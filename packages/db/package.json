@@ -1,0 +1,21 @@
+{
+  "name": "@relune/db",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "devDependencies": {
+    "drizzle-kit": "^0.31.8",
+    "@types/pg": "^8.15.6"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.1",
+    "pg": "^8.16.3"
+  }
+}
