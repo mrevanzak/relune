@@ -1,10 +1,9 @@
+import { HapticTab } from "@/components/haptic-tab";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme.web";
 import { Tabs } from "expo-router";
 import React from "react";
-
-import { HapticTab } from "@/relune/apps/native/components/haptic-tab";
-import { IconSymbol } from "@/relune/apps/native/components/ui/icon-symbol";
-import { Colors } from "@/relune/apps/native/constants/theme";
-import { useColorScheme } from "@/relune/apps/native/hooks/use-color-scheme";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
