@@ -2,6 +2,8 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
+**Status:** Phase 1 Complete (Tasks 1-3) | Commit: 95591f5
+
 **Goal:** Build the MVP of Rêlune, a private voice recording app with transcription and search, covering backend foundation and mobile core flow.
 
 **Architecture:** Monorepo with Expo/RN mobile app and Elysia/Bun backend. Supabase for DB/Storage/Auth. Vercel AI SDK for transcription.
@@ -12,7 +14,7 @@
 
 ## Phase 1: Foundation (Backend & Schema)
 
-### Task 1: Database Schema & Enums
+### Task 1: Database Schema & Enums ✅ DONE
 
 **Files:**
 - Modify: `packages/db/src/schema/index.ts`
@@ -97,7 +99,7 @@ git add packages/db/src/schema/index.ts
 git commit -m "feat(db): define initial schema for users, recordings, keywords"
 ```
 
-### Task 2: Backend Auth Middleware
+### Task 2: Backend Auth Middleware ✅ DONE
 
 **Files:**
 - Create: `apps/server/src/middleware/auth.ts`
@@ -150,7 +152,7 @@ git add apps/server/src/middleware/auth.ts apps/server/src/index.ts
 git commit -m "feat(server): add auth middleware with whitelist"
 ```
 
-### Task 3: Backend Recordings API (Basic CRUD)
+### Task 3: Backend Recordings API (Basic CRUD) ✅ DONE
 
 **Files:**
 - Create: `apps/server/src/routes/recordings.ts`
