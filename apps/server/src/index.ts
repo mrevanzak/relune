@@ -1,7 +1,6 @@
-import "dotenv/config";
 import { cors } from "@elysiajs/cors";
 import { openapi } from "@elysiajs/openapi";
-import { env } from "@relune/config/env";
+import { env } from "@relune/env";
 import { Elysia } from "elysia";
 import { auth } from "./modules/auth";
 import { importRoutes } from "./modules/import";

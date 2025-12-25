@@ -1,4 +1,4 @@
-import { env } from "@relune/config";
+import { env } from "@relune/env";
 import { createClient } from "@supabase/supabase-js";
 
 // Privileged server-side client (bypasses RLS). Must use the service role key.

@@ -24,6 +24,7 @@
 	},
 	"dependencies": {
 		"@relune/config": "workspace:*",
+		"@relune/env": "workspace:*",
 		"drizzle-orm": "^0.45.1",
 		"pg": "^8.16.3"
 	}

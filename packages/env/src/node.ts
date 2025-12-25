@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { createEnv } from "@t3-oss/env-core";
 import dotenv from "dotenv";
-import { z } from "zod";
+import { buildClientEnvInput } from "./expo.cjs";
+import { clientSchema, serverSchema } from "./shared";
 
 function findNearestDotenvFile(startDir: string): string | null {
 	let dir = startDir;
@@ -54,31 +55,16 @@ function loadDotenvOnce(): void {
  * Use this when you need to control when validation happens (e.g., after dotenv.config).
  */
 export function createReluneEnv(runtimeEnv = process.env) {
+	const clientEnvInput = buildClientEnvInput(runtimeEnv);
+
 	return createEnv({
-		server: {
-			DATABASE_URL: z.url(),
-			SUPABASE_URL: z.url(),
-			SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
-			// Server-only: use for privileged operations that must bypass RLS (eg. Storage uploads).
-			// Never expose this to clients.
-			SUPABASE_SECRET_KEY: z.string().min(1),
-			OPENAI_API_KEY: z.string().min(1),
-			ALLOWED_EMAILS: z
-				.string()
-				.default("")
-				.transform((val) =>
-					val
-						.split(",")
-						.map((item) => item.trim())
-						.filter(Boolean),
-				),
-			CORS_ORIGIN: z.string().default(""),
-			ENABLE_SWAGGER: z
-				.string()
-				.default("false")
-				.transform((val) => val === "true"),
+		server: serverSchema,
+		clientPrefix: "EXPO_PUBLIC_",
+		client: clientSchema,
+		runtimeEnv: {
+			...runtimeEnv,
+			...clientEnvInput,
 		},
-		runtimeEnv,
 		emptyStringAsUndefined: true,
 	});
 }

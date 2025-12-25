@@ -1,9 +1,10 @@
 import "react-native-url-polyfill/auto";
+import { env } from "@relune/env";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { supabaseStorage } from "./supabase-storage";
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
+const supabaseUrl = env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 let supabaseInstance: SupabaseClient | null = null;
 

@@ -1,4 +1,4 @@
-import { env } from "@relune/config/env";
+import { env } from "@relune/env";
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({

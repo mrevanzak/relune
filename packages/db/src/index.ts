@@ -1,4 +1,4 @@
-import { env } from "@relune/config/env";
+import { env } from "@relune/env";
 import { drizzle } from "drizzle-orm/node-postgres";
 
 import * as schema from "./schema";

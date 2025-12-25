@@ -1,4 +1,4 @@
-import { env } from "@relune/config/env";
+import { env } from "@relune/env";
 import { Elysia } from "elysia";
 import { supabase } from "@/shared/supabase";
 import { createAuthPlugin } from "./service";
