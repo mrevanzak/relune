@@ -1975,12 +1975,12 @@
     drizzle-orm "^0.45.1"
     pg "^8.16.3"
 
-"@sinclair/typebox@>= 0.34.0 < 1", "@sinclair/typebox@^0.27.8", "@sinclair/typebox@^0.34.15":
+"@sinclair/typebox@^0.27.8":
   version "0.27.8"
   resolved "https://registry.npmjs.org/@sinclair/typebox/-/typebox-0.27.8.tgz"
   integrity sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==
 
-"@sinclair/typebox@^0.34.43":
+"@sinclair/typebox@>= 0.34.0 < 1", "@sinclair/typebox@^0.34.15", "@sinclair/typebox@^0.34.43":
   version "0.34.43"
   resolved "https://registry.npmjs.org/@sinclair/typebox/-/typebox-0.34.43.tgz"
   integrity sha512-zD2/pAP6nq+ypyNPxsDhc5as3BamstGwCvhOEFTvull2qog9fdb/sj4m/431mk6iuXXW+WE1PER94uBDqxkoIg==
