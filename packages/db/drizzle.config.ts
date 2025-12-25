@@ -1,12 +1,5 @@
-import { createReluneEnv } from "@relune/config/env";
-import dotenv from "dotenv";
+import { env } from "@relune/config/env";
 import { defineConfig } from "drizzle-kit";
-
-dotenv.config({
-	path: "../../apps/server/.env",
-});
-
-const env = createReluneEnv(process.env);
 
 export default defineConfig({
 	schema: "./src/schema",
