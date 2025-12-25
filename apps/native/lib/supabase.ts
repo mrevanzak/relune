@@ -5,7 +5,6 @@ import {
 	processLock,
 	type SupabaseClient,
 } from "@supabase/supabase-js";
-import { AppState, Platform } from "react-native";
 import { supabaseStorage } from "./supabase-storage";
 
 const supabaseUrl = env.EXPO_PUBLIC_SUPABASE_URL;
@@ -34,21 +33,4 @@ export function getSupabaseClient(): SupabaseClient {
 	});
 
 	return supabaseInstance;
-}
-
-// Tells Supabase Auth to continuously refresh the session automatically
-// if the app is in the foreground. When this is added, you will continue
-// to receive `onAuthStateChange` events with the `TOKEN_REFRESHED` or
-// `SIGNED_OUT` event if the user's session is terminated. This should
-// only be registered once.
-if (Platform.OS !== "web") {
-	AppState.addEventListener("change", (state) => {
-		const supabase = getSupabaseClient();
-
-		if (state === "active") {
-			supabase.auth.startAutoRefresh();
-		} else {
-			supabase.auth.stopAutoRefresh();
-		}
-	});
 }
