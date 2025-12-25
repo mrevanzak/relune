@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+	ActivityIndicator,
+	Pressable,
+	StyleSheet,
+	Text,
+	View,
+} from "react-native";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
+import { isNetworkError } from "@/lib/api";
+import { useUploadRecordingMutation } from "@/queries/recordings";
+import { useUploadQueueStore } from "@/stores/upload-queue";
 
 function formatDuration(ms: number): string {
 	const totalSeconds = Math.floor(ms / 1000);
@@ -9,15 +18,22 @@ function formatDuration(ms: number): string {
 	return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
+type UploadStatus = "idle" | "uploading" | "success" | "queued" | "error";
+
 export default function RecordScreen() {
 	const { isRecording, start, stop, hasPermission, requestPermission } =
 		useAudioRecorder();
+
+	const { mutate: uploadRecording, isPending: isUploading } =
+		useUploadRecordingMutation();
+	const queueLength = useUploadQueueStore.use.queue().length;
 
 	const [displayDuration, setDisplayDuration] = useState(0);
 	const [lastRecording, setLastRecording] = useState<{
 		uri: string;
 		durationSeconds: number;
 	} | null>(null);
+	const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
 
 	// Update duration display while recording
 	useEffect(() => {
@@ -41,12 +57,33 @@ export default function RecordScreen() {
 			const result = await stop();
 			if (result) {
 				setLastRecording(result);
+				setUploadStatus("uploading");
+
+				// Auto-upload the recording
+				uploadRecording(
+					{
+						uri: result.uri,
+						durationSeconds: result.durationSeconds,
+						recordedAt: new Date(),
+					},
+					{
+						onSuccess: () => {
+							setUploadStatus("success");
+						},
+						onError: (error) => {
+							// Check if it was queued for later (network error)
+							const isQueued = isNetworkError(error);
+							setUploadStatus(isQueued ? "queued" : "error");
+						},
+					},
+				);
 			}
 		} else {
 			setLastRecording(null);
+			setUploadStatus("idle");
 			await start();
 		}
-	}, [isRecording, start, stop]);
+	}, [isRecording, start, stop, uploadRecording]);
 
 	const handlePermissionPress = useCallback(async () => {
 		await requestPermission();
@@ -80,10 +117,29 @@ export default function RecordScreen() {
 
 			{lastRecording && !isRecording && (
 				<View style={styles.resultContainer}>
-					<Text style={styles.resultText}>
-						Recording saved ({lastRecording.durationSeconds}s)
-					</Text>
+					{uploadStatus === "uploading" || isUploading ? (
+						<View style={styles.uploadingContainer}>
+							<ActivityIndicator size="small" color="#fff" />
+							<Text style={styles.uploadingText}>Uploading...</Text>
+						</View>
+					) : uploadStatus === "success" ? (
+						<Text style={styles.successText}>Saved</Text>
+					) : uploadStatus === "queued" ? (
+						<Text style={styles.queuedText}>Queued for upload</Text>
+					) : uploadStatus === "error" ? (
+						<Text style={styles.errorText}>Upload failed</Text>
+					) : (
+						<Text style={styles.resultText}>
+							Recording saved ({lastRecording.durationSeconds}s)
+						</Text>
+					)}
 				</View>
+			)}
+
+			{queueLength > 0 && !isRecording && (
+				<Text style={styles.queueInfo}>
+					{queueLength} recording{queueLength > 1 ? "s" : ""} pending upload
+				</Text>
 			)}
 
 			<Pressable
@@ -155,10 +211,37 @@ const styles = StyleSheet.create({
 	},
 	resultContainer: {
 		marginBottom: 40,
+		alignItems: "center",
 	},
 	resultText: {
 		fontSize: 16,
 		color: "#34c759",
+	},
+	uploadingContainer: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 8,
+	},
+	uploadingText: {
+		fontSize: 16,
+		color: "#888",
+	},
+	successText: {
+		fontSize: 16,
+		color: "#34c759",
+	},
+	queuedText: {
+		fontSize: 16,
+		color: "#ff9500",
+	},
+	errorText: {
+		fontSize: 16,
+		color: "#ff3b30",
+	},
+	queueInfo: {
+		fontSize: 12,
+		color: "#666",
+		marginTop: 8,
 	},
 	recordButton: {
 		width: 80,

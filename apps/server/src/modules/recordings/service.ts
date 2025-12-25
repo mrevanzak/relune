@@ -1,10 +1,11 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import { env } from "@relune/config/env";
 import { db } from "@relune/db";
 import type { Recording } from "@relune/db/schema";
 import { keywords, recordingKeywords, recordings } from "@relune/db/schema";
+import { env } from "@relune/env";
 import { generateText } from "ai";
 import { desc, eq, isNull } from "drizzle-orm";
+import { getContentType, uploadAudioToStorage } from "@/shared/storage";
 import { supabase } from "@/shared/supabase";
 
 /**
@@ -287,4 +288,66 @@ export async function processPendingRecordings(
 		remaining: remainingCount.length - processed,
 		errors,
 	};
+}
+
+/**
+ * Create a new recording from in-app recording upload
+ */
+export type CreateAppRecordingOptions = {
+	userId: string;
+	file: File;
+	durationSeconds?: number;
+	recordedAt?: Date;
+};
+
+export type CreateAppRecordingResult =
+	| { recording: Recording; error: null }
+	| { recording: null; error: string };
+
+export async function createAppRecording({
+	userId,
+	file,
+	durationSeconds,
+	recordedAt,
+}: CreateAppRecordingOptions): Promise<CreateAppRecordingResult> {
+	try {
+		// Read file content
+		const fileContent = new Uint8Array(await file.arrayBuffer());
+		const contentType = getContentType(file.name);
+
+		// Upload to storage
+		const uploadResult = await uploadAudioToStorage(
+			file.name,
+			fileContent,
+			contentType,
+		);
+
+		if (uploadResult.error) {
+			return { recording: null, error: `Upload failed: ${uploadResult.error}` };
+		}
+
+		// Create recording in database
+		const result = await db
+			.insert(recordings)
+			.values({
+				userId,
+				audioUrl: uploadResult.url,
+				durationSeconds: durationSeconds ?? null,
+				fileSizeBytes: fileContent.length,
+				recordedAt: recordedAt ?? new Date(),
+				importSource: "app",
+				originalFilename: file.name,
+			})
+			.returning();
+
+		const recording = result[0];
+		if (!recording) {
+			return { recording: null, error: "Failed to create recording" };
+		}
+
+		return { recording, error: null };
+	} catch (error) {
+		const message = error instanceof Error ? error.message : "Unknown error";
+		return { recording: null, error: message };
+	}
 }

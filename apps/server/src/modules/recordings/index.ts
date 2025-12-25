@@ -1,7 +1,12 @@
 import { Elysia } from "elysia";
-import { ForbiddenError, NotFoundError } from "../../shared/errors";
+import {
+	BadRequestError,
+	ForbiddenError,
+	NotFoundError,
+} from "../../shared/errors";
 import { authMiddleware } from "../auth";
 import {
+	createRecordingBodySchema,
 	listQuerySchema,
 	processPendingQuerySchema,
 	recordingIdParamSchema,
@@ -64,5 +69,27 @@ export const recordings = new Elysia({
 		},
 		{
 			query: processPendingQuerySchema,
+		},
+	)
+	.post(
+		"/",
+		async ({ user, body }) => {
+			const { file, durationSeconds, recordedAt } = body;
+
+			const result = await RecordingsService.createAppRecording({
+				userId: user.id,
+				file,
+				durationSeconds: durationSeconds ? Number(durationSeconds) : undefined,
+				recordedAt: recordedAt ? new Date(recordedAt) : undefined,
+			});
+
+			if (result.error) {
+				throw new BadRequestError(result.error, "UPLOAD_FAILED");
+			}
+
+			return { recording: result.recording };
+		},
+		{
+			body: createRecordingBodySchema,
 		},
 	);

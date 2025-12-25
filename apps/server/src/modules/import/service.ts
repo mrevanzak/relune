@@ -2,7 +2,6 @@ import { randomUUID } from "node:crypto";
 import { db } from "@relune/db";
 import { recordings, users } from "@relune/db/schema";
 import { and, eq } from "drizzle-orm";
-import { supabase } from "@/shared/supabase";
 
 /**
  * WhatsApp Import Service
@@ -186,34 +185,7 @@ export async function checkDuplicate(
 }
 
 /**
- * Upload audio file to Supabase Storage
- */
-export async function uploadAudioToStorage(
-	filename: string,
-	fileContent: Uint8Array,
-	contentType: string,
-): Promise<{ url: string; error: string | null }> {
-	const storagePath = `recordings/${randomUUID()}-${filename}`;
-
-	const { error } = await supabase.storage
-		.from("audio")
-		.upload(storagePath, fileContent, {
-			contentType,
-			upsert: false,
-		});
-
-	if (error) {
-		return { url: "", error: error.message };
-	}
-
-	// Get public URL (or use signed URL if bucket is private)
-	const { data } = supabase.storage.from("audio").getPublicUrl(storagePath);
-
-	return { url: data.publicUrl, error: null };
-}
-
-/**
- * Create a recording record in the database
+ * Create a recording record in the database (for WhatsApp imports)
  */
 export async function createRecording(data: {
 	userId: string;
@@ -242,17 +214,4 @@ export async function createRecording(data: {
 	}
 
 	return recordingId;
-}
-
-// Content type mapping for audio files
-export function getContentType(filename: string): string {
-	const ext = filename.toLowerCase().split(".").pop();
-	const types: Record<string, string> = {
-		opus: "audio/opus",
-		m4a: "audio/mp4",
-		mp3: "audio/mpeg",
-		wav: "audio/wav",
-		ogg: "audio/ogg",
-	};
-	return types[ext || ""] || "audio/mpeg";
 }

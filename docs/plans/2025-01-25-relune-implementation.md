@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Status:** Task 7 Complete (WhatsApp Import) | Next: Task 8 (In-App Recording Upload)
+**Status:** Task 8 Complete (In-App Recording Upload) | MVP Core Flow Complete ✅
 
 **Goal:** Build the MVP of Rêlune, a private voice recording app with transcription and search, covering backend foundation and mobile core flow.
 
@@ -287,23 +287,36 @@ git add packages/db/src/schema/index.ts apps/server/src/modules/import
 git commit -m "feat(server): implement WhatsApp import and transcription pipeline"
 ```
 
-### Task 8: Upload & Transcription (In-App Recording)
+### Task 8: Upload & Transcription (In-App Recording) ✅ DONE
 
 **Files:**
-- Modify: `apps/server/src/modules/recordings/index.ts`
-- Create: `apps/native/lib/api.ts`
+- Create: `apps/server/src/shared/storage.ts` (shared upload utilities)
+- Modify: `apps/server/src/modules/import/service.ts` (re-export from shared)
+- Modify: `apps/server/src/modules/recordings/model.ts` (add upload schema)
+- Modify: `apps/server/src/modules/recordings/service.ts` (add createAppRecording)
+- Modify: `apps/server/src/modules/recordings/index.ts` (add POST endpoint)
+- Create: `apps/native/lib/api.ts` (Eden treaty client)
+- Create: `apps/native/lib/file-utils.ts` (RN URI to File converter)
+- Create: `apps/native/stores/upload-queue.ts` (offline queue store)
+- Modify: `apps/native/queries/recordings.ts` (add upload mutation)
+- Modify: `apps/native/app/(tabs)/index.tsx` (integrate auto-upload)
+- Modify: `apps/native/app/_layout.tsx` (queue processing on foreground)
 
 **Step 1: Server Upload Handler**
-Implement `POST /recordings` to accept `multipart/form-data`, upload to Supabase Storage, and save DB record with `importSource: 'app'`.
+Implemented `POST /recordings` to accept file uploads via Eden treaty, upload to Supabase Storage, and save DB record with `importSource: 'app'`.
 
 **Step 2: Reuse Transcription Job**
 New recordings with `transcript: null` are picked up by the existing `process-pending` job from Task 7.
 
 **Step 3: Client Mutation**
-Implement upload mutation in mobile app using `eden` treaty.
+Implemented upload mutation in mobile app using Eden treaty with:
+- Auto-upload after recording stops
+- Offline queueing with retry logic (max 3 retries)
+- Queue processing on app foreground
+- Type-safe API calls
 
 **Step 4: Commit**
 ```bash
-git add apps/server/src/modules/recordings
-git commit -m "feat(server): implement in-app recording upload"
+git add apps/server/src/shared/storage.ts apps/server/src/modules/recordings apps/native/lib/api.ts apps/native/lib/file-utils.ts apps/native/stores/upload-queue.ts apps/native/queries/recordings.ts apps/native/app
+git commit -m "feat: implement in-app recording upload with offline queueing"
 ```
