@@ -1,18 +1,18 @@
 {
-  "name": "better-t-stack",
-  "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "type": "module",
-  "scripts": {
-    "check": "biome check --write ."
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "turbo": "^2.6.3",
-    "@biomejs/biome": "^2.2.0"
-  },
-  "packageManager": "bun@1.2.10"
+	"name": "better-t-stack",
+	"private": true,
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"type": "module",
+	"scripts": {
+		"check": "biome check --write ."
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"turbo": "^2.6.3",
+		"@biomejs/biome": "^2.2.0"
+	},
+	"packageManager": "bun@1.2.10"
 }

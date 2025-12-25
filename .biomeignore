@@ -1,0 +1,26 @@
+# Dependencies
+**/node_modules/**
+
+# Build outputs
+**/dist/**
+**/build/**
+**/.turbo/**
+**/dev-dist/**
+**/coverage/**
+
+# Expo / React Native generated native projects (very large)
+apps/native/ios/**
+apps/native/android/**
+**/.expo/**
+
+# iOS / Xcode
+**/Pods/**
+**/DerivedData/**
+**/*.xcworkspace/**
+**/*.xcodeproj/**
+
+# Android / Gradle
+**/.gradle/**
+**/.kotlin/**
+
+
