@@ -1,4 +1,5 @@
 import { env } from "@relune/config";
 import { createClient } from "@supabase/supabase-js";
 
-export const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+// Privileged server-side client (bypasses RLS). Must use the service role key.
+export const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);

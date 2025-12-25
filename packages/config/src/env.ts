@@ -58,7 +58,10 @@ export function createReluneEnv(runtimeEnv = process.env) {
 		server: {
 			DATABASE_URL: z.url(),
 			SUPABASE_URL: z.url(),
-			SUPABASE_KEY: z.string().min(1),
+			SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
+			// Server-only: use for privileged operations that must bypass RLS (eg. Storage uploads).
+			// Never expose this to clients.
+			SUPABASE_SECRET_KEY: z.string().min(1),
 			OPENAI_API_KEY: z.string().min(1),
 			ALLOWED_EMAILS: z
 				.string()
