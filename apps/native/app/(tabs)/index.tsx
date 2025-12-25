@@ -1,10 +1,10 @@
 import { Image } from "expo-image";
 import { Platform, StyleSheet } from "react-native";
 
-import { HelloWave } from "@/relune/apps/native/components/hello-wave";
-import ParallaxScrollView from "@/relune/apps/native/components/parallax-scroll-view";
-import { ThemedText } from "@/relune/apps/native/components/themed-text";
-import { ThemedView } from "@/relune/apps/native/components/themed-view";
+import { HelloWave } from "@/components/hello-wave";
+import ParallaxScrollView from "@/components/parallax-scroll-view";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import { Link } from "expo-router";
 
 export default function HomeScreen() {

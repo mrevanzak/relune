@@ -1,11 +1,11 @@
 import { PropsWithChildren, useState } from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 
-import { ThemedText } from "@/relune/apps/native/components/themed-text";
-import { ThemedView } from "@/relune/apps/native/components/themed-view";
-import { IconSymbol } from "@/relune/apps/native/components/ui/icon-symbol";
-import { Colors } from "@/relune/apps/native/constants/theme";
-import { useColorScheme } from "@/relune/apps/native/hooks/use-color-scheme";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export function Collapsible({
   children,
