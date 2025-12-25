@@ -1,0 +1,84 @@
+import { Platform } from "react-native";
+import { getMmkv } from "./mmkv";
+
+type OnNativeUnavailable = "throw" | "tolerant";
+
+interface PlatformStorageOptions {
+	/**
+	 * Behavior when MMKV is not initialized on native platforms.
+	 * - "throw": throw an error (for Supabase storage)
+	 * - "tolerant": return null/noop (for Zustand hydration)
+	 */
+	onNativeUnavailable: OnNativeUnavailable;
+}
+
+interface SyncStorage {
+	getItem: (key: string) => string | null;
+	setItem: (key: string, value: string) => void;
+	removeItem: (key: string) => void;
+}
+
+/**
+ * Creates a platform-agnostic storage adapter.
+ * Uses localStorage on web, MMKV on native platforms.
+ */
+export function createPlatformStorage(
+	options: PlatformStorageOptions,
+): SyncStorage {
+	const { onNativeUnavailable } = options;
+
+	return {
+		getItem: (key: string): string | null => {
+			if (Platform.OS === "web") {
+				return localStorage.getItem(key);
+			}
+
+			const mmkv = getMmkv();
+			if (!mmkv) {
+				if (onNativeUnavailable === "throw") {
+					throw new Error("MMKV not initialized. Call initMmkv() first.");
+				}
+				return null;
+			}
+
+			const value = mmkv.getString(key);
+			return value ?? null;
+		},
+
+		setItem: (key: string, value: string): void => {
+			if (Platform.OS === "web") {
+				localStorage.setItem(key, value);
+				return;
+			}
+
+			const mmkv = getMmkv();
+			if (!mmkv) {
+				if (onNativeUnavailable === "throw") {
+					throw new Error("MMKV not initialized. Call initMmkv() first.");
+				}
+				// Tolerant mode: silently fail during initialization
+				return;
+			}
+
+			mmkv.set(key, value);
+		},
+
+		removeItem: (key: string): void => {
+			if (Platform.OS === "web") {
+				localStorage.removeItem(key);
+				return;
+			}
+
+			const mmkv = getMmkv();
+			if (!mmkv) {
+				if (onNativeUnavailable === "throw") {
+					throw new Error("MMKV not initialized. Call initMmkv() first.");
+				}
+				// Tolerant mode: silently fail during initialization
+				return;
+			}
+
+			mmkv.remove(key);
+		},
+	};
+}

@@ -842,6 +842,11 @@
   resolved "https://registry.npmjs.org/@elysiajs/cors/-/cors-1.4.0.tgz"
   integrity sha512-pb0SCzBfFbFSYA/U40HHO7R+YrcXBJXOWgL20eSViK33ol1e20ru2/KUaZYo5IMUn63yaTJI/bQERuQ+77ND8g==
 
+"@elysiajs/openapi@^1.4.12":
+  version "1.4.12"
+  resolved "https://registry.npmjs.org/@elysiajs/openapi/-/openapi-1.4.12.tgz"
+  integrity sha512-FhmWqUFDOidD2tUR0mrLnD2M0OUFF6cFUfKtHkQDbnAmCihFusxs7JvtUJjmEKZ++mzNvYLpbhZeJIXA7tIzLA==
+
 "@elysiajs/swagger@^1.3.1":
   version "1.3.1"
   resolved "https://registry.npmjs.org/@elysiajs/swagger/-/swagger-1.3.1.tgz"
@@ -2014,9 +2019,13 @@
   dependencies:
     nanoid "^3.3.11"
 
-"@relune/config@packages/config":
+"@relune/config@packages/config", "@relune/config@workspace:*":
   version "workspace:packages/config"
   resolved "workspace:packages/config"
+  dependencies:
+    "@t3-oss/env-core" "^0.13.10"
+    dotenv "^16.5.0"
+    zod "^4.2.1"
 
 "@relune/db@packages/db", "@relune/db@workspace:*":
   version "workspace:packages/db"
@@ -2025,6 +2034,7 @@
     "@types/pg" "^8.15.6"
     drizzle-kit "^0.31.8"
   dependencies:
+    "@relune/config" "workspace:*"
     drizzle-orm "^0.45.1"
     pg "^8.16.3"
 
@@ -2124,19 +2134,19 @@
   resolved "https://registry.npmjs.org/@scalar/types/-/types-0.0.12.tgz"
   integrity sha512-XYZ36lSEx87i4gDqopQlGCOkdIITHHEvgkuJFrXFATQs9zHARop0PN0g4RZYWj+ZpCUclOcaOjbCt8JGe22mnQ==
   dependencies:
-    "@unhead/schema" "^1.9.5"
     "@scalar/openapi-types" "0.1.1"
+    "@unhead/schema" "^1.9.5"
 
 "@scalar/types@0.1.7":
   version "0.1.7"
   resolved "https://registry.npmjs.org/@scalar/types/-/types-0.1.7.tgz"
   integrity sha512-irIDYzTQG2KLvFbuTI8k2Pz/R4JR+zUUSykVTbEMatkzMmVFnn1VzNSMlODbadycwZunbnL2tA27AXed9URVjw==
   dependencies:
-    zod "^3.23.8"
+    "@scalar/openapi-types" "0.2.0"
+    "@unhead/schema" "^1.11.11"
     nanoid "^5.1.5"
     type-fest "^4.20.0"
-    "@unhead/schema" "^1.11.11"
-    "@scalar/openapi-types" "0.2.0"
+    zod "^3.23.8"
 
 "@sinclair/typebox@^0.27.8":
   version "0.27.8"
@@ -2211,6 +2221,23 @@
     "@supabase/postgrest-js" "2.89.0"
     "@supabase/realtime-js" "2.89.0"
     "@supabase/storage-js" "2.89.0"
+
+"@t3-oss/env-core@^0.13.10":
+  version "0.13.10"
+  resolved "https://registry.npmjs.org/@t3-oss/env-core/-/env-core-0.13.10.tgz"
+  integrity sha512-NNFfdlJ+HmPHkLi2HKy7nwuat9SIYOxei9K10lO2YlcSObDILY7mHZNSHsieIM3A0/5OOzw/P/b+yLvPdaG52g==
+
+"@tanstack/query-core@5.90.12":
+  version "5.90.12"
+  resolved "https://registry.npmjs.org/@tanstack/query-core/-/query-core-5.90.12.tgz"
+  integrity sha512-T1/8t5DhV/SisWjDnaiU2drl6ySvsHj1bHBCWNXd+/T+Hh1cf6JodyEYMd5sgwm+b/mETT4EV3H+zCVczCU5hg==
+
+"@tanstack/react-query@^5.62.11":
+  version "5.90.12"
+  resolved "https://registry.npmjs.org/@tanstack/react-query/-/react-query-5.90.12.tgz"
+  integrity sha512-graRZspg7EoEaw0a8faiUASCyJrqjKPdqJ9EwuDRUF9mEYJ1YPczI9H+/agJ0mOJkPCJDk0lsz5QTrLZ/jQ2rg==
+  dependencies:
+    "@tanstack/query-core" "5.90.12"
 
 "@tokenizer/inflate@^0.4.1":
   version "0.4.1"
@@ -2324,7 +2351,7 @@
   resolved "https://registry.npmjs.org/@types/phoenix/-/phoenix-1.6.7.tgz"
   integrity sha512-oN9ive//QSBkf19rfDv45M7eZPi0eEXylht2OLEXicu5b4KoQ1OzXIw+xDSGWxSxe1JmepRR/ZH283vsu518/Q==
 
-"@types/react@*", "@types/react@^19.1.0", "@types/react@~19.1.0":
+"@types/react@*", "@types/react@>=18.0.0", "@types/react@^19.1.0", "@types/react@~19.1.0":
   version "19.1.17"
   resolved "https://registry.npmjs.org/@types/react/-/react-19.1.17.tgz"
   integrity sha512-Qec1E3mhALmaspIrhWt9jkQMNdw6bReVu64mjvhbhq2NFPftLPVr+l1SZgmw/66WwBNpDh7ao5AT6gF5v41PFA==
@@ -2365,8 +2392,8 @@
   resolved "https://registry.npmjs.org/@unhead/schema/-/schema-1.11.20.tgz"
   integrity sha512-0zWykKAaJdm+/Y7yi/Yds20PrUK7XabLe9c3IRcjnwYmSWY6z0Cr19VIs3ozCj8P+GhR+/TI2mwtGlueCEYouA==
   dependencies:
-    zhead "^2.2.4"
     hookable "^5.5.3"
+    zhead "^2.2.4"
 
 "@urql/core@^5.0.6", "@urql/core@^5.1.2":
   version "5.2.0"
@@ -2661,7 +2688,7 @@ balanced-match@^1.0.0:
   resolved "https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.2.tgz"
   integrity sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==
 
-base64-js@^1.2.3, base64-js@^1.3.1, base64-js@^1.5.1:
+base64-js@^1.2.3, base64-js@^1.3.0, base64-js@^1.3.1, base64-js@^1.5.1:
   version "1.5.1"
   resolved "https://registry.npmjs.org/base64-js/-/base64-js-1.5.1.tgz"
   integrity sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==
@@ -3346,6 +3373,13 @@ expo-constants@^18.0.12, expo-constants@~18.0.12:
     "@expo/config" "~12.0.12"
     "@expo/env" "~2.0.8"
 
+expo-crypto@^15.0.8:
+  version "15.0.8"
+  resolved "https://registry.npmjs.org/expo-crypto/-/expo-crypto-15.0.8.tgz"
+  integrity sha512-aF7A914TB66WIlTJvl5J6/itejfY78O7dq3ibvFltL9vnTALJ/7LYHvLT4fwmx9yUNS6ekLBtDGWivFWnj2Fcw==
+  dependencies:
+    base64-js "^1.3.0"
+
 expo-file-system@~19.0.21:
   version "19.0.21"
   resolved "https://registry.npmjs.org/expo-file-system/-/expo-file-system-19.0.21.tgz"
@@ -3379,6 +3413,13 @@ expo-linking@^8.0.11, expo-linking@~8.0.11:
   integrity sha512-+VSaNL5om3kOp/SSKO5qe6cFgfSIWnnQDSbA7XLs3ECkYzXRquk5unxNS3pg7eK5kNUmQ4kgLI7MhTggAEUBLA==
   dependencies:
     expo-constants "~18.0.12"
+    invariant "^2.2.4"
+
+expo-local-authentication@~17.0.8:
+  version "17.0.8"
+  resolved "https://registry.npmjs.org/expo-local-authentication/-/expo-local-authentication-17.0.8.tgz"
+  integrity sha512-Q5fXHhu6w3pVPlFCibU72SYIAN+9wX7QpFn9h49IUqs0Equ44QgswtGrxeh7fdnDqJrrYGPet5iBzjnE70uolA==
+  dependencies:
     invariant "^2.2.4"
 
 expo-modules-autolinking@3.0.23:
@@ -4947,7 +4988,7 @@ rc@~1.2.7:
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
 
-react@*, react@19.1.0, "react@>= 18.2.0", react@>=16.8, react@>=17.0.0, "react@^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc", "react@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc", "react@^18.0.0 || ^19.0.0", react@^19.1.0:
+react@*, react@19.1.0, "react@>= 18.2.0", react@>=16.8, react@>=17.0.0, react@>=18.0.0, "react@^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc", "react@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc", "react@^18 || ^19", react@^19.1.0:
   version "19.1.0"
   resolved "https://registry.npmjs.org/react/-/react-19.1.0.tgz"
   integrity sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg==
@@ -5046,6 +5087,21 @@ react-native-is-edge-to-edge@^1.1.6, react-native-is-edge-to-edge@^1.2.1:
   resolved "https://registry.npmjs.org/react-native-is-edge-to-edge/-/react-native-is-edge-to-edge-1.2.1.tgz"
   integrity sha512-FLbPWl/MyYQWz+KwqOZsSyj2JmLKglHatd3xLZWskXOpRaio4LfEDEz8E/A6uD8QoTHW6Aobw1jbEwK7KMgR7Q==
 
+react-native-keychain@^10.0.0:
+  version "10.0.0"
+  resolved "https://registry.npmjs.org/react-native-keychain/-/react-native-keychain-10.0.0.tgz"
+  integrity sha512-YzPKSAnSzGEJ12IK6CctNLU79T1W15WDrElRQ+1/FsOazGX9ucFPTQwgYe8Dy8jiSEDJKM4wkVa3g4lD2Z+Pnw==
+
+react-native-mmkv@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.npmjs.org/react-native-mmkv/-/react-native-mmkv-4.1.0.tgz"
+  integrity sha512-ia76WnU6dkLZxFkSSflxqFgHT2pIaML763aucEu7nMglF41oEWTdTtBu0o8a1cxbhZOaONk6KF8RQp5fLvPitA==
+
+react-native-nitro-modules@*:
+  version "0.32.0"
+  resolved "https://registry.npmjs.org/react-native-nitro-modules/-/react-native-nitro-modules-0.32.0.tgz"
+  integrity sha512-nLDsmi/H9/cLcYxArYxcTDL641JiWnAH3u2LmsFETgyqSEHvukswDTdmX6AHBRIAwXu/iUDppZyjsaRpTG6WMg==
+
 react-native-reanimated@*, react-native-reanimated@~4.1.1:
   version "4.1.6"
   resolved "https://registry.npmjs.org/react-native-reanimated/-/react-native-reanimated-4.1.6.tgz"
@@ -5067,6 +5123,13 @@ react-native-screens@*, "react-native-screens@>= 4.0.0", react-native-screens@~4
     react-freeze "^1.0.0"
     react-native-is-edge-to-edge "^1.2.1"
     warn-once "^0.1.0"
+
+react-native-url-polyfill@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.npmjs.org/react-native-url-polyfill/-/react-native-url-polyfill-3.0.0.tgz"
+  integrity sha512-aA5CiuUCUb/lbrliVCJ6lZ17/RpNJzvTO/C7gC/YmDQhTUoRD5q5HlJfwLWcxz4VgAhHwXKzhxH+wUN24tAdqg==
+  dependencies:
+    whatwg-url-without-unicode "8.0.0-3"
 
 react-native-web@*, react-native-web@~0.21.0:
   version "0.21.2"
@@ -5183,12 +5246,16 @@ regjsparser@^0.13.0:
     "@react-navigation/bottom-tabs" "^7.4.0"
     "@react-navigation/elements" "^2.6.3"
     "@react-navigation/native" "^7.1.8"
+    "@supabase/supabase-js" "^2.89.0"
+    "@tanstack/react-query" "^5.62.11"
     expo "~54.0.30"
     expo-constants "~18.0.12"
+    expo-crypto "^15.0.8"
     expo-font "~14.0.10"
     expo-haptics "~15.0.8"
     expo-image "~3.0.11"
     expo-linking "~8.0.11"
+    expo-local-authentication "~17.0.8"
     expo-router "~6.0.21"
     expo-splash-screen "~31.0.13"
     expo-status-bar "~3.0.9"
@@ -5199,11 +5266,15 @@ regjsparser@^0.13.0:
     react-dom "19.1.0"
     react-native "0.81.5"
     react-native-gesture-handler "~2.28.0"
+    react-native-keychain "^10.0.0"
+    react-native-mmkv "^4.1.0"
     react-native-reanimated "~4.1.1"
     react-native-safe-area-context "~5.6.0"
     react-native-screens "~4.16.0"
+    react-native-url-polyfill "^3.0.0"
     react-native-web "~0.21.0"
     react-native-worklets "0.5.1"
+    zustand "^5.0.9"
 
 require-directory@^2.1.1:
   version "2.1.1"
@@ -5395,7 +5466,9 @@ serve-static@^1.16.2:
     tsdown "^0.18.3"
   dependencies:
     "@elysiajs/cors" "^1.3.3"
+    "@elysiajs/openapi" "^1.4.12"
     "@elysiajs/swagger" "^1.3.1"
+    "@relune/config" "workspace:*"
     "@relune/db" "workspace:*"
     "@sinclair/typebox" "^0.34.43"
     "@supabase/supabase-js" "^2.89.0"
@@ -5958,7 +6031,7 @@ use-sidecar@^1.1.3:
     detect-node-es "^1.1.0"
     tslib "^2.0.0"
 
-use-sync-external-store@^1.5.0:
+use-sync-external-store@>=1.2.0, use-sync-external-store@^1.5.0:
   version "1.6.0"
   resolved "https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.6.0.tgz"
   integrity sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==
@@ -6180,3 +6253,13 @@ zod@^3.23.8:
   version "3.25.76"
   resolved "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz"
   integrity sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==
+
+"zod@^3.24.0 || ^4.0.0", zod@^4.2.1:
+  version "4.2.1"
+  resolved "https://registry.npmjs.org/zod/-/zod-4.2.1.tgz"
+  integrity sha512-0wZ1IRqGGhMP76gLqz8EyfBXKk0J2qo2+H3fi4mcUP/KtTocoX08nmIAHl1Z2kJIZbZee8KOpBCSNPRgauucjw==
+
+zustand@^5.0.9:
+  version "5.0.9"
+  resolved "https://registry.npmjs.org/zustand/-/zustand-5.0.9.tgz"
+  integrity sha512-ALBtUj0AfjJt3uNRQoL1tL2tMvj6Gp/6e39dnfT6uzpelGru8v1tPOGBzayOWbPJvujM8JojDk3E1LxeFisBNg==
