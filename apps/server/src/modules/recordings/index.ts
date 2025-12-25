@@ -1,7 +1,11 @@
 import { Elysia } from "elysia";
 import { ForbiddenError, NotFoundError } from "../../shared/errors";
 import { authMiddleware } from "../auth";
-import { listQuerySchema, recordingIdParamSchema } from "./model";
+import {
+	listQuerySchema,
+	processPendingQuerySchema,
+	recordingIdParamSchema,
+} from "./model";
 import * as RecordingsService from "./service";
 
 /**
@@ -50,6 +54,16 @@ export const recordings = new Elysia({
 		},
 		{
 			params: recordingIdParamSchema,
+		},
+	)
+	.post(
+		"/process-pending",
+		async ({ query }) => {
+			const limit = Number(query.limit) || 10;
+			return await RecordingsService.processPendingRecordings(limit);
+		},
+		{
+			query: processPendingQuerySchema,
 		},
 	)
 	.as("scoped");

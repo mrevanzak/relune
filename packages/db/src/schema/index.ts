@@ -35,6 +35,7 @@ export const recordings = pgTable("recordings", {
 	recordedAt: timestamp("recorded_at").notNull(),
 	importSource: importSourceEnum("import_source").default("app").notNull(),
 	originalFilename: text("original_filename"),
+	notes: text("notes"), // Optional text context from WhatsApp import
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

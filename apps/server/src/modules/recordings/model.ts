@@ -13,6 +13,11 @@ export const recordingIdParamSchema = t.Object({
 	id: t.String(),
 });
 
+export const processPendingQuerySchema = t.Object({
+	limit: t.Optional(t.String()),
+});
+
 // Type exports for use in services/controllers
 export type ListQuery = typeof listQuerySchema.static;
 export type RecordingIdParam = typeof recordingIdParamSchema.static;
+export type ProcessPendingQuery = typeof processPendingQuerySchema.static;

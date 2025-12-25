@@ -8,7 +8,8 @@
 	"type": "module",
 	"scripts": {
 		"check": "biome check --write .",
-		"server:dev": "bun turbo dev --filter=server"
+		"server:dev": "bun turbo dev --filter=server",
+		"db:push": "bun turbo db:push"
 	},
 	"dependencies": {},
 	"devDependencies": {

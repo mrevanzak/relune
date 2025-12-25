@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Status:** Phase 2 Complete (Tasks 4-6) | Commit: pending
+**Status:** Phase 2 Complete (Tasks 4-6) | Next: Task 7 (WhatsApp Import)
 
 **Goal:** Build the MVP of Rêlune, a private voice recording app with transcription and search, covering backend foundation and mobile core flow.
 
@@ -239,23 +239,71 @@ git add apps/native/hooks/useAudioRecorder.ts
 git commit -m "feat(native): implement audio recording logic"
 ```
 
-### Task 7: Upload & Transcription Pipeline
+### Task 7: WhatsApp Import Pipeline
+
+**Design:** See `docs/plans/2025-12-25-whatsapp-import-design.md`
 
 **Files:**
-- Modify: `apps/server/src/routes/recordings.ts`
-- Modify: `apps/native/lib/api.ts`
+- Modify: `packages/db/src/schema/index.ts` (add `notes` field)
+- Create: `apps/server/src/modules/import/index.ts` (controller)
+- Create: `apps/server/src/modules/import/service.ts` (parser, storage, user resolution)
+- Modify: `apps/server/src/modules/recordings/service.ts` (transcription job)
+- Modify: `apps/server/src/index.ts` (register routes)
+
+**Step 1: Schema Update**
+Add `notes` field to `recordings` table for storing associated text messages.
+
+```typescript
+notes: text('notes'),  // Optional text context from WhatsApp
+```
+
+**Step 2: WhatsApp Parser Service**
+Create service to:
+- Extract zip file contents
+- Parse `_chat.txt` format: `[MM/DD/YY, HH:MM:SS] Sender: <attached: filename.opus>`
+- Map audio files to metadata (timestamp, sender, optional notes)
+
+**Step 3: User Resolution**
+Query `users` table by `display_name`. If not found, create user with:
+- `display_name`: sender name from chat
+- `email`: placeholder like `{slugified-name}@import.local`
+
+**Step 4: Import Endpoint**
+Implement `POST /import/whatsapp`:
+- Accept `multipart/form-data` with zip file
+- For each audio: check duplicate, resolve user, upload to storage, insert record
+- Return `{ imported, skipped, failed, recordings }`
+
+**Step 5: Transcription Job**
+Implement `POST /recordings/process-pending`:
+- Query `WHERE transcript IS NULL LIMIT ?`
+- Fetch audio, call AI SDK transcribe, update record
+- Generate keywords with GPT-4o-mini
+- Return `{ processed, remaining, errors }`
+
+**Step 6: Commit**
+```bash
+git add packages/db/src/schema/index.ts apps/server/src/modules/import
+git commit -m "feat(server): implement WhatsApp import and transcription pipeline"
+```
+
+### Task 8: Upload & Transcription (In-App Recording)
+
+**Files:**
+- Modify: `apps/server/src/modules/recordings/index.ts`
+- Create: `apps/native/lib/api.ts`
 
 **Step 1: Server Upload Handler**
-Implement `POST /recordings` to accept `multipart/form-data`, upload to Supabase Storage, and save DB record.
+Implement `POST /recordings` to accept `multipart/form-data`, upload to Supabase Storage, and save DB record with `importSource: 'app'`.
 
-**Step 2: Integrate AI SDK**
-Add `transcribe` call using Groq/Whisper in the upload handler (background job ideally, or inline for MVP).
+**Step 2: Reuse Transcription Job**
+New recordings with `transcript: null` are picked up by the existing `process-pending` job from Task 7.
 
 **Step 3: Client Mutation**
 Implement upload mutation in mobile app using `eden` treaty.
 
 **Step 4: Commit**
 ```bash
-git add apps/server/src/routes/recordings.ts
-git commit -m "feat(server): implement upload and transcription pipeline"
+git add apps/server/src/modules/recordings
+git commit -m "feat(server): implement in-app recording upload"
 ```

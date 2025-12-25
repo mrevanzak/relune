@@ -59,6 +59,7 @@ export function createReluneEnv(runtimeEnv = process.env) {
 			DATABASE_URL: z.url(),
 			SUPABASE_URL: z.url(),
 			SUPABASE_KEY: z.string().min(1),
+			OPENAI_API_KEY: z.string().min(1),
 			ALLOWED_EMAILS: z
 				.string()
 				.default("")

@@ -4,6 +4,7 @@ import { openapi } from "@elysiajs/openapi";
 import { env } from "@relune/config/env";
 import { Elysia } from "elysia";
 import { auth } from "./modules/auth";
+import { importRoutes } from "./modules/import";
 import { recordings } from "./modules/recordings";
 import { errorHandler } from "./shared/error-handler";
 
@@ -30,6 +31,7 @@ const app = new Elysia()
 	.get("/health", () => ({ status: "ok" }))
 	.use(auth)
 	.use(recordings)
+	.use(importRoutes)
 	.listen(3000, () => {
 		console.log("Server is running on http://localhost:3000");
 	});
