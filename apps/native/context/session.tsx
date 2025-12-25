@@ -1,6 +1,12 @@
 import type { Session } from "@supabase/supabase-js";
 import type { ReactNode } from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+	createContext,
+	useCallback,
+	useContext,
+	useEffect,
+	useState,
+} from "react";
 import { AppState, Platform } from "react-native";
 import { initMmkv } from "@/lib/mmkv";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -34,7 +40,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
 	const [error, setError] = useState<Error | null>(null);
 	const session = useAuthStore.use.session();
 
-	const bootstrap = async () => {
+	const bootstrap = useCallback(async () => {
 		try {
 			setError(null);
 			setIsLoading(true);
@@ -80,11 +86,11 @@ export function SessionProvider({ children }: SessionProviderProps) {
 			setError(err instanceof Error ? err : new Error("Bootstrap failed"));
 			setIsLoading(false);
 		}
-	};
+	}, []);
 
 	useEffect(() => {
 		void bootstrap();
-	}, []);
+	}, [bootstrap]);
 
 	const signOut = async () => {
 		const supabase = getSupabaseClient();
