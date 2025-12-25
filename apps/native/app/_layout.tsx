@@ -13,6 +13,7 @@ import { AuthGate } from "@/components/AuthGate";
 import { BiometricLock } from "@/components/BiometricLock";
 import { QueryProvider } from "@/components/QueryProvider";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuthStore } from "@/stores/auth";
 import { useUploadQueueStore } from "@/stores/upload-queue";
 
 export const unstable_settings = {
@@ -22,9 +23,13 @@ export const unstable_settings = {
 export default function RootLayout() {
 	const colorScheme = useColorScheme();
 	const processQueue = useUploadQueueStore.use.processQueue();
+	const session = useAuthStore.use.session();
 
 	// Process queued uploads when app comes to foreground
+	// Only process if session exists (auth is ready) to avoid burning retries on 401
 	useEffect(() => {
+		if (!session) return;
+
 		const subscription = AppState.addEventListener("change", (nextAppState) => {
 			if (nextAppState === "active") {
 				// Process queue when app becomes active
@@ -38,7 +43,7 @@ export default function RootLayout() {
 		return () => {
 			subscription.remove();
 		};
-	}, [processQueue]);
+	}, [processQueue, session]);
 
 	return (
 		<ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>

@@ -1,6 +1,6 @@
 import * as WebBrowser from "expo-web-browser";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	ActivityIndicator,
 	Button,
@@ -13,6 +13,7 @@ import { initMmkv } from "@/lib/mmkv";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useSignInWithGoogleMutation } from "@/queries/auth";
 import { useAuthStore } from "@/stores/auth";
+import { useUploadQueueStore } from "@/stores/upload-queue";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -24,57 +25,60 @@ export function AuthGate({ children }: AuthGateProps) {
 	const [isInitializing, setIsInitializing] = useState(true);
 	const [isLoading, setIsLoading] = useState(true);
 	const session = useAuthStore.use.session();
-	const setSession = useAuthStore.use.setSession();
 	const signInMutation = useSignInWithGoogleMutation();
 
+	const mounted = useRef(true);
+
 	useEffect(() => {
-		let mounted = true;
+		if (!mounted.current) return;
 
 		(async () => {
 			try {
 				// Initialize MMKV storage (on native platforms)
 				if (Platform.OS !== "web") {
 					await initMmkv();
-					// Rehydrate zustand store after MMKV is ready
+					
+					// Rehydrate zustand stores after MMKV is ready
 					useAuthStore.persist.rehydrate();
+					useUploadQueueStore.persist.rehydrate();
 				}
 
 				// Get Supabase client (will use MMKV storage on native, localStorage on web)
 				const supabase = getSupabaseClient();
 
-				// Get initial session
+				// // Get initial session
 				const {
 					data: { session: initialSession },
 				} = await supabase.auth.getSession();
 
-				if (mounted) {
-					setSession(initialSession);
+				if (mounted.current) {
+					useAuthStore.getState().setSession(initialSession);
 					setIsLoading(false);
 					setIsInitializing(false);
 				}
 
-				// Subscribe to auth state changes
+				// // Subscribe to auth state changes
 				const {
 					data: { subscription },
 				} = supabase.auth.onAuthStateChange((_event, newSession) => {
-					if (mounted) {
-						setSession(newSession);
+					if (mounted.current) {
+						useAuthStore.getState().setSession(newSession);
 					}
 				});
 
 				return () => {
-					mounted = false;
+					mounted.current = false;
 					subscription.unsubscribe();
 				};
 			} catch (error) {
 				console.error("Failed to initialize auth:", error);
-				if (mounted) {
+				if (mounted.current) {
 					setIsInitializing(false);
 					setIsLoading(false);
 				}
 			}
 		})();
-	}, [setSession]);
+	}, []);
 
 	const handleSignIn = () => {
 		signInMutation.mutate();

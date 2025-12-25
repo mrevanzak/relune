@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, isNetworkError } from "@/lib/api";
-import { uriToFile } from "@/lib/file-utils";
+import { isNetworkError } from "@/lib/api";
+import { uploadRecording } from "@/lib/upload-recording";
 import { useUploadQueueStore } from "@/stores/upload-queue";
 
 export interface UploadRecordingParams {
@@ -21,25 +21,11 @@ export function useUploadRecordingMutation() {
 
 	return useMutation({
 		mutationFn: async (params: UploadRecordingParams) => {
-			// Convert RN file URI to File object
-			const file = await uriToFile(params.uri);
-
-			// Upload via Eden API
-			const response = await api.recordings.post({
-				file,
+			return uploadRecording({
+				uri: params.uri,
 				durationSeconds: params.durationSeconds,
 				recordedAt: (params.recordedAt ?? new Date()).toISOString(),
 			});
-
-			if (response.error) {
-				throw new Error(
-					typeof response.error.value === "string"
-						? response.error.value
-						: "Upload failed",
-				);
-			}
-
-			return response.data;
 		},
 		onSuccess: () => {
 			// Invalidate recordings list to show the new recording
