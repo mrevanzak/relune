@@ -51,7 +51,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
 		extra: {
 			...config?.extra,
-			clientEnv,
+			...clientEnv,
 		},
 	} as ExpoConfig;
 };

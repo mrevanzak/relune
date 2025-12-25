@@ -6,17 +6,9 @@ import { clientSchema } from "./shared";
  * Get client env from Expo's extra config.
  * Falls back to manifest.extra if expoConfig is not available.
  */
-function getClientEnvFromExpo(): Record<string, string | undefined> {
-	const extra = Constants.expoConfig?.extra?.clientEnv;
-	if (extra && typeof extra === "object") {
-		return extra as Record<string, string | undefined>;
-	}
-
-	// Fallback to manifest (for bare workflow or older Expo versions)
-	const manifestExtra = Constants.manifest?.extra?.clientEnv;
-	if (manifestExtra && typeof manifestExtra === "object") {
-		return manifestExtra as Record<string, string | undefined>;
-	}
+function getClientEnvFromExpo() {
+	const extra = Constants.expoConfig?.extra;
+	if (extra && typeof extra === "object") return extra;
 
 	throw new Error(
 		"clientEnv not found in Expo config. Make sure app.config.ts injects clientEnv into extra.",
