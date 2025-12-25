@@ -3,41 +3,49 @@ import {
 	DefaultTheme,
 	ThemeProvider,
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import { Slot } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
-import { AppState } from "react-native";
+import { useCallback, useEffect } from "react";
+import { AppState, View } from "react-native";
 import "react-native-reanimated";
 
-import { AuthGate } from "@/components/AuthGate";
-import { BiometricLock } from "@/components/BiometricLock";
+import { BootstrapErrorScreen } from "@/components/BootstrapErrorScreen";
 import { QueryProvider } from "@/components/QueryProvider";
+import { SessionProvider, useSession } from "@/context/session";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useAuthStore } from "@/stores/auth";
 import { useUploadQueueStore } from "@/stores/upload-queue";
 
+// Prevent splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync();
+
 export const unstable_settings = {
-	anchor: "(tabs)",
+	initialRouteName: "(app)",
 };
 
-export default function RootLayout() {
+function RootLayoutNav() {
 	const colorScheme = useColorScheme();
+	const { isLoading, error, retry, session } = useSession();
 	const processQueue = useUploadQueueStore.use.processQueue();
-	const session = useAuthStore.use.session();
+
+	// Hide splash screen when bootstrap completes
+	const onLayoutRootView = useCallback(async () => {
+		if (!isLoading) {
+			await SplashScreen.hideAsync();
+		}
+	}, [isLoading]);
 
 	// Process queued uploads when app comes to foreground
-	// Only process if session exists (auth is ready) to avoid burning retries on 401
 	useEffect(() => {
 		if (!session) return;
 
 		const subscription = AppState.addEventListener("change", (nextAppState) => {
 			if (nextAppState === "active") {
-				// Process queue when app becomes active
 				void processQueue();
 			}
 		});
 
-		// Also process on initial mount if there are queued items
+		// Also process on initial mount
 		void processQueue();
 
 		return () => {
@@ -45,22 +53,32 @@ export default function RootLayout() {
 		};
 	}, [processQueue, session]);
 
+	// Show error screen if bootstrap failed
+	if (error) {
+		return <BootstrapErrorScreen error={error} onRetry={retry} />;
+	}
+
+	// Return null while loading (splash screen stays visible)
+	if (isLoading) {
+		return null;
+	}
+
 	return (
-		<ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-			<QueryProvider>
-				<AuthGate>
-					<BiometricLock>
-						<Stack>
-							<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-							<Stack.Screen
-								name="modal"
-								options={{ presentation: "modal", title: "Modal" }}
-							/>
-						</Stack>
-						<StatusBar style="auto" />
-					</BiometricLock>
-				</AuthGate>
-			</QueryProvider>
-		</ThemeProvider>
+		<View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+			<ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+				<Slot />
+				<StatusBar style="auto" />
+			</ThemeProvider>
+		</View>
+	);
+}
+
+export default function RootLayout() {
+	return (
+		<QueryProvider>
+			<SessionProvider>
+				<RootLayoutNav />
+			</SessionProvider>
+		</QueryProvider>
 	);
 }
