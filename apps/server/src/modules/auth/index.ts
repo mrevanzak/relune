@@ -1,14 +1,11 @@
+import { env } from "@relune/config/env";
 import { createClient } from "@supabase/supabase-js";
 import { Elysia } from "elysia";
-import { getEnvList, requireEnv } from "../../shared/env";
 import { createAuthPlugin } from "./service";
 
-const supabaseUrl = requireEnv("SUPABASE_URL");
-const supabaseServiceRoleKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-const allowedEmails = getEnvList("ALLOWED_EMAILS");
+const allowedEmails = env.ALLOWED_EMAILS;
 
 const authPlugin = createAuthPlugin({
 	allowedEmails,

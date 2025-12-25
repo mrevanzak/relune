@@ -1,20 +1,20 @@
 import "dotenv/config";
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
+import { env } from "@relune/config/env";
 import { Elysia } from "elysia";
 import { auth } from "./modules/auth";
 import { recordings } from "./modules/recordings";
-import { getEnv } from "./shared/env";
 import { errorHandler } from "./shared/error-handler";
 
 const app = new Elysia().use(errorHandler).use(
 	cors({
-		origin: getEnv("CORS_ORIGIN"),
+		origin: env.CORS_ORIGIN,
 		methods: ["GET", "POST", "OPTIONS"],
 	}),
 );
 
-if (getEnv("ENABLE_SWAGGER") === "true") {
+if (env.ENABLE_SWAGGER) {
 	app.use(
 		swagger({
 			path: "/swagger",
