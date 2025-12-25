@@ -1,104 +1,191 @@
-import { Image } from "expo-image";
-import { Link } from "expo-router";
-import { Platform, StyleSheet } from "react-native";
-import { HelloWave } from "@/components/hello-wave";
-import ParallaxScrollView from "@/components/parallax-scroll-view";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
+import { useCallback, useEffect, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 
-export default function HomeScreen() {
-	return (
-		<ParallaxScrollView
-			headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-			headerImage={
-				<Image
-					source={require("@/assets/images/partial-react-logo.png")}
-					style={styles.reactLogo}
-				/>
+function formatDuration(ms: number): string {
+	const totalSeconds = Math.floor(ms / 1000);
+	const minutes = Math.floor(totalSeconds / 60);
+	const seconds = totalSeconds % 60;
+	return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+}
+
+export default function RecordScreen() {
+	const { isRecording, start, stop, hasPermission, requestPermission } =
+		useAudioRecorder();
+
+	const [displayDuration, setDisplayDuration] = useState(0);
+	const [lastRecording, setLastRecording] = useState<{
+		uri: string;
+		durationSeconds: number;
+	} | null>(null);
+
+	// Update duration display while recording
+	useEffect(() => {
+		if (!isRecording) {
+			return;
+		}
+
+		const startTime = Date.now();
+		const interval = setInterval(() => {
+			setDisplayDuration(Date.now() - startTime);
+		}, 100);
+
+		return () => {
+			clearInterval(interval);
+			setDisplayDuration(0);
+		};
+	}, [isRecording]);
+
+	const handleRecordPress = useCallback(async () => {
+		if (isRecording) {
+			const result = await stop();
+			if (result) {
+				setLastRecording(result);
 			}
-		>
-			<ThemedView style={styles.titleContainer}>
-				<ThemedText type="title">Welcome!</ThemedText>
-				<HelloWave />
-			</ThemedView>
-			<ThemedView style={styles.stepContainer}>
-				<ThemedText type="subtitle">Step 1: Try it</ThemedText>
-				<ThemedText>
-					Edit{" "}
-					<ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
-					to see changes. Press{" "}
-					<ThemedText type="defaultSemiBold">
-						{Platform.select({
-							ios: "cmd + d",
-							android: "cmd + m",
-							web: "F12",
-						})}
-					</ThemedText>{" "}
-					to open developer tools.
-				</ThemedText>
-			</ThemedView>
-			<ThemedView style={styles.stepContainer}>
-				<Link href="/modal">
-					<Link.Trigger>
-						<ThemedText type="subtitle">Step 2: Explore</ThemedText>
-					</Link.Trigger>
-					<Link.Preview />
-					<Link.Menu>
-						<Link.MenuAction
-							title="Action"
-							icon="cube"
-							onPress={() => alert("Action pressed")}
-						/>
-						<Link.MenuAction
-							title="Share"
-							icon="square.and.arrow.up"
-							onPress={() => alert("Share pressed")}
-						/>
-						<Link.Menu title="More" icon="ellipsis">
-							<Link.MenuAction
-								title="Delete"
-								icon="trash"
-								destructive
-								onPress={() => alert("Delete pressed")}
-							/>
-						</Link.Menu>
-					</Link.Menu>
-				</Link>
+		} else {
+			setLastRecording(null);
+			await start();
+		}
+	}, [isRecording, start, stop]);
 
-				<ThemedText>
-					{`Tap the Explore tab to learn more about what's included in this starter app.`}
-				</ThemedText>
-			</ThemedView>
-			<ThemedView style={styles.stepContainer}>
-				<ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-				<ThemedText>
-					{`When you're ready, run `}
-					<ThemedText type="defaultSemiBold">npm run reset-project</ThemedText>{" "}
-					to get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{" "}
-					directory. This will move the current{" "}
-					<ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-					<ThemedText type="defaultSemiBold">app-example</ThemedText>.
-				</ThemedText>
-			</ThemedView>
-		</ParallaxScrollView>
+	const handlePermissionPress = useCallback(async () => {
+		await requestPermission();
+	}, [requestPermission]);
+
+	if (!hasPermission) {
+		return (
+			<View style={styles.container}>
+				<Text style={styles.title}>Relune</Text>
+				<Text style={styles.subtitle}>Microphone access required</Text>
+				<Pressable
+					style={styles.permissionButton}
+					onPress={handlePermissionPress}
+				>
+					<Text style={styles.permissionButtonText}>Grant Permission</Text>
+				</Pressable>
+			</View>
+		);
+	}
+
+	return (
+		<View style={styles.container}>
+			<Text style={styles.title}>Relune</Text>
+
+			{isRecording && (
+				<View style={styles.durationContainer}>
+					<View style={styles.recordingIndicator} />
+					<Text style={styles.duration}>{formatDuration(displayDuration)}</Text>
+				</View>
+			)}
+
+			{lastRecording && !isRecording && (
+				<View style={styles.resultContainer}>
+					<Text style={styles.resultText}>
+						Recording saved ({lastRecording.durationSeconds}s)
+					</Text>
+				</View>
+			)}
+
+			<Pressable
+				style={[styles.recordButton, isRecording && styles.recordButtonActive]}
+				onPress={handleRecordPress}
+			>
+				<View
+					style={[
+						styles.recordButtonInner,
+						isRecording && styles.recordButtonInnerActive,
+					]}
+				/>
+			</Pressable>
+
+			<Text style={styles.hint}>
+				{isRecording ? "Tap to stop" : "Tap to record"}
+			</Text>
+		</View>
 	);
 }
 
 const styles = StyleSheet.create({
-	titleContainer: {
-		flexDirection: "row",
+	container: {
+		flex: 1,
+		justifyContent: "center",
 		alignItems: "center",
-		gap: 8,
+		backgroundColor: "#000",
+		padding: 20,
 	},
-	stepContainer: {
-		gap: 8,
+	title: {
+		fontSize: 32,
+		fontWeight: "bold",
+		color: "#fff",
 		marginBottom: 8,
 	},
-	reactLogo: {
-		height: 178,
-		width: 290,
-		bottom: 0,
-		left: 0,
-		position: "absolute",
+	subtitle: {
+		fontSize: 16,
+		color: "#888",
+		marginBottom: 32,
+	},
+	permissionButton: {
+		backgroundColor: "#fff",
+		paddingHorizontal: 24,
+		paddingVertical: 12,
+		borderRadius: 8,
+	},
+	permissionButtonText: {
+		color: "#000",
+		fontSize: 16,
+		fontWeight: "600",
+	},
+	durationContainer: {
+		flexDirection: "row",
+		alignItems: "center",
+		marginBottom: 40,
+	},
+	recordingIndicator: {
+		width: 12,
+		height: 12,
+		borderRadius: 6,
+		backgroundColor: "#ff3b30",
+		marginRight: 8,
+	},
+	duration: {
+		fontSize: 48,
+		fontWeight: "300",
+		color: "#fff",
+		fontVariant: ["tabular-nums"],
+	},
+	resultContainer: {
+		marginBottom: 40,
+	},
+	resultText: {
+		fontSize: 16,
+		color: "#34c759",
+	},
+	recordButton: {
+		width: 80,
+		height: 80,
+		borderRadius: 40,
+		borderWidth: 4,
+		borderColor: "#fff",
+		justifyContent: "center",
+		alignItems: "center",
+		marginBottom: 16,
+	},
+	recordButtonActive: {
+		borderColor: "#ff3b30",
+	},
+	recordButtonInner: {
+		width: 60,
+		height: 60,
+		borderRadius: 30,
+		backgroundColor: "#ff3b30",
+	},
+	recordButtonInnerActive: {
+		width: 28,
+		height: 28,
+		borderRadius: 4,
+	},
+	hint: {
+		fontSize: 14,
+		color: "#888",
 	},
 });

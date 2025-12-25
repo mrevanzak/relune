@@ -847,16 +847,6 @@
   resolved "https://registry.npmjs.org/@elysiajs/openapi/-/openapi-1.4.12.tgz"
   integrity sha512-FhmWqUFDOidD2tUR0mrLnD2M0OUFF6cFUfKtHkQDbnAmCihFusxs7JvtUJjmEKZ++mzNvYLpbhZeJIXA7tIzLA==
 
-"@elysiajs/swagger@^1.3.1":
-  version "1.3.1"
-  resolved "https://registry.npmjs.org/@elysiajs/swagger/-/swagger-1.3.1.tgz"
-  integrity sha512-LcbLHa0zE6FJKWPWKsIC/f+62wbDv3aXydqcNPVPyqNcaUgwvCajIi+5kHEU6GO3oXUCpzKaMsb3gsjt8sLzFQ==
-  dependencies:
-    "@scalar/themes" "^0.9.52"
-    "@scalar/types" "^0.0.12"
-    openapi-types "^12.1.3"
-    pathe "^1.1.2"
-
 "@emnapi/core@^1.7.1":
   version "1.7.1"
   resolved "https://registry.npmjs.org/@emnapi/core/-/core-1.7.1.tgz"
@@ -2110,44 +2100,6 @@
   resolved "https://registry.npmjs.org/@rolldown/pluginutils/-/pluginutils-1.0.0-beta.57.tgz"
   integrity sha512-aQNelgx14tGA+n2tNSa9x6/jeoCL9fkDeCei7nOKnHx0fEFRRMu5ReiITo+zZD5TzWDGGRjbSYCs93IfRIyTuQ==
 
-"@scalar/openapi-types@0.1.1":
-  version "0.1.1"
-  resolved "https://registry.npmjs.org/@scalar/openapi-types/-/openapi-types-0.1.1.tgz"
-  integrity sha512-NMy3QNk6ytcCoPUGJH0t4NNr36OWXgZhA3ormr3TvhX1NDgoF95wFyodGVH8xiHeUyn2/FxtETm8UBLbB5xEmg==
-
-"@scalar/openapi-types@0.2.0":
-  version "0.2.0"
-  resolved "https://registry.npmjs.org/@scalar/openapi-types/-/openapi-types-0.2.0.tgz"
-  integrity sha512-waiKk12cRCqyUCWTOX0K1WEVX46+hVUK+zRPzAahDJ7G0TApvbNkuy5wx7aoUyEk++HHde0XuQnshXnt8jsddA==
-  dependencies:
-    zod "^3.23.8"
-
-"@scalar/themes@^0.9.52":
-  version "0.9.86"
-  resolved "https://registry.npmjs.org/@scalar/themes/-/themes-0.9.86.tgz"
-  integrity sha512-QUHo9g5oSWi+0Lm1vJY9TaMZRau8LHg+vte7q5BVTBnu6NuQfigCaN+ouQ73FqIVd96TwMO6Db+dilK1B+9row==
-  dependencies:
-    "@scalar/types" "0.1.7"
-
-"@scalar/types@^0.0.12":
-  version "0.0.12"
-  resolved "https://registry.npmjs.org/@scalar/types/-/types-0.0.12.tgz"
-  integrity sha512-XYZ36lSEx87i4gDqopQlGCOkdIITHHEvgkuJFrXFATQs9zHARop0PN0g4RZYWj+ZpCUclOcaOjbCt8JGe22mnQ==
-  dependencies:
-    "@scalar/openapi-types" "0.1.1"
-    "@unhead/schema" "^1.9.5"
-
-"@scalar/types@0.1.7":
-  version "0.1.7"
-  resolved "https://registry.npmjs.org/@scalar/types/-/types-0.1.7.tgz"
-  integrity sha512-irIDYzTQG2KLvFbuTI8k2Pz/R4JR+zUUSykVTbEMatkzMmVFnn1VzNSMlODbadycwZunbnL2tA27AXed9URVjw==
-  dependencies:
-    "@scalar/openapi-types" "0.2.0"
-    "@unhead/schema" "^1.11.11"
-    nanoid "^5.1.5"
-    type-fest "^4.20.0"
-    zod "^3.23.8"
-
 "@sinclair/typebox@^0.27.8":
   version "0.27.8"
   resolved "https://registry.npmjs.org/@sinclair/typebox/-/typebox-0.27.8.tgz"
@@ -2386,14 +2338,6 @@
   version "1.3.0"
   resolved "https://registry.npmjs.org/@ungap/structured-clone/-/structured-clone-1.3.0.tgz"
   integrity sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==
-
-"@unhead/schema@^1.11.11", "@unhead/schema@^1.9.5":
-  version "1.11.20"
-  resolved "https://registry.npmjs.org/@unhead/schema/-/schema-1.11.20.tgz"
-  integrity sha512-0zWykKAaJdm+/Y7yi/Yds20PrUK7XabLe9c3IRcjnwYmSWY6z0Cr19VIs3ozCj8P+GhR+/TI2mwtGlueCEYouA==
-  dependencies:
-    hookable "^5.5.3"
-    zhead "^2.2.4"
 
 "@urql/core@^5.0.6", "@urql/core@^5.1.2":
   version "5.2.0"
@@ -3171,7 +3115,7 @@ electron-to-chromium@^1.5.263:
   resolved "https://registry.npmjs.org/electron-to-chromium/-/electron-to-chromium-1.5.267.tgz"
   integrity sha512-0Drusm6MVRXSOJpGbaSVgcQsuB4hEkMpHXaVstcPmhu5LIedxs1xNK/nIxmQIU/RPC0+1/o0AVZfBTkTNJOdUw==
 
-"elysia@>= 1.3.0", "elysia@>= 1.4.0", elysia@^1.3.21:
+"elysia@>= 1.4.0", elysia@^1.3.21:
   version "1.4.19"
   resolved "https://registry.npmjs.org/elysia/-/elysia-1.4.19.tgz"
   integrity sha512-DZb9y8FnWyX5IuqY44SvqAV0DjJ15NeCWHrLdgXrKgTPDPsl3VNwWHqrEr9bmnOCpg1vh6QUvAX/tcxNj88jLA==
@@ -3357,13 +3301,18 @@ expo@*, expo@~54.0.30:
     react-refresh "^0.14.2"
     whatwg-url-without-unicode "8.0.0-3"
 
-expo-asset@~12.0.12:
+expo-asset@*, expo-asset@~12.0.12:
   version "12.0.12"
   resolved "https://registry.npmjs.org/expo-asset/-/expo-asset-12.0.12.tgz"
   integrity sha512-CsXFCQbx2fElSMn0lyTdRIyKlSXOal6ilLJd+yeZ6xaC7I9AICQgscY5nj0QcwgA+KYYCCEQEBndMsmj7drOWQ==
   dependencies:
     "@expo/image-utils" "^0.8.8"
     expo-constants "~18.0.12"
+
+expo-audio@~1.1.1:
+  version "1.1.1"
+  resolved "https://registry.npmjs.org/expo-audio/-/expo-audio-1.1.1.tgz"
+  integrity sha512-CPCpJ+0AEHdzWROc0f00Zh6e+irLSl2ALos/LPvxEeIcJw1APfBa4DuHPkL4CQCWsVe7EnUjFpdwpqsEUWcP0g==
 
 expo-constants@^18.0.12, expo-constants@~18.0.12:
   version "18.0.12"
@@ -3756,11 +3705,6 @@ hoist-non-react-statics@^3.3.0:
   integrity sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==
   dependencies:
     react-is "^16.7.0"
-
-hookable@^5.5.3:
-  version "5.5.3"
-  resolved "https://registry.npmjs.org/hookable/-/hookable-5.5.3.tgz"
-  integrity sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==
 
 hookable@^6.0.1:
   version "6.0.1"
@@ -4535,11 +4479,6 @@ nanoid@^3.3.11, nanoid@^3.3.7, nanoid@^3.3.8:
   resolved "https://registry.npmjs.org/nanoid/-/nanoid-3.3.11.tgz"
   integrity sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==
 
-nanoid@^5.1.5:
-  version "5.1.6"
-  resolved "https://registry.npmjs.org/nanoid/-/nanoid-5.1.6.tgz"
-  integrity sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg==
-
 negotiator@0.6.3:
   version "0.6.3"
   resolved "https://registry.npmjs.org/negotiator/-/negotiator-0.6.3.tgz"
@@ -4664,7 +4603,7 @@ open@^8.0.4:
     is-docker "^2.1.1"
     is-wsl "^2.2.0"
 
-"openapi-types@>= 12.0.0", openapi-types@^12.1.3:
+"openapi-types@>= 12.0.0":
   version "12.1.3"
   resolved "https://registry.npmjs.org/openapi-types/-/openapi-types-12.1.3.tgz"
   integrity sha512-N4YtSYJqghVu4iek2ZUvcN/0aqH1kRDuNqzcycDxhOUpg7GdvLa2F3DgS6yBNhInhv2r/6I0Flkn7CqL8+nIcw==
@@ -4753,11 +4692,6 @@ path-scurry@^2.0.0:
   dependencies:
     lru-cache "^11.0.0"
     minipass "^7.1.2"
-
-pathe@^1.1.2:
-  version "1.1.2"
-  resolved "https://registry.npmjs.org/pathe/-/pathe-1.1.2.tgz"
-  integrity sha512-whLdWMYL2TwI08hn8/ZqAbrVemu0LNaNNJZX73O6qaIdCTfXutsLhMkjdENX0qhsQ9uIimo4/aQOmXkoon2nDQ==
 
 pathe@^2.0.3:
   version "2.0.3"
@@ -5249,6 +5183,7 @@ regjsparser@^0.13.0:
     "@supabase/supabase-js" "^2.89.0"
     "@tanstack/react-query" "^5.62.11"
     expo "~54.0.30"
+    expo-audio "~1.1.1"
     expo-constants "~18.0.12"
     expo-crypto "^15.0.8"
     expo-font "~14.0.10"
@@ -5467,7 +5402,6 @@ serve-static@^1.16.2:
   dependencies:
     "@elysiajs/cors" "^1.3.3"
     "@elysiajs/openapi" "^1.4.12"
-    "@elysiajs/swagger" "^1.3.1"
     "@relune/config" "workspace:*"
     "@relune/db" "workspace:*"
     "@sinclair/typebox" "^0.34.43"
@@ -5923,11 +5857,6 @@ type-fest@^0.21.3:
   resolved "https://registry.npmjs.org/type-fest/-/type-fest-0.21.3.tgz"
   integrity sha512-t0rzBq87m3fVcduHDUFhKmyyX+9eo6WQjZvf51Ea/M0Q7+T374Jp1aUiyUl0GKxp8M/OETVHSDvmkyPgvX+X2w==
 
-type-fest@^4.20.0:
-  version "4.41.0"
-  resolved "https://registry.npmjs.org/type-fest/-/type-fest-4.41.0.tgz"
-  integrity sha512-TeTSQ6H5YHvpqVwBRcnLDCBnDOHWYu7IvGbHT6N8AOymcr9PJGjc1GTtiWZTYg0NCgYwvnYWEkVChQAr9bjfwA==
-
 "typescript@>= 5.0.0", typescript@^5.0.0, typescript@~5.9.2:
   version "5.9.3"
   resolved "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz"
@@ -6243,16 +6172,6 @@ yocto-queue@^0.1.0:
   version "0.1.0"
   resolved "https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
-
-zhead@^2.2.4:
-  version "2.2.4"
-  resolved "https://registry.npmjs.org/zhead/-/zhead-2.2.4.tgz"
-  integrity sha512-8F0OI5dpWIA5IGG5NHUg9staDwz/ZPxZtvGVf01j7vHqSyZ0raHY+78atOVxRqb73AotX22uV1pXt3gYSstGag==
-
-zod@^3.23.8:
-  version "3.25.76"
-  resolved "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz"
-  integrity sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==
 
 "zod@^3.24.0 || ^4.0.0", zod@^4.2.1:
   version "4.2.1"

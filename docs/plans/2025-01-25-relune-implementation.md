@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Status:** Phase 1 Complete (Tasks 1-3) | Commit: 95591f5
+**Status:** Phase 2 Complete (Tasks 4-6) | Commit: pending
 
 **Goal:** Build the MVP of Rêlune, a private voice recording app with transcription and search, covering backend foundation and mobile core flow.
 
@@ -175,7 +175,7 @@ git commit -m "feat(server): add basic recordings CRUD"
 
 ## Phase 2: Mobile Foundation
 
-### Task 4: Mobile Auth Setup
+### Task 4: Mobile Auth Setup ✅ DONE
 
 **Files:**
 - Create: `apps/native/lib/supabase.ts`
@@ -198,7 +198,7 @@ git add apps/native/lib/supabase.ts apps/native/components/AuthGate.tsx
 git commit -m "feat(native): setup supabase auth and auth gate"
 ```
 
-### Task 5: Mobile Biometric Lock
+### Task 5: Mobile Biometric Lock ✅ DONE
 
 **Files:**
 - Create: `apps/native/components/BiometricLock.tsx`
@@ -218,7 +218,7 @@ git commit -m "feat(native): add biometric lock screen"
 
 ## Phase 3: Core Recording Flow
 
-### Task 6: Audio Recording Implementation
+### Task 6: Audio Recording Implementation ✅ DONE
 
 **Files:**
 - Modify: `apps/native/app/index.tsx` (or new recording screen)
