@@ -26,6 +26,7 @@ export function BiometricLock({ children }: BiometricLockProps) {
 
 	const isLockedRef = useRef(isLocked);
 	const isAuthenticatingRef = useRef(isAuthenticating);
+	const autoAuthPendingRef = useRef(false);
 
 	useEffect(() => {
 		isLockedRef.current = isLocked;
@@ -38,6 +39,9 @@ export function BiometricLock({ children }: BiometricLockProps) {
 	const authenticate = useCallback(async () => {
 		if (Platform.OS === "web") return;
 
+		// Update the ref synchronously to avoid race conditions with AppState events
+		// (eg. biometric prompt causing `inactive -> active` while state updates flush).
+		isAuthenticatingRef.current = true;
 		setIsAuthenticating(true);
 		try {
 			const result = await LocalAuthentication.authenticateAsync({
@@ -47,12 +51,14 @@ export function BiometricLock({ children }: BiometricLockProps) {
 			});
 
 			if (result.success) {
+				autoAuthPendingRef.current = false;
 				isLockedRef.current = false;
 				setIsLocked(false);
 			}
 		} catch (error) {
 			console.error("Biometric authentication failed:", error);
 		} finally {
+			isAuthenticatingRef.current = false;
 			setIsAuthenticating(false);
 		}
 	}, []);
@@ -81,6 +87,7 @@ export function BiometricLock({ children }: BiometricLockProps) {
 		const handleAppStateChange = (nextState: AppStateStatus) => {
 			// Lock when going to background
 			if (nextState === "background") {
+				autoAuthPendingRef.current = true;
 				isLockedRef.current = true;
 				setIsLocked(true);
 				return;
@@ -89,8 +96,12 @@ export function BiometricLock({ children }: BiometricLockProps) {
 			if (
 				nextState === "active" &&
 				isLockedRef.current &&
+				autoAuthPendingRef.current &&
 				!isAuthenticatingRef.current
 			) {
+				// Only auto-auth once per "lock session" to avoid infinite reprompt loops
+				// (biometric prompts can themselves trigger `inactive -> active`).
+				autoAuthPendingRef.current = false;
 				void authenticate();
 			}
 		};
