@@ -1,6 +1,6 @@
 import * as LocalAuthentication from "expo-local-authentication";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	AppState,
 	type AppStateStatus,
@@ -24,6 +24,17 @@ export function BiometricLock({ children }: BiometricLockProps) {
 	const [isAuthenticating, setIsAuthenticating] = useState(false);
 	const [biometricType, setBiometricType] = useState<string>("Biometric");
 
+	const isLockedRef = useRef(isLocked);
+	const isAuthenticatingRef = useRef(isAuthenticating);
+
+	useEffect(() => {
+		isLockedRef.current = isLocked;
+	}, [isLocked]);
+
+	useEffect(() => {
+		isAuthenticatingRef.current = isAuthenticating;
+	}, [isAuthenticating]);
+
 	const authenticate = useCallback(async () => {
 		if (Platform.OS === "web") return;
 
@@ -36,6 +47,7 @@ export function BiometricLock({ children }: BiometricLockProps) {
 			});
 
 			if (result.success) {
+				isLockedRef.current = false;
 				setIsLocked(false);
 			}
 		} catch (error) {
@@ -69,11 +81,17 @@ export function BiometricLock({ children }: BiometricLockProps) {
 		const handleAppStateChange = (nextState: AppStateStatus) => {
 			// Lock when going to background
 			if (nextState === "background") {
+				isLockedRef.current = true;
 				setIsLocked(true);
+				return;
 			}
 			// Authenticate when coming back to foreground
-			if (nextState === "active" && isLocked) {
-				authenticate();
+			if (
+				nextState === "active" &&
+				isLockedRef.current &&
+				!isAuthenticatingRef.current
+			) {
+				void authenticate();
 			}
 		};
 
@@ -85,14 +103,7 @@ export function BiometricLock({ children }: BiometricLockProps) {
 		return () => {
 			subscription.remove();
 		};
-	}, [isLocked, authenticate]);
-
-	// Auto-authenticate when locked state changes to true
-	useEffect(() => {
-		if (isLocked && !isAuthenticating) {
-			authenticate();
-		}
-	}, [isLocked, isAuthenticating, authenticate]);
+	}, [authenticate]);
 
 	// On web, just render children
 	if (Platform.OS === "web") {
