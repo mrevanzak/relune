@@ -1,23 +1,23 @@
 import "dotenv/config";
 import { cors } from "@elysiajs/cors";
-import { swagger } from "@elysiajs/swagger";
+import { openapi } from "@elysiajs/openapi";
 import { env } from "@relune/config/env";
 import { Elysia } from "elysia";
 import { auth } from "./modules/auth";
 import { recordings } from "./modules/recordings";
 import { errorHandler } from "./shared/error-handler";
 
-const app = new Elysia().use(errorHandler).use(
-	cors({
-		origin: env.CORS_ORIGIN,
-		methods: ["GET", "POST", "OPTIONS"],
-	}),
-);
-
-if (env.ENABLE_SWAGGER) {
-	app.use(
-		swagger({
-			path: "/swagger",
+const app = new Elysia()
+	.use(errorHandler)
+	.use(
+		cors({
+			origin: env.CORS_ORIGIN,
+			methods: ["GET", "POST", "OPTIONS"],
+		}),
+	)
+	.use(
+		openapi({
+			enabled: env.ENABLE_SWAGGER,
 			documentation: {
 				info: {
 					title: "Relune API",
@@ -25,10 +25,7 @@ if (env.ENABLE_SWAGGER) {
 				},
 			},
 		}),
-	);
-}
-
-app
+	)
 	.get("/", () => "OK")
 	.get("/health", () => ({ status: "ok" }))
 	.use(auth)

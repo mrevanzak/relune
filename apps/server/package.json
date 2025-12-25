@@ -11,7 +11,7 @@
 	},
 	"dependencies": {
 		"@elysiajs/cors": "^1.3.3",
-		"@elysiajs/swagger": "^1.3.1",
+		"@elysiajs/openapi": "^1.4.12",
 		"@relune/config": "workspace:*",
 		"@relune/db": "workspace:*",
 		"@sinclair/typebox": "^0.34.43",
