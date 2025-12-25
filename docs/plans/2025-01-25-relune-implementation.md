@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Status:** Phase 2 Complete (Tasks 4-6) | Next: Task 7 (WhatsApp Import)
+**Status:** Task 7 Complete (WhatsApp Import) | Next: Task 8 (In-App Recording Upload)
 
 **Goal:** Build the MVP of Rêlune, a private voice recording app with transcription and search, covering backend foundation and mobile core flow.
 
