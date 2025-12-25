@@ -44,6 +44,7 @@ All errors return consistent JSON:
 ### Global Error Handler (`shared/error-handler.ts`)
 
 Applied at the app level to catch:
+
 - `HttpError` instances (custom errors)
 - Elysia validation errors (`VALIDATION`)
 - Route not found (`NOT_FOUND`)
@@ -74,10 +75,11 @@ new Elysia({ name: "Auth.Service" })
       };
     }
     // ... handle other errors
-  })
+  });
 ```
 
 **Why plugin-level handlers?**
+
 - Errors thrown in `derive` need to be caught by the plugin's `onError`
 - Allows domain-specific error formatting
 - Type-safe error handling with custom error classes
@@ -127,7 +129,7 @@ if (whitelist.length > 0 && !whitelist.includes(userEmail)) {
 Use consistent, machine-readable error codes:
 
 - `MISSING_TOKEN` - No auth header or invalid format
-- `INVALID_TOKEN` - Token verification failed  
+- `INVALID_TOKEN` - Token verification failed
 - `EMAIL_NOT_ALLOWED` - Email not in whitelist
 - `RECORDING_NOT_FOUND` - Recording doesn't exist
 - `RECORDING_FORBIDDEN` - User doesn't own recording
@@ -149,8 +151,8 @@ expect(body).toEqual({
   error: {
     message: "No authorization header or invalid Bearer token format",
     code: "MISSING_TOKEN",
-    status: 401
-  }
+    status: 401,
+  },
 });
 ```
 
@@ -174,6 +176,7 @@ expect(body).toEqual({
 ## Migration Notes
 
 **Before:**
+
 ```typescript
 if (!recording) {
   set.status = 404;
@@ -182,6 +185,7 @@ if (!recording) {
 ```
 
 **After:**
+
 ```typescript
 if (!recording) {
   throw new NotFoundError("Recording not found", "RECORDING_NOT_FOUND");
@@ -195,4 +199,3 @@ if (!recording) {
 - `AGENTS.md` for error handling conventions
 - `shared/errors.ts` for available error classes
 - `shared/error-handler.ts` for global error handler
-

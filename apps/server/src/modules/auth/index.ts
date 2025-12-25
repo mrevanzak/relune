@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { Elysia } from "elysia";
 import { getEnvList, requireEnv } from "../../shared/env";
 import { createAuthPlugin } from "./service";
 
@@ -9,7 +10,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 const allowedEmails = getEnvList("ALLOWED_EMAILS");
 
-export const auth = createAuthPlugin({
+const authPlugin = createAuthPlugin({
 	allowedEmails,
 	getUser: async (token) => {
 		const {
@@ -20,6 +21,20 @@ export const auth = createAuthPlugin({
 		return { user, error };
 	},
 });
+
+/**
+ * Auth controller (Elysia instance)
+ * Handles authentication routes
+ */
+export const auth = new Elysia({
+	prefix: "/auth",
+	name: "Auth.Controller",
+})
+	.use(authPlugin)
+	.get("/me", ({ user }) => ({ user }));
+
+// Re-export the auth plugin for use in other modules
+export const authMiddleware = authPlugin;
 
 // Re-export types for convenience
 export type { AuthUser, GetUserFn, GetUserResult } from "./service";

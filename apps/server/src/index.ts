@@ -32,7 +32,6 @@ app
 	.get("/", () => "OK")
 	.get("/health", () => ({ status: "ok" }))
 	.use(auth)
-	.get("/api/me", ({ user }) => ({ user }))
 	.use(recordings)
 	.listen(3000, () => {
 		console.log("Server is running on http://localhost:3000");

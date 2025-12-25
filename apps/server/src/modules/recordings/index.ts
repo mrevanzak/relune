@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { ForbiddenError, NotFoundError } from "../../shared/errors";
-import { auth } from "../auth";
+import { authMiddleware } from "../auth";
 import { listQuerySchema, recordingIdParamSchema } from "./model";
 import * as RecordingsService from "./service";
 
@@ -13,7 +13,7 @@ export const recordings = new Elysia({
 	prefix: "/recordings",
 	name: "Recordings.Controller",
 })
-	.use(auth)
+	.use(authMiddleware)
 	.get(
 		"/",
 		async ({ user, query }) => {
