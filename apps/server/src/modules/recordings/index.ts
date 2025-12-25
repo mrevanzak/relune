@@ -65,5 +65,4 @@ export const recordings = new Elysia({
 		{
 			query: processPendingQuerySchema,
 		},
-	)
-	.as("scoped");
+	);

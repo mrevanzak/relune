@@ -154,5 +154,4 @@ export const importRoutes = new Elysia({
 				file: t.File(),
 			}),
 		},
-	)
-	.as("scoped");
+	);
