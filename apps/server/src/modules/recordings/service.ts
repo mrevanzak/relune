@@ -3,8 +3,8 @@ import { db } from "@relune/db";
 import type { Recording } from "@relune/db/schema";
 import { keywords, recordingKeywords, recordings } from "@relune/db/schema";
 import { env } from "@relune/env";
-import { experimental_transcribe as transcribe, generateText } from "ai";
-import { desc, eq, isNull } from "drizzle-orm";
+import { generateText, experimental_transcribe as transcribe } from "ai";
+import { count, desc, eq, isNull } from "drizzle-orm";
 import { convertToM4a, needsConversion } from "@/shared/audio-converter";
 import { getContentType, uploadAudioToStorage } from "@/shared/storage";
 import { supabase } from "@/shared/supabase";
@@ -244,24 +244,29 @@ export async function processPendingRecordings(
 	const errors: Array<{ id: string; error: string }> = [];
 	let processed = 0;
 
-	for (const recording of pending) {
-		const result = await processRecording(recording);
-		if (result.success) {
-			processed++;
-		} else {
-			errors.push({ id: recording.id, error: result.error || "Unknown error" });
-		}
-	}
+	await Promise.all(
+		pending.map(async (recording) => {
+			const result = await processRecording(recording);
+			if (result.error) {
+				processed++;
+			} else {
+				errors.push({
+					id: recording.id,
+					error: result.error || "Unknown error",
+				});
+			}
+		}),
+	);
 
 	// Count remaining
-	const remainingCount = await db
-		.select()
+	const remainingCountResult = await db
+		.select({ count: count() })
 		.from(recordings)
 		.where(isNull(recordings.transcript));
-
+	const remainingCount = remainingCountResult[0]?.count ?? 0;
 	return {
 		processed,
-		remaining: remainingCount.length - processed,
+		remaining: remainingCount,
 		errors,
 	};
 }
