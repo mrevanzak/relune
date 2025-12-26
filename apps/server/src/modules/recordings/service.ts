@@ -5,6 +5,7 @@ import { keywords, recordingKeywords, recordings } from "@relune/db/schema";
 import { env } from "@relune/env";
 import { generateText } from "ai";
 import { desc, eq, isNull } from "drizzle-orm";
+import { convertToM4a, needsConversion } from "@/shared/audio-converter";
 import { getContentType, uploadAudioToStorage } from "@/shared/storage";
 import { supabase } from "@/shared/supabase";
 
@@ -313,12 +314,22 @@ export async function createAppRecording({
 	try {
 		// Read file content
 		const fileContent = new Uint8Array(await file.arrayBuffer());
-		const contentType = getContentType(file.name);
+
+		// Convert to m4a if needed (opus, ogg, wav, etc.)
+		let finalContent: Uint8Array<ArrayBufferLike> = fileContent;
+		let finalFilename = file.name;
+		if (needsConversion(file.name)) {
+			const converted = await convertToM4a(fileContent, file.name);
+			finalContent = converted.data;
+			finalFilename = converted.filename;
+		}
+
+		const contentType = getContentType(finalFilename);
 
 		// Upload to storage
 		const uploadResult = await uploadAudioToStorage(
-			file.name,
-			fileContent,
+			finalFilename,
+			finalContent,
 			contentType,
 		);
 
@@ -333,7 +344,7 @@ export async function createAppRecording({
 				userId,
 				audioUrl: uploadResult.url,
 				durationSeconds: durationSeconds ?? null,
-				fileSizeBytes: fileContent.length,
+				fileSizeBytes: finalContent.length,
 				recordedAt: recordedAt ?? new Date(),
 				importSource: "app",
 				originalFilename: file.name,

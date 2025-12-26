@@ -1,6 +1,8 @@
 import { Elysia, t } from "elysia";
 import JSZip from "jszip";
+import { convertToM4a, needsConversion } from "@/shared/audio-converter";
 import { BadRequestError } from "../../shared/errors";
+import { getContentType, uploadAudioToStorage } from "../../shared/storage";
 import { authMiddleware } from "../auth";
 import * as ImportService from "./service";
 
@@ -107,11 +109,20 @@ export const importRoutes = new Elysia({
 						continue;
 					}
 
+					// Convert to m4a if needed (opus, ogg, wav, etc.)
+					let finalContent = audioContent;
+					let finalFilename = msg.filename;
+					if (needsConversion(msg.filename)) {
+						const converted = await convertToM4a(audioContent, msg.filename);
+						finalContent = converted.data;
+						finalFilename = converted.filename;
+					}
+
 					// Upload to storage
-					const contentType = ImportService.getContentType(msg.filename);
-					const uploadResult = await ImportService.uploadAudioToStorage(
-						msg.filename,
-						audioContent,
+					const contentType = getContentType(finalFilename);
+					const uploadResult = await uploadAudioToStorage(
+						finalFilename,
+						finalContent,
 						contentType,
 					);
 
@@ -130,7 +141,7 @@ export const importRoutes = new Elysia({
 						recordedAt: msg.timestamp,
 						originalFilename: msg.filename,
 						notes: msg.notes,
-						fileSizeBytes: audioContent.length,
+						fileSizeBytes: finalContent.length,
 					});
 
 					imported.push({ id: recordingId, filename: msg.filename });
