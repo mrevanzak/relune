@@ -3,7 +3,7 @@ import { db } from "@relune/db";
 import type { Recording } from "@relune/db/schema";
 import { keywords, recordingKeywords, recordings } from "@relune/db/schema";
 import { env } from "@relune/env";
-import { generateText } from "ai";
+import { experimental_transcribe as transcribe, generateText } from "ai";
 import { desc, eq, isNull } from "drizzle-orm";
 import { convertToM4a, needsConversion } from "@/shared/audio-converter";
 import { getContentType, uploadAudioToStorage } from "@/shared/storage";
@@ -119,40 +119,15 @@ async function downloadAudio(audioUrl: string): Promise<Uint8Array | null> {
 }
 
 /**
- * Transcribe audio using OpenAI Whisper
+ * Transcribe audio using OpenAI Whisper via AI SDK
  */
-async function transcribeAudio(
-	audioData: Uint8Array,
-	filename: string,
-): Promise<string> {
-	// Create a File object for the API
-	const file = new File([audioData], filename, { type: "audio/mpeg" });
+async function transcribeAudio(audioData: Uint8Array): Promise<string> {
+	const { text } = await transcribe({
+		model: openai.transcription("whisper-1"),
+		audio: audioData,
+	});
 
-	// Use OpenAI's transcription API directly
-	const response = await fetch(
-		"https://api.openai.com/v1/audio/transcriptions",
-		{
-			method: "POST",
-			headers: {
-				Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-			},
-			body: (() => {
-				const formData = new FormData();
-				formData.append("file", file);
-				formData.append("model", "whisper-1");
-				formData.append("language", "fr"); // Default to French, can be made dynamic
-				return formData;
-			})(),
-		},
-	);
-
-	if (!response.ok) {
-		const error = await response.text();
-		throw new Error(`Transcription failed: ${error}`);
-	}
-
-	const result = (await response.json()) as { text: string };
-	return result.text;
+	return text;
 }
 
 /**
@@ -227,9 +202,9 @@ export async function processRecording(
 			return { success: false, error: "Failed to download audio" };
 		}
 
-		// Transcribe
-		const filename = recording.originalFilename || "audio.m4a";
-		const transcript = await transcribeAudio(audioData, filename);
+		// Extract actual filename from storage URL (files may be converted to m4a)
+		// URL format: .../recordings/{uuid}-{filename}.m4a
+		const transcript = await transcribeAudio(audioData);
 
 		// Generate keywords
 		const keywordList = await generateKeywords(transcript);
