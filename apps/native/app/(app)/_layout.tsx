@@ -28,9 +28,12 @@ export default function AppLayout() {
 					name="import"
 					options={{
 						presentation: "formSheet",
-						title: "Import WhatsApp",
+						headerShown: false,
 						sheetGrabberVisible: true,
-						sheetAllowedDetents: "fitToContents",
+						sheetAllowedDetents: [0.4],
+						contentStyle: {
+							backgroundColor: "transparent",
+						},
 					}}
 				/>
 				<Stack.Screen name="index" redirect />

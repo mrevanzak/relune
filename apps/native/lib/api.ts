@@ -1,6 +1,5 @@
 import { treaty } from "@elysiajs/eden";
 import { env } from "@relune/env";
-import { fetch } from "expo/fetch";
 import type { App } from "server";
 import { getSupabaseClient } from "./supabase";
 
@@ -21,9 +20,6 @@ export const api = treaty<App>(API_URL, {
 		}
 		return {};
 	},
-	// fetcher: (input, init) => {
-	// 	return fetch(input as string, init);
-	// },
 });
 
 /**

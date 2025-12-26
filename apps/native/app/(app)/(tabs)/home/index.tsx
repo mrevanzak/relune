@@ -2,14 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { HeaderButton } from "@react-navigation/elements";
 import { router, Stack } from "expo-router";
 import { useState } from "react";
-import {
-	FlatList,
-	Pressable,
-	ScrollView,
-	StyleSheet,
-	Text,
-	View,
-} from "react-native";
+import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AudioCard, type AudioCardProps } from "@/components/ui/AudioCard";
 import { FilterPill } from "@/components/ui/FilterPill";
