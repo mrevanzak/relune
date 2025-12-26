@@ -11,6 +11,7 @@
 			"!**/dev-dist",
 			"!**/.zed",
 			"!**/.vscode",
+			"!**/.cursor",
 			"!**/routeTree.gen.ts",
 			"!**/src-tauri",
 			"!**/.nuxt",

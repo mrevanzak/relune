@@ -27,7 +27,7 @@ import { convertToM4a, needsConversion } from "@/shared/audio-converter";
 
 // Check if file needs conversion
 needsConversion("audio.opus"); // true
-needsConversion("audio.m4a");  // false
+needsConversion("audio.m4a"); // false
 
 // Convert audio
 const result = await convertToM4a(audioBuffer, "original.opus");
@@ -61,7 +61,7 @@ All conversion happens in memory using Buffer I/O callbacks - no temp files are 
 When writing to memory buffers, we use fragmented MP4 flags:
 
 ```typescript
-movflags: "frag_keyframe+empty_moov+default_base_moof"
+movflags: "frag_keyframe+empty_moov+default_base_moof";
 ```
 
 This ensures the moov atom (metadata) is written correctly without requiring seekable file output.
@@ -80,18 +80,20 @@ Conversion failures reject the upload with an error message.
 
 ```bash
 cd apps/server
-bun test-audio-converter.ts
+bun scripts/test-audio-converter.ts "/path/to/input.opus" "/tmp/relune-test-output.m4a"
 open /tmp/relune-test-output.m4a
 ```
 
 ## Deployment Notes
 
 The `node-av` package includes prebuilt binaries for:
+
 - macOS (arm64, x64)
 - Linux (x64, arm64)
 - Windows (x64)
 
 If postinstall scripts are blocked, run manually:
+
 ```bash
 node node_modules/@seydx/node-av-*/install.js
 ```

@@ -61,13 +61,16 @@ export async function convertToM4a(
 		return { data: input, filename: originalFilename };
 	}
 
+	let demuxer: Demuxer | null = null;
+	let decoder: Decoder | null = null;
+	let muxer: Muxer | null = null;
+
 	try {
 		// Open input from buffer
-		const demuxer = await Demuxer.open(Buffer.from(input));
+		demuxer = await Demuxer.open(Buffer.from(input));
 
 		const audioStream = demuxer.audio();
 		if (!audioStream) {
-			await demuxer.close();
 			throw new AudioConversionError(
 				"No audio stream found in input file",
 				"NO_AUDIO_STREAM",
@@ -75,7 +78,7 @@ export async function convertToM4a(
 		}
 
 		// Create decoder from input stream
-		const decoder = await Decoder.create(audioStream);
+		decoder = await Decoder.create(audioStream);
 
 		// Create AAC encoder
 		const encoder = await Encoder.create(FF_ENCODER_AAC, {
@@ -85,7 +88,7 @@ export async function convertToM4a(
 
 		// Collect output chunks in memory
 		const chunks: Buffer[] = [];
-		const muxer = await Muxer.open(
+		muxer = await Muxer.open(
 			{
 				write: (buffer: Buffer) => {
 					chunks.push(Buffer.from(buffer));
@@ -130,10 +133,7 @@ export async function convertToM4a(
 
 		// Close muxer (writes trailer automatically)
 		await muxer.close();
-
-		// Cleanup
-		decoder.close();
-		demuxer.close();
+		muxer = null;
 
 		return {
 			data: new Uint8Array(Buffer.concat(chunks)),
@@ -147,5 +147,23 @@ export async function convertToM4a(
 			`Conversion failed: ${error instanceof Error ? error.message : "Unknown error"}`,
 			"CONVERSION_FAILED",
 		);
+	} finally {
+		try {
+			decoder?.close();
+		} catch {
+			// ignore cleanup errors
+		}
+
+		try {
+			await demuxer?.close();
+		} catch {
+			// ignore cleanup errors
+		}
+
+		try {
+			await muxer?.close();
+		} catch {
+			// ignore cleanup errors
+		}
 	}
 }

@@ -7,7 +7,6 @@ import { generateText, experimental_transcribe as transcribe } from "ai";
 import { count, desc, eq, isNull } from "drizzle-orm";
 import { convertToM4a, needsConversion } from "@/shared/audio-converter";
 import { getContentType, uploadAudioToStorage } from "@/shared/storage";
-import { supabase } from "@/shared/supabase";
 
 /**
  * Non-request-dependent business logic for recordings
@@ -94,37 +93,13 @@ export async function getPendingRecordings(
 }
 
 /**
- * Download audio file from Supabase Storage
- */
-async function downloadAudio(audioUrl: string): Promise<Uint8Array | null> {
-	// Extract storage path from URL
-	const url = new URL(audioUrl);
-	const pathMatch = url.pathname.match(
-		/\/storage\/v1\/object\/public\/audio\/(.+)/,
-	);
-	if (!pathMatch?.[1]) {
-		// Try signed URL pattern or direct fetch
-		const response = await fetch(audioUrl);
-		if (!response.ok) return null;
-		return new Uint8Array(await response.arrayBuffer());
-	}
-
-	const storagePath = pathMatch[1];
-	const { data, error } = await supabase.storage
-		.from("audio")
-		.download(storagePath);
-
-	if (error || !data) return null;
-	return new Uint8Array(await data.arrayBuffer());
-}
-
-/**
  * Transcribe audio using OpenAI Whisper via AI SDK
+ * Uses URL to allow OpenAI to detect format from the file extension
  */
-async function transcribeAudio(audioData: Uint8Array): Promise<string> {
+async function transcribeAudio(audioUrl: string): Promise<string> {
 	const { text } = await transcribe({
 		model: openai.transcription("whisper-1"),
-		audio: audioData,
+		audio: new URL(audioUrl),
 	});
 
 	return text;
@@ -196,15 +171,9 @@ export async function processRecording(
 	recording: Recording,
 ): Promise<{ success: boolean; error?: string }> {
 	try {
-		// Download audio
-		const audioData = await downloadAudio(recording.audioUrl);
-		if (!audioData) {
-			return { success: false, error: "Failed to download audio" };
-		}
-
-		// Extract actual filename from storage URL (files may be converted to m4a)
-		// URL format: .../recordings/{uuid}-{filename}.m4a
-		const transcript = await transcribeAudio(audioData);
+		// Transcribe audio directly from URL
+		// OpenAI detects format from the .m4a extension in the URL
+		const transcript = await transcribeAudio(recording.audioUrl);
 
 		// Generate keywords
 		const keywordList = await generateKeywords(transcript);
@@ -241,22 +210,23 @@ export async function processPendingRecordings(
 	limit: number,
 ): Promise<ProcessPendingResult> {
 	const pending = await getPendingRecordings(limit);
-	const errors: Array<{ id: string; error: string }> = [];
-	let processed = 0;
-
-	await Promise.all(
+	const results = await Promise.all(
 		pending.map(async (recording) => {
 			const result = await processRecording(recording);
-			if (result.success) {
-				processed++;
-			} else {
-				errors.push({
-					id: recording.id,
-					error: result.error || "Unknown error",
-				});
-			}
+			return { id: recording.id, result };
 		}),
 	);
+
+	const processed = results.reduce(
+		(acc, { result }) => acc + (result.success ? 1 : 0),
+		0,
+	);
+	const errors: Array<{ id: string; error: string }> = results
+		.filter(({ result }) => !result.success)
+		.map(({ id, result }) => ({
+			id,
+			error: result.error || "Unknown error",
+		}));
 
 	// Count remaining
 	const remainingCountResult = await db
