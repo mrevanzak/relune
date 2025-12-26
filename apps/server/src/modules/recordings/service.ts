@@ -247,7 +247,7 @@ export async function processPendingRecordings(
 	await Promise.all(
 		pending.map(async (recording) => {
 			const result = await processRecording(recording);
-			if (result.error) {
+			if (result.success) {
 				processed++;
 			} else {
 				errors.push({
