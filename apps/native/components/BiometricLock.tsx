@@ -1,15 +1,18 @@
+import { Ionicons } from "@expo/vector-icons";
 import * as LocalAuthentication from "expo-local-authentication";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	AppState,
 	type AppStateStatus,
-	Button,
 	Platform,
 	StyleSheet,
 	Text,
 	View,
 } from "react-native";
+import { SoftButton } from "@/components/ui/SoftButton";
+import { Fonts } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface BiometricLockProps {
 	children: ReactNode;
@@ -20,6 +23,13 @@ interface BiometricLockProps {
  * On web, it's a no-op and just renders children.
  */
 export function BiometricLock({ children }: BiometricLockProps) {
+	// Theme colors
+	const tint = useThemeColor({}, "tint");
+	const surface = useThemeColor({}, "surface");
+	const lilac = useThemeColor({}, "lilac");
+	const text = useThemeColor({}, "text");
+	const textSecondary = useThemeColor({}, "textSecondary");
+
 	const [isLocked, setIsLocked] = useState(false);
 	const [isAuthenticating, setIsAuthenticating] = useState(false);
 	const [biometricType, setBiometricType] = useState<string>("Biometric");
@@ -56,7 +66,8 @@ export function BiometricLock({ children }: BiometricLockProps) {
 				setIsLocked(false);
 			}
 		} catch (error) {
-			console.error("Biometric authentication failed:", error);
+			// Silently handle authentication errors
+			void error;
 		} finally {
 			isAuthenticatingRef.current = false;
 			setIsAuthenticating(false);
@@ -124,20 +135,33 @@ export function BiometricLock({ children }: BiometricLockProps) {
 	if (isLocked) {
 		return (
 			<View style={styles.container}>
-				<Text style={styles.icon}>🔒</Text>
-				<Text style={styles.title}>Relune is Locked</Text>
-				<Text style={styles.subtitle}>
+				{/* Lock icon */}
+				<View
+					style={[
+						styles.iconContainer,
+						{ backgroundColor: surface, shadowColor: lilac },
+					]}
+				>
+					<Ionicons name="lock-closed" size={48} color={tint} />
+				</View>
+
+				{/* Title */}
+				<Text style={[styles.title, { color: text }]}>Relune is Locked</Text>
+
+				{/* Subtitle */}
+				<Text style={[styles.subtitle, { color: textSecondary }]}>
 					{isAuthenticating
 						? "Authenticating..."
 						: `Use ${biometricType} to unlock`}
 				</Text>
+
+				{/* Unlock button */}
 				{!isAuthenticating && (
-					<View style={styles.buttonContainer}>
-						<Button
-							title={`Unlock with ${biometricType}`}
-							onPress={authenticate}
-						/>
-					</View>
+					<SoftButton
+						title={`Unlock with ${biometricType}`}
+						onPress={authenticate}
+						style={styles.button}
+					/>
 				)}
 			</View>
 		);
@@ -151,27 +175,34 @@ const styles = StyleSheet.create({
 		flex: 1,
 		justifyContent: "center",
 		alignItems: "center",
-		padding: 20,
-		backgroundColor: "#000",
+		padding: 24,
 	},
-	icon: {
-		fontSize: 64,
-		marginBottom: 16,
+	iconContainer: {
+		width: 100,
+		height: 100,
+		borderRadius: 50,
+		justifyContent: "center",
+		alignItems: "center",
+		marginBottom: 24,
+		shadowOffset: { width: 0, height: 8 },
+		shadowOpacity: 0.25,
+		shadowRadius: 16,
+		elevation: 10,
 	},
 	title: {
-		fontSize: 24,
-		fontWeight: "bold",
-		color: "#fff",
+		fontSize: 26,
+		fontWeight: "300",
 		marginBottom: 8,
+		fontFamily: Fonts?.serif || "serif",
+		letterSpacing: 1,
 	},
 	subtitle: {
 		fontSize: 16,
-		color: "#888",
-		marginBottom: 32,
+		marginBottom: 40,
 		textAlign: "center",
 	},
-	buttonContainer: {
+	button: {
 		width: "100%",
-		maxWidth: 300,
+		maxWidth: 280,
 	},
 });

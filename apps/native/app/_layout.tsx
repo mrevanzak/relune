@@ -13,6 +13,7 @@ import "react-native-reanimated";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BootstrapErrorScreen } from "@/components/BootstrapErrorScreen";
 import { QueryProvider } from "@/components/QueryProvider";
+import { GradientBackground } from "@/components/ui/GradientBackground";
 import { SessionProvider, useSession } from "@/context/session";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { uploadQueueStore } from "@/stores/upload-queue";
@@ -67,7 +68,9 @@ function RootLayoutNav() {
 	return (
 		<View style={{ flex: 1 }} onLayout={onLayoutRootView}>
 			<ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-				<Slot />
+				<GradientBackground>
+					<Slot />
+				</GradientBackground>
 				<StatusBar style="auto" />
 			</ThemeProvider>
 		</View>

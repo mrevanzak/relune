@@ -2,7 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { PressableScale } from "pressto";
 import { StyleSheet, View } from "react-native";
-import { ReluneColors, Shadows } from "@/constants/theme";
+import { Gradients, Shadows } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface RecordButtonProps {
 	onPress?: () => void;
@@ -10,6 +11,10 @@ interface RecordButtonProps {
 }
 
 export function RecordButton({ onPress, isRecording }: RecordButtonProps) {
+	const surface = useThemeColor({}, "surface");
+	const tint = useThemeColor({}, "tint");
+	const lilac = useThemeColor({}, "lilac");
+
 	return (
 		<PressableScale
 			style={styles.container}
@@ -17,13 +22,15 @@ export function RecordButton({ onPress, isRecording }: RecordButtonProps) {
 			accessibilityRole="button"
 			accessibilityLabel={isRecording ? "Stop Recording" : "Start Recording"}
 		>
-			<View style={[styles.outerRing, isRecording && styles.recordingRing]}>
+			<View
+				style={[
+					styles.outerRing,
+					{ backgroundColor: surface, shadowColor: tint },
+					isRecording && styles.recordingRing,
+				]}
+			>
 				<LinearGradient
-					colors={
-						isRecording
-							? ["#FF5C5C", "#D92E2E"] // Red gradient for recording
-							: [ReluneColors.primaryPurple, ReluneColors.lilac] // Purple gradient for idle
-					}
+					colors={isRecording ? Gradients.recording : [tint, lilac]}
 					style={styles.innerCircle}
 					start={{ x: 0, y: 0 }}
 					end={{ x: 1, y: 1 }}
@@ -31,7 +38,7 @@ export function RecordButton({ onPress, isRecording }: RecordButtonProps) {
 					<Ionicons
 						name={isRecording ? "square" : "mic"}
 						size={32}
-						color={ReluneColors.surface}
+						color={surface}
 					/>
 				</LinearGradient>
 			</View>
@@ -48,15 +55,13 @@ const styles = StyleSheet.create({
 		width: 80,
 		height: 80,
 		borderRadius: 40,
-		backgroundColor: ReluneColors.surface, // White ring
 		alignItems: "center",
 		justifyContent: "center",
-		...Shadows.soft, // Soft shadow for lift
-		shadowColor: ReluneColors.primaryPurple, // Color tint the shadow
+		...Shadows.soft,
 		shadowOpacity: 0.3,
 	},
 	recordingRing: {
-		transform: [{ scale: 1.1 }], // Pulse effect placeholder
+		transform: [{ scale: 1.1 }],
 	},
 	innerCircle: {
 		width: 64,

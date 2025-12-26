@@ -24,6 +24,28 @@ export const ReluneColors = {
 	text: "#4A4A4A",
 	textSecondary: "#8A8A8A",
 	border: "#EFEFEF",
+
+	// Status colors (softer variants)
+	error: "#E85A5A",
+	errorLight: "#FDEAEA",
+	success: "#7BC47F",
+	successLight: "#EAF7EB",
+
+	// Overlay
+	overlay: "rgba(193, 142, 216, 0.15)",
+	overlayDark: "rgba(74, 74, 74, 0.6)",
+};
+
+// Gradient presets for LinearGradient components
+export const Gradients = {
+	// Primary button/accent gradient (purple to lilac)
+	primary: ["#C18ED8", "#d4aecd"] as const,
+	// Screen background gradient (warm peach to misty rose)
+	background: ["#fbebe1", "#ecdadd"] as const,
+	// Recording state gradient (soft red)
+	recording: ["#FF6B6B", "#EE5A5A"] as const,
+	// Subtle card highlight
+	cardHighlight: ["#FFFFFF", "#f5e3df"] as const,
 };
 
 export const Shadows = {

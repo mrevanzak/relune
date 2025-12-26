@@ -26,6 +26,7 @@ export default function TabLayout() {
 			hapticFeedbackEnabled
 			initialRouteName="home"
 			tabBarActiveTintColor={theme.tint}
+			// renderBottomAccessoryView={(props) => <Text>Hello</Text>}
 		>
 			<Tabs.Screen
 				name="home"

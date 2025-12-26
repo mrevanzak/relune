@@ -1,6 +1,8 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { PressableScale } from "pressto";
 import { StyleSheet, Text } from "react-native";
-import { ReluneColors, Shadows } from "@/constants/theme";
+import { Gradients, Shadows } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface FilterPillProps {
 	label: string;
@@ -13,20 +15,34 @@ export function FilterPill({
 	isActive = false,
 	onPress,
 }: FilterPillProps) {
+	const surface = useThemeColor({}, "surface");
+	const textSecondary = useThemeColor({}, "textSecondary");
+
+	if (isActive) {
+		return (
+			<PressableScale style={styles.container} onPress={onPress}>
+				<LinearGradient
+					colors={Gradients.primary}
+					style={styles.gradientContainer}
+					start={{ x: 0, y: 0 }}
+					end={{ x: 1, y: 1 }}
+				>
+					<Text style={[styles.activeText, { color: surface }]}>{label}</Text>
+				</LinearGradient>
+			</PressableScale>
+		);
+	}
+
 	return (
 		<PressableScale
 			style={[
 				styles.container,
-				isActive ? styles.activeContainer : styles.inactiveContainer,
+				styles.inactiveContainer,
+				{ backgroundColor: surface },
 			]}
 			onPress={onPress}
 		>
-			<Text
-				style={[
-					styles.text,
-					isActive ? styles.activeText : styles.inactiveText,
-				]}
-			>
+			<Text style={[styles.inactiveText, { color: textSecondary }]}>
 				{label}
 			</Text>
 		</PressableScale>
@@ -35,27 +51,24 @@ export function FilterPill({
 
 const styles = StyleSheet.create({
 	container: {
-		paddingHorizontal: 20,
-		paddingVertical: 10,
 		borderRadius: 20,
-		marginRight: 12,
+		overflow: "hidden",
 		...Shadows.small,
 	},
-	activeContainer: {
-		backgroundColor: ReluneColors.darkPeach,
+	gradientContainer: {
+		paddingHorizontal: 20,
+		paddingVertical: 10,
 	},
 	inactiveContainer: {
-		backgroundColor: ReluneColors.surface,
-	},
-	text: {
-		fontSize: 14,
-		fontWeight: "600",
-		fontFamily: "System",
+		paddingHorizontal: 20,
+		paddingVertical: 10,
 	},
 	activeText: {
-		color: ReluneColors.text,
+		fontSize: 14,
+		fontWeight: "600",
 	},
 	inactiveText: {
-		color: ReluneColors.textSecondary,
+		fontSize: 14,
+		fontWeight: "500",
 	},
 });

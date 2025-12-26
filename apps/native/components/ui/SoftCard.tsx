@@ -1,5 +1,6 @@
 import { StyleSheet, View, type ViewProps } from "react-native";
-import { ReluneColors, Shadows } from "@/constants/theme";
+import { Shadows } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface SoftCardProps extends ViewProps {
 	variant?: "surface" | "highlight";
@@ -11,20 +12,13 @@ export function SoftCard({
 	children,
 	...props
 }: SoftCardProps) {
+	const surface = useThemeColor({}, "surface");
+	const surfaceHighlight = useThemeColor({}, "surfaceHighlight");
+
+	const backgroundColor = variant === "surface" ? surface : surfaceHighlight;
+
 	return (
-		<View
-			style={[
-				styles.card,
-				{
-					backgroundColor:
-						variant === "surface"
-							? ReluneColors.surface
-							: ReluneColors.surfaceHighlight,
-				},
-				style,
-			]}
-			{...props}
-		>
+		<View style={[styles.card, { backgroundColor }, style]} {...props}>
 			{children}
 		</View>
 	);

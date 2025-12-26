@@ -1,14 +1,20 @@
 import { Redirect } from "expo-router";
+import { PressableScale } from "pressto";
 import { useState } from "react";
 import {
 	ActivityIndicator,
-	Pressable,
+	KeyboardAvoidingView,
+	Platform,
 	StyleSheet,
 	Text,
-	TextInput,
 	View,
 } from "react-native";
+import { GradientBackground } from "@/components/ui/GradientBackground";
+import { SoftButton } from "@/components/ui/SoftButton";
+import { SoftInput } from "@/components/ui/SoftInput";
+import { Fonts } from "@/constants/theme";
 import { useSession } from "@/context/session";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import {
 	useResetPasswordMutation,
 	useSignInMutation,
@@ -19,6 +25,14 @@ type AuthMode = "signIn" | "signUp" | "forgotPassword";
 
 export default function SignInScreen() {
 	const { session, isInitialized } = useSession();
+
+	// Theme colors
+	const tint = useThemeColor({}, "tint");
+	const text = useThemeColor({}, "text");
+	const textSecondary = useThemeColor({}, "textSecondary");
+	const error = useThemeColor({}, "error");
+	const errorLight = useThemeColor({}, "errorLight");
+	const successLight = useThemeColor({}, "successLight");
 
 	const [authMode, setAuthMode] = useState<AuthMode>("signIn");
 	const [email, setEmail] = useState("");
@@ -39,8 +53,8 @@ export default function SignInScreen() {
 	// Show loading while session is being determined
 	if (!isInitialized) {
 		return (
-			<View style={styles.container}>
-				<ActivityIndicator size="large" />
+			<View style={styles.loadingContainer}>
+				<ActivityIndicator size="large" color={tint} />
 			</View>
 		);
 	}
@@ -107,180 +121,219 @@ export default function SignInScreen() {
 
 	const isPending = activeMutation.isPending;
 
+	const getButtonTitle = () => {
+		if (isPending) return "Loading...";
+		if (authMode === "signIn") return "Sign In";
+		if (authMode === "signUp") return "Create Account";
+		return "Reset Password";
+	};
+
+	const handleSubmit = () => {
+		if (authMode === "signIn") handleSignIn();
+		else if (authMode === "signUp") handleSignUp();
+		else handleResetPassword();
+	};
+
 	return (
-		<View style={styles.container}>
-			<Text style={styles.title}>Relune</Text>
-			<Text style={styles.subtitle}>Private voice recordings</Text>
-
-			{(validationError || activeMutation.isError) && (
-				<Text style={styles.error}>
-					{validationError ||
-						(activeMutation.error instanceof Error
-							? activeMutation.error.message
-							: "An error occurred")}
-				</Text>
-			)}
-
-			{authMode === "forgotPassword" && resetEmailSent ? (
-				<View style={styles.form}>
-					<Text style={styles.successText}>
-						Check your email for a password reset link.
-					</Text>
-					<Pressable onPress={() => switchMode("signIn")}>
-						<Text style={styles.link}>Back to Sign In</Text>
-					</Pressable>
-				</View>
-			) : (
-				<View style={styles.form}>
-					<TextInput
-						style={styles.input}
-						placeholder="Email"
-						value={email}
-						onChangeText={setEmail}
-						autoCapitalize="none"
-						autoComplete="email"
-						keyboardType="email-address"
-						editable={!isPending}
-					/>
-
-					{authMode !== "forgotPassword" && (
-						<TextInput
-							style={styles.input}
-							placeholder="Password"
-							value={password}
-							onChangeText={setPassword}
-							secureTextEntry
-							autoComplete={
-								authMode === "signUp" ? "new-password" : "current-password"
-							}
-							editable={!isPending}
-						/>
-					)}
-
-					{authMode === "signUp" && (
-						<TextInput
-							style={styles.input}
-							placeholder="Confirm Password"
-							value={confirmPassword}
-							onChangeText={setConfirmPassword}
-							secureTextEntry
-							autoComplete="new-password"
-							editable={!isPending}
-						/>
-					)}
-
-					<Pressable
-						style={[styles.button, isPending && styles.buttonDisabled]}
-						onPress={
-							authMode === "signIn"
-								? handleSignIn
-								: authMode === "signUp"
-									? handleSignUp
-									: handleResetPassword
-						}
-						disabled={isPending}
-					>
-						<Text style={styles.buttonText}>
-							{isPending
-								? "Loading..."
-								: authMode === "signIn"
-									? "Sign In"
-									: authMode === "signUp"
-										? "Create Account"
-										: "Reset Password"}
+		<GradientBackground>
+			<KeyboardAvoidingView
+				behavior={Platform.OS === "ios" ? "padding" : "height"}
+				style={styles.container}
+			>
+				<View style={styles.content}>
+					{/* Brand header */}
+					<View style={styles.header}>
+						<Text style={[styles.title, { color: tint }]}>Relune</Text>
+						<Text style={[styles.subtitle, { color: textSecondary }]}>
+							Private voice recordings
 						</Text>
-					</Pressable>
-
-					<View style={styles.links}>
-						{authMode === "signIn" && (
-							<>
-								<Pressable onPress={() => switchMode("signUp")}>
-									<Text style={styles.link}>Create an account</Text>
-								</Pressable>
-								<Pressable onPress={() => switchMode("forgotPassword")}>
-									<Text style={styles.link}>Forgot password?</Text>
-								</Pressable>
-							</>
-						)}
-						{authMode === "signUp" && (
-							<Pressable onPress={() => switchMode("signIn")}>
-								<Text style={styles.link}>Already have an account?</Text>
-							</Pressable>
-						)}
-						{authMode === "forgotPassword" && (
-							<Pressable onPress={() => switchMode("signIn")}>
-								<Text style={styles.link}>Back to Sign In</Text>
-							</Pressable>
-						)}
 					</View>
+
+					{/* Error message */}
+					{(validationError || activeMutation.isError) && (
+						<View
+							style={[styles.errorContainer, { backgroundColor: errorLight }]}
+						>
+							<Text style={[styles.error, { color: error }]}>
+								{validationError ||
+									(activeMutation.error instanceof Error
+										? activeMutation.error.message
+										: "An error occurred")}
+							</Text>
+						</View>
+					)}
+
+					{/* Form */}
+					{authMode === "forgotPassword" && resetEmailSent ? (
+						<View style={styles.form}>
+							<View
+								style={[
+									styles.successContainer,
+									{ backgroundColor: successLight },
+								]}
+							>
+								<Text style={[styles.successText, { color: text }]}>
+									Check your email for a password reset link.
+								</Text>
+							</View>
+							<SoftButton
+								title="Back to Sign In"
+								variant="ghost"
+								onPress={() => switchMode("signIn")}
+							/>
+						</View>
+					) : (
+						<View style={styles.form}>
+							<SoftInput
+								placeholder="Email"
+								value={email}
+								onChangeText={setEmail}
+								autoCapitalize="none"
+								autoComplete="email"
+								keyboardType="email-address"
+								editable={!isPending}
+							/>
+
+							{authMode !== "forgotPassword" && (
+								<SoftInput
+									placeholder="Password"
+									value={password}
+									onChangeText={setPassword}
+									secureTextEntry
+									autoComplete={
+										authMode === "signUp" ? "new-password" : "current-password"
+									}
+									editable={!isPending}
+								/>
+							)}
+
+							{authMode === "signUp" && (
+								<SoftInput
+									placeholder="Confirm Password"
+									value={confirmPassword}
+									onChangeText={setConfirmPassword}
+									secureTextEntry
+									autoComplete="new-password"
+									editable={!isPending}
+								/>
+							)}
+
+							<SoftButton
+								title={getButtonTitle()}
+								onPress={handleSubmit}
+								disabled={isPending}
+								loading={isPending}
+								style={styles.submitButton}
+							/>
+
+							{/* Links */}
+							<View style={styles.links}>
+								{authMode === "signIn" && (
+									<>
+										<PressableScale onPress={() => switchMode("signUp")}>
+											<Text style={[styles.link, { color: tint }]}>
+												Create an account
+											</Text>
+										</PressableScale>
+										<PressableScale
+											onPress={() => switchMode("forgotPassword")}
+										>
+											<Text style={[styles.link, { color: tint }]}>
+												Forgot password?
+											</Text>
+										</PressableScale>
+									</>
+								)}
+								{authMode === "signUp" && (
+									<PressableScale onPress={() => switchMode("signIn")}>
+										<Text style={[styles.link, { color: tint }]}>
+											Already have an account?
+										</Text>
+									</PressableScale>
+								)}
+								{authMode === "forgotPassword" && (
+									<PressableScale onPress={() => switchMode("signIn")}>
+										<Text style={[styles.link, { color: tint }]}>
+											Back to Sign In
+										</Text>
+									</PressableScale>
+								)}
+							</View>
+						</View>
+					)}
 				</View>
-			)}
-		</View>
+			</KeyboardAvoidingView>
+		</GradientBackground>
 	);
 }
 
 const styles = StyleSheet.create({
+	loadingContainer: {
+		justifyContent: "center",
+		alignItems: "center",
+	},
 	container: {
+		flex: 1,
+	},
+	content: {
 		flex: 1,
 		justifyContent: "center",
 		alignItems: "center",
-		padding: 20,
+		padding: 24,
+	},
+	header: {
+		alignItems: "center",
+		marginBottom: 40,
 	},
 	title: {
-		fontSize: 32,
-		fontWeight: "bold",
+		fontSize: 42,
+		fontWeight: "300",
+		fontFamily: Fonts?.serif || "serif",
+		letterSpacing: 2,
 		marginBottom: 8,
 	},
 	subtitle: {
 		fontSize: 16,
-		color: "#666",
-		marginBottom: 32,
+		fontFamily: Fonts?.rounded || "System",
 	},
 	form: {
 		width: "100%",
-		maxWidth: 300,
+		maxWidth: 320,
+		gap: 12,
 	},
-	input: {
-		borderWidth: 1,
-		borderColor: "#ccc",
-		borderRadius: 8,
-		padding: 12,
-		marginBottom: 12,
-		fontSize: 16,
-	},
-	button: {
-		backgroundColor: "#007AFF",
-		borderRadius: 8,
-		padding: 14,
-		alignItems: "center",
-		marginTop: 4,
-	},
-	buttonDisabled: {
-		opacity: 0.6,
-	},
-	buttonText: {
-		color: "#fff",
-		fontSize: 16,
-		fontWeight: "600",
+	submitButton: {
+		marginTop: 8,
 	},
 	links: {
 		marginTop: 16,
 		alignItems: "center",
-		gap: 12,
+		gap: 16,
 	},
 	link: {
-		color: "#007AFF",
 		fontSize: 14,
+		fontWeight: "500",
+	},
+	errorContainer: {
+		paddingVertical: 12,
+		paddingHorizontal: 16,
+		borderRadius: 12,
+		marginBottom: 16,
+		width: "100%",
+		maxWidth: 320,
 	},
 	error: {
-		color: "#ff0000",
-		marginBottom: 16,
 		textAlign: "center",
+		fontSize: 14,
+	},
+	successContainer: {
+		paddingVertical: 16,
+		paddingHorizontal: 20,
+		borderRadius: 12,
+		marginBottom: 8,
 	},
 	successText: {
-		fontSize: 16,
+		fontSize: 15,
 		textAlign: "center",
-		marginBottom: 16,
-		color: "#333",
+		lineHeight: 22,
 	},
 });

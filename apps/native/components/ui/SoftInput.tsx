@@ -1,25 +1,30 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, TextInput, type TextInputProps, View } from "react-native";
-import { ReluneColors, Shadows } from "@/constants/theme";
+import { Shadows } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface SoftInputProps extends TextInputProps {
 	icon?: keyof typeof Ionicons.glyphMap;
 }
 
 export function SoftInput({ icon, style, ...props }: SoftInputProps) {
+	const surface = useThemeColor({}, "surface");
+	const text = useThemeColor({}, "text");
+	const textSecondary = useThemeColor({}, "textSecondary");
+
 	return (
-		<View style={styles.container}>
+		<View style={[styles.container, { backgroundColor: surface }]}>
 			{icon && (
 				<Ionicons
 					name={icon}
 					size={20}
-					color={ReluneColors.textSecondary}
+					color={textSecondary}
 					style={styles.icon}
 				/>
 			)}
 			<TextInput
-				style={[styles.input, style]}
-				placeholderTextColor={ReluneColors.textSecondary}
+				style={[styles.input, { color: text }, style]}
+				placeholderTextColor={textSecondary}
 				{...props}
 			/>
 		</View>
@@ -30,7 +35,6 @@ const styles = StyleSheet.create({
 	container: {
 		flexDirection: "row",
 		alignItems: "center",
-		backgroundColor: ReluneColors.surface,
 		borderRadius: 20,
 		paddingHorizontal: 16,
 		height: 48,
@@ -42,7 +46,5 @@ const styles = StyleSheet.create({
 	input: {
 		flex: 1,
 		fontSize: 16,
-		color: ReluneColors.text,
-		fontFamily: "System", // Will rely on system rounded if applied globally or default
 	},
 });
