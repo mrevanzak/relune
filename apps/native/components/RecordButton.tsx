@@ -1,8 +1,8 @@
-import { ReluneColors, Shadows } from "@/constants/theme";
-import { View, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { PressableScale } from "pressto";
 import { LinearGradient } from "expo-linear-gradient";
+import { PressableScale } from "pressto";
+import { StyleSheet, View } from "react-native";
+import { ReluneColors, Shadows } from "@/constants/theme";
 
 interface RecordButtonProps {
 	onPress?: () => void;

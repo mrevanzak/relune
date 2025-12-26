@@ -1,5 +1,5 @@
+import { StyleSheet, View, type ViewProps } from "react-native";
 import { ReluneColors, Shadows } from "@/constants/theme";
-import { View, ViewProps, StyleSheet } from "react-native";
 
 interface SoftCardProps extends ViewProps {
 	variant?: "surface" | "highlight";

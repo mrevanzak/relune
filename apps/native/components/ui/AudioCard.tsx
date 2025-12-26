@@ -1,9 +1,9 @@
-import { ReluneColors } from "@/constants/theme";
-import { View, Text, StyleSheet } from "react-native";
-import { SoftCard } from "./SoftCard";
 import { Ionicons } from "@expo/vector-icons";
-import { PressableScale } from "pressto";
 import { LinearGradient } from "expo-linear-gradient";
+import { PressableScale } from "pressto";
+import { StyleSheet, Text, View } from "react-native";
+import { ReluneColors } from "@/constants/theme";
+import { SoftCard } from "./SoftCard";
 
 export interface AudioCardProps {
 	title: string;

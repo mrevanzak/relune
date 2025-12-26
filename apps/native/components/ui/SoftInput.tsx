@@ -1,6 +1,6 @@
-import { ReluneColors, Shadows } from "@/constants/theme";
-import { TextInput, TextInputProps, View, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { StyleSheet, TextInput, type TextInputProps, View } from "react-native";
+import { ReluneColors, Shadows } from "@/constants/theme";
 
 interface SoftInputProps extends TextInputProps {
 	icon?: keyof typeof Ionicons.glyphMap;

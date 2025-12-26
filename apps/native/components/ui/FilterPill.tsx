@@ -1,6 +1,6 @@
-import { ReluneColors, Shadows } from "@/constants/theme";
-import { StyleSheet, Text } from "react-native";
 import { PressableScale } from "pressto";
+import { StyleSheet, Text } from "react-native";
+import { ReluneColors, Shadows } from "@/constants/theme";
 
 interface FilterPillProps {
 	label: string;
