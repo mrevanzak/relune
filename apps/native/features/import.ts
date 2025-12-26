@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
 import { File as ExpoFile } from "expo-file-system";
 import { api } from "@/lib/api";
-import { recordingsQueryOptions } from "./recordings";
+import { recordingsQueryOptions } from "@/queries/recordings";
 
 /**
  * Mutation hook for importing WhatsApp chat exports.

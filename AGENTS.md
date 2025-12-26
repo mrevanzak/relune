@@ -92,6 +92,55 @@ apps/server/src
 - **Error handling**: use custom `HttpError` classes (`UnauthorizedError`, `ForbiddenError`, `NotFoundError`); plugins handle their own errors via `.error()` + `.onError()`; global `errorHandler` catches all other errors.
 - **Testing**: prefer controller-level tests using `.handle(new Request(...))` so lifecycle + validation run.
 
+## Native App Architecture (`apps/native`)
+
+### Layer Responsibilities
+
+| Layer | Location | Purpose | Can Import From |
+|-------|----------|---------|-----------------|
+| **Queries** | `queries/` | React Query `queryOptions` definitions only | `lib/` |
+| **Stores** | `stores/` | Zustand state containers (state + basic actions) | `lib/` |
+| **Features** | `features/` | Orchestration (mutations, workflows, side effects) | `queries/`, `stores/`, `lib/` |
+| **Lib** | `lib/` | Pure utilities, API client, shared functions | Nothing from above |
+
+### Rules
+
+1. **Queries are read-only definitions** - `queryOptions()` only, no mutations, no store imports
+2. **Stores are pure state containers** - state + basic CRUD actions (add/remove/update), no query imports, no async workflows
+3. **Features orchestrate** - mutations, queue processing, anything that coordinates queries + stores + side effects
+4. **No cycles allowed** - dependencies flow one direction: `features → queries/stores → lib`
+
+### Why This Pattern?
+
+Prevents circular dependencies. Without this pattern:
+- `queries/recordings.ts` might import from `stores/upload-queue.ts` (to queue failed uploads)
+- `stores/upload-queue.ts` might import from `queries/recordings.ts` (to invalidate cache)
+- Result: require cycle warning, potential runtime issues with uninitialized values
+
+With the orchestration layer:
+- Both `queries/` and `stores/` remain leaf nodes with no cross-dependencies
+- `features/` imports from both and handles all coordination logic
+
+### Example: Upload Feature
+
+```text
+features/upload.ts              # useUploadRecordingMutation(), processUploadQueue()
+    ├── queries/recordings.ts   # recordingsQueryOptions() - pure query definition
+    ├── stores/upload-queue.ts  # addToQueue(), removeFromQueue() - pure state
+    └── lib/upload-recording.ts # uploadRecording() - pure async function
+```
+
+### When to Use Each Layer
+
+| I need to... | Use |
+|--------------|-----|
+| Define a query for fetching data | `queries/<feature>.ts` |
+| Store client-side state | `stores/<feature>.ts` |
+| Create a mutation hook | `features/<feature>.ts` |
+| Coordinate queries + stores | `features/<feature>.ts` |
+| Process a background queue | `features/<feature>.ts` |
+| Write a pure utility function | `lib/<name>.ts` |
+
 ## Cursor Rules
 
 See `.cursor/rules/ultracite.mdc` for comprehensive Biome/Ultracite standards.

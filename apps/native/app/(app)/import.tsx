@@ -4,8 +4,8 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { ThemedText } from "@/components/themed-text";
 import { SoftButton } from "@/components/ui/SoftButton";
+import { useImportWhatsAppMutation } from "@/features/import";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { useImportWhatsAppMutation } from "@/queries/import";
 
 export default function ImportScreen() {
 	const importMutation = useImportWhatsAppMutation();

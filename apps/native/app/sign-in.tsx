@@ -14,12 +14,12 @@ import { SoftButton } from "@/components/ui/SoftButton";
 import { SoftInput } from "@/components/ui/SoftInput";
 import { Fonts } from "@/constants/theme";
 import { useSession } from "@/context/session";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import {
 	useResetPasswordMutation,
 	useSignInMutation,
 	useSignUpMutation,
-} from "@/queries/auth";
+} from "@/features/auth";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 type AuthMode = "signIn" | "signUp" | "forgotPassword";
 
