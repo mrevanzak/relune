@@ -22,28 +22,11 @@ export default function TabLayout() {
 	}, [isRecording, start, stop]);
 
 	return (
-		<Tabs
-			tabBarActiveTintColor={theme.tint}
-			screenListeners={{
-				tabPress: (e) => {
-					// Check if this is the record tab
-					if (e.target?.startsWith("record")) {
-						e.preventDefault();
-						handleRecordPress();
-					}
-				},
-			}}
-		>
-			<Tabs.Screen
-				name="index"
-				options={{
-					title: "Home",
-					tabBarIcon: () => ({ sfSymbol: "house.fill" }),
-				}}
-			/>
+		<Tabs initialRouteName="home" tabBarActiveTintColor={theme.tint}>
 			<Tabs.Screen
 				name="home"
 				options={{
+					role: "search",
 					title: "Search",
 					tabBarIcon: () => ({ sfSymbol: "magnifyingglass" }),
 				}}
@@ -56,6 +39,12 @@ export default function TabLayout() {
 					tabBarIcon: () => ({
 						sfSymbol: isRecording ? "stop.circle.fill" : "mic.circle.fill",
 					}),
+				}}
+				listeners={{
+					tabPress: (e) => {
+						e.preventDefault();
+						handleRecordPress();
+					},
 				}}
 			/>
 		</Tabs>

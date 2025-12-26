@@ -4,7 +4,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { RecordButton } from "@/components/RecordButton";
 import { AudioCard, type AudioCardProps } from "@/components/ui/AudioCard";
 import { FilterPill } from "@/components/ui/FilterPill";
-import { SoftInput } from "@/components/ui/SoftInput";
 import { ReluneColors } from "@/constants/theme";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { useUploadRecordingMutation } from "@/queries/recordings";
@@ -128,10 +127,6 @@ export default function HomeScreen() {
 					<Text style={styles.recordingText}>Recording...</Text>
 				</View>
 			)}
-
-			<View style={styles.floatingButtonContainer}>
-				<RecordButton onPress={handleRecordPress} isRecording={isRecording} />
-			</View>
 		</SafeAreaView>
 	);
 }
@@ -140,25 +135,6 @@ const styles = StyleSheet.create({
 	safeArea: {
 		flex: 1,
 		backgroundColor: ReluneColors.background,
-	},
-	header: {
-		paddingHorizontal: 24,
-		paddingBottom: 16,
-	},
-	headerTop: {
-		alignItems: "center",
-		marginBottom: 16,
-		marginTop: 8,
-	},
-	appTitle: {
-		fontSize: 32,
-		fontFamily: "System",
-		fontWeight: "400",
-		color: ReluneColors.text,
-		fontStyle: "italic",
-	},
-	searchBar: {
-		marginTop: 8,
 	},
 	filterContainer: {
 		marginBottom: 8,
@@ -180,13 +156,6 @@ const styles = StyleSheet.create({
 	},
 	listContent: {
 		paddingBottom: 120, // Space for floating button
-	},
-	floatingButtonContainer: {
-		position: "absolute",
-		bottom: 32,
-		left: 0,
-		right: 0,
-		alignItems: "center",
 	},
 	recordingOverlay: {
 		position: "absolute",

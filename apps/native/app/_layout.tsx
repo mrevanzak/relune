@@ -21,7 +21,7 @@ import { uploadQueueStore } from "@/stores/upload-queue";
 SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
-	initialRouteName: "(app)",
+	initialRouteName: "home",
 };
 
 function RootLayoutNav() {

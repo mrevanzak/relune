@@ -22,12 +22,13 @@ export default function AppLayout() {
 
 	return (
 		<BiometricLock>
-			<Stack>
+			<Stack initialRouteName="(tabs)">
 				<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 				<Stack.Screen
 					name="modal"
 					options={{ presentation: "modal", title: "Modal" }}
 				/>
+				<Stack.Screen name="index" redirect />
 			</Stack>
 		</BiometricLock>
 	);

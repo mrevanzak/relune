@@ -33,7 +33,7 @@ export default function SignInScreen() {
 
 	// If already authenticated, redirect to app
 	if (session) {
-		return <Redirect href="/" />;
+		return <Redirect href="/home" />;
 	}
 
 	// Show loading while session is being determined

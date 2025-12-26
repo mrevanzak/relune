@@ -4,7 +4,7 @@ export default function HomeLayout() {
 	return (
 		<Stack
 			screenOptions={{
-				headerTransparent: true,
+				headerShown: false,
 				headerSearchBarOptions: {
 					placement: "automatic",
 					placeholder: "Search",
