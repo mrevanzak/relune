@@ -18,7 +18,7 @@ import {
 type AuthMode = "signIn" | "signUp" | "forgotPassword";
 
 export default function SignInScreen() {
-	const { session, isLoading } = useSession();
+	const { session, isInitialized } = useSession();
 
 	const [authMode, setAuthMode] = useState<AuthMode>("signIn");
 	const [email, setEmail] = useState("");
@@ -37,7 +37,7 @@ export default function SignInScreen() {
 	}
 
 	// Show loading while session is being determined
-	if (isLoading) {
+	if (!isInitialized) {
 		return (
 			<View style={styles.container}>
 				<ActivityIndicator size="large" />

@@ -24,7 +24,10 @@ export async function uploadRecording(params: UploadRecordingParams) {
 
 	if (error) throw new Error(error.value.message ?? "Upload failed");
 
-	if ("error" in data) throw new Error(data.error.message ?? "Upload failed");
+	if (data && typeof data === "object" && "error" in data) {
+		const err = (data as any).error;
+		throw new Error(err?.message ?? "Upload failed");
+	}
 
 	return data.recording;
 }

@@ -4,10 +4,10 @@ import { BiometricLock } from "@/components/BiometricLock";
 import { useSession } from "@/context/session";
 
 export default function AppLayout() {
-	const { session, isLoading } = useSession();
+	const { session, isInitialized } = useSession();
 
 	// Show loading while session is being determined
-	if (isLoading) {
+	if (!isInitialized) {
 		return (
 			<View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
 				<Text>Loading...</Text>

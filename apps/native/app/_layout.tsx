@@ -10,6 +10,7 @@ import { useCallback, useEffect } from "react";
 import { AppState, View } from "react-native";
 import "react-native-reanimated";
 
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BootstrapErrorScreen } from "@/components/BootstrapErrorScreen";
 import { QueryProvider } from "@/components/QueryProvider";
 import { SessionProvider, useSession } from "@/context/session";
@@ -75,10 +76,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
 	return (
-		<QueryProvider>
-			<SessionProvider>
-				<RootLayoutNav />
-			</SessionProvider>
-		</QueryProvider>
+		<GestureHandlerRootView>
+			<QueryProvider>
+				<SessionProvider>
+					<RootLayoutNav />
+				</SessionProvider>
+			</QueryProvider>
+		</GestureHandlerRootView>
 	);
 }

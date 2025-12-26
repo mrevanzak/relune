@@ -1,65 +1,72 @@
-import { useCallback, useEffect, useState } from "react";
-import {
-	ActivityIndicator,
-	Pressable,
-	StyleSheet,
-	Text,
-	View,
-} from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { useCallback, useState } from "react";
+import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { RecordButton } from "@/components/RecordButton";
+import { AudioCard, type AudioCardProps } from "@/components/ui/AudioCard";
+import { FilterPill } from "@/components/ui/FilterPill";
+import { SoftInput } from "@/components/ui/SoftInput";
+import { ReluneColors } from "@/constants/theme";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
-import { isNetworkError } from "@/lib/api";
 import { useUploadRecordingMutation } from "@/queries/recordings";
-import { uploadQueueStore } from "@/stores/upload-queue";
 
-function formatDuration(ms: number): string {
-	const totalSeconds = Math.floor(ms / 1000);
-	const minutes = Math.floor(totalSeconds / 60);
-	const seconds = totalSeconds % 60;
-	return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-}
+// Mock Data
+const MOCK_RECORDINGS: AudioCardProps[] = [
+	{
+		title: "Project Update",
+		date: "Today, 9:45 AM",
+		description:
+			"I finished the report and sent it over. Let's discuss the next steps for the Q3 roadmap...",
+		tags: ["work", "deadline"],
+		duration: "0:45",
+	},
+	{
+		title: "Weekend Plans",
+		date: "Yesterday, 4:30 PM",
+		description:
+			"Let's meet at the café around 3 PM, then head to the museum exhibition before dinner...",
+		tags: ["plans", "weekend"],
+		duration: "1:20",
+	},
+	{
+		title: "Investment Ideas",
+		date: "Apr 14, 11:15 AM",
+		description:
+			"I was thinking about that new opportunity in the tech sector regarding AI startups...",
+		tags: ["finance", "opportunity"],
+		duration: "3:10",
+	},
+	{
+		title: "Travel Notes",
+		date: "Apr 10, 8:20 PM",
+		description:
+			"Remember to pack the documents and book the hotel for the second leg of the trip...",
+		tags: ["travel", "documents"],
+		duration: "2:05",
+	},
+];
 
-type UploadStatus = "idle" | "uploading" | "success" | "queued" | "error";
+const FILTERS = ["Date", "Today", "This Week", "Range"];
 
-export default function RecordScreen() {
+export default function HomeScreen() {
 	const { isRecording, start, stop, hasPermission, requestPermission } =
 		useAudioRecorder();
 
-	const { mutate: uploadRecording, isPending: isUploading } =
-		useUploadRecordingMutation();
-	const queueLength = uploadQueueStore.use.queue().length;
+	const { mutate: uploadRecording } = useUploadRecordingMutation();
 
-	const [displayDuration, setDisplayDuration] = useState(0);
-	const [lastRecording, setLastRecording] = useState<{
-		uri: string;
-		durationSeconds: number;
-	} | null>(null);
-	const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
+	const [activeFilter, setActiveFilter] = useState("Today");
+	const [searchQuery, setSearchQuery] = useState("");
 
-	// Update duration display while recording
-	useEffect(() => {
-		if (!isRecording) {
+	const handleRecordPress = useCallback(async () => {
+		if (!hasPermission) {
+			await requestPermission();
 			return;
 		}
 
-		const startTime = Date.now();
-		const interval = setInterval(() => {
-			setDisplayDuration(Date.now() - startTime);
-		}, 100);
-
-		return () => {
-			clearInterval(interval);
-			setDisplayDuration(0);
-		};
-	}, [isRecording]);
-
-	const handleRecordPress = useCallback(async () => {
 		if (isRecording) {
 			const result = await stop();
 			if (result) {
-				setLastRecording(result);
-				setUploadStatus("uploading");
-
-				// Auto-upload the recording
+				// Upload logic here
 				uploadRecording(
 					{
 						uri: result.uri,
@@ -67,208 +74,154 @@ export default function RecordScreen() {
 						recordedAt: new Date(),
 					},
 					{
-						onSuccess: () => {
-							setUploadStatus("success");
-						},
 						onError: (error) => {
-							// Check if it was queued for later (network error)
-							const isQueued = isNetworkError(error);
-							setUploadStatus(isQueued ? "queued" : "error");
+							console.log("Upload error", error);
 						},
 					},
 				);
 			}
 		} else {
-			setLastRecording(null);
-			setUploadStatus("idle");
 			await start();
 		}
-	}, [isRecording, start, stop, uploadRecording]);
-
-	const handlePermissionPress = useCallback(async () => {
-		await requestPermission();
-	}, [requestPermission]);
-
-	if (!hasPermission) {
-		return (
-			<View style={styles.container}>
-				<Text style={styles.title}>Relune</Text>
-				<Text style={styles.subtitle}>Microphone access required</Text>
-				<Pressable
-					style={styles.permissionButton}
-					onPress={handlePermissionPress}
-				>
-					<Text style={styles.permissionButtonText}>Grant Permission</Text>
-				</Pressable>
-			</View>
-		);
-	}
+	}, [
+		isRecording,
+		hasPermission,
+		requestPermission,
+		start,
+		stop,
+		uploadRecording,
+	]);
 
 	return (
-		<View style={styles.container}>
-			<Text style={styles.title}>Relune</Text>
-
-			{isRecording && (
-				<View style={styles.durationContainer}>
-					<View style={styles.recordingIndicator} />
-					<Text style={styles.duration}>{formatDuration(displayDuration)}</Text>
+		<SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+			<StatusBar style="dark" />
+			<View style={styles.container}>
+				{/* Header */}
+				<View style={styles.header}>
+					<View style={styles.headerTop}>
+						<Text style={styles.appTitle}>Rélune</Text>
+					</View>
+					<SoftInput
+						placeholder="Search by keyword or date..."
+						icon="search"
+						value={searchQuery}
+						onChangeText={setSearchQuery}
+						style={styles.searchBar}
+					/>
 				</View>
-			)}
 
-			{lastRecording && !isRecording && (
-				<View style={styles.resultContainer}>
-					{uploadStatus === "uploading" || isUploading ? (
-						<View style={styles.uploadingContainer}>
-							<ActivityIndicator size="small" color="#fff" />
-							<Text style={styles.uploadingText}>Uploading...</Text>
-						</View>
-					) : uploadStatus === "success" ? (
-						<Text style={styles.successText}>Saved</Text>
-					) : uploadStatus === "queued" ? (
-						<Text style={styles.queuedText}>Queued for upload</Text>
-					) : uploadStatus === "error" ? (
-						<Text style={styles.errorText}>Upload failed</Text>
-					) : (
-						<Text style={styles.resultText}>
-							Recording saved ({lastRecording.durationSeconds}s)
-						</Text>
-					)}
+				{/* Filters */}
+				<View style={styles.filterContainer}>
+					<ScrollView
+						horizontal
+						showsHorizontalScrollIndicator={false}
+						contentContainerStyle={styles.filterContent}
+					>
+						{FILTERS.map((filter) => (
+							<FilterPill
+								key={filter}
+								label={filter}
+								isActive={activeFilter === filter}
+								onPress={() => setActiveFilter(filter)}
+							/>
+						))}
+					</ScrollView>
 				</View>
-			)}
 
-			{queueLength > 0 && !isRecording && (
-				<Text style={styles.queueInfo}>
-					{queueLength} recording{queueLength > 1 ? "s" : ""} pending upload
-				</Text>
-			)}
+				{/* Content */}
+				<View style={styles.contentContainer}>
+					<Text style={styles.sectionTitle}>Recent Recordings</Text>
+					<FlatList
+						data={MOCK_RECORDINGS}
+						keyExtractor={(item, index) => index.toString()}
+						renderItem={({ item }) => <AudioCard {...item} />}
+						contentContainerStyle={styles.listContent}
+						showsVerticalScrollIndicator={false}
+					/>
+				</View>
 
-			<Pressable
-				style={[styles.recordButton, isRecording && styles.recordButtonActive]}
-				onPress={handleRecordPress}
-			>
-				<View
-					style={[
-						styles.recordButtonInner,
-						isRecording && styles.recordButtonInnerActive,
-					]}
-				/>
-			</Pressable>
+				{/* Recording Overlay / Button */}
+				{isRecording && (
+					<View style={styles.recordingOverlay}>
+						<Text style={styles.recordingText}>Recording...</Text>
+					</View>
+				)}
 
-			<Text style={styles.hint}>
-				{isRecording ? "Tap to stop" : "Tap to record"}
-			</Text>
-		</View>
+				<View style={styles.floatingButtonContainer}>
+					<RecordButton onPress={handleRecordPress} isRecording={isRecording} />
+				</View>
+			</View>
+		</SafeAreaView>
 	);
 }
 
 const styles = StyleSheet.create({
+	safeArea: {
+		flex: 1,
+		backgroundColor: ReluneColors.background,
+	},
 	container: {
 		flex: 1,
-		justifyContent: "center",
-		alignItems: "center",
-		backgroundColor: "#000",
-		padding: 20,
+		backgroundColor: ReluneColors.background,
 	},
-	title: {
-		fontSize: 32,
-		fontWeight: "bold",
-		color: "#fff",
-		marginBottom: 8,
-	},
-	subtitle: {
-		fontSize: 16,
-		color: "#888",
-		marginBottom: 32,
-	},
-	permissionButton: {
-		backgroundColor: "#fff",
+	header: {
 		paddingHorizontal: 24,
-		paddingVertical: 12,
-		borderRadius: 8,
+		paddingBottom: 16,
 	},
-	permissionButtonText: {
-		color: "#000",
-		fontSize: 16,
-		fontWeight: "600",
-	},
-	durationContainer: {
-		flexDirection: "row",
-		alignItems: "center",
-		marginBottom: 40,
-	},
-	recordingIndicator: {
-		width: 12,
-		height: 12,
-		borderRadius: 6,
-		backgroundColor: "#ff3b30",
-		marginRight: 8,
-	},
-	duration: {
-		fontSize: 48,
-		fontWeight: "300",
-		color: "#fff",
-		fontVariant: ["tabular-nums"],
-	},
-	resultContainer: {
-		marginBottom: 40,
-		alignItems: "center",
-	},
-	resultText: {
-		fontSize: 16,
-		color: "#34c759",
-	},
-	uploadingContainer: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 8,
-	},
-	uploadingText: {
-		fontSize: 16,
-		color: "#888",
-	},
-	successText: {
-		fontSize: 16,
-		color: "#34c759",
-	},
-	queuedText: {
-		fontSize: 16,
-		color: "#ff9500",
-	},
-	errorText: {
-		fontSize: 16,
-		color: "#ff3b30",
-	},
-	queueInfo: {
-		fontSize: 12,
-		color: "#666",
-		marginTop: 8,
-	},
-	recordButton: {
-		width: 80,
-		height: 80,
-		borderRadius: 40,
-		borderWidth: 4,
-		borderColor: "#fff",
-		justifyContent: "center",
+	headerTop: {
 		alignItems: "center",
 		marginBottom: 16,
+		marginTop: 8,
 	},
-	recordButtonActive: {
-		borderColor: "#ff3b30",
+	appTitle: {
+		fontSize: 32,
+		fontFamily: "System",
+		fontWeight: "400",
+		color: ReluneColors.text,
+		fontStyle: "italic",
 	},
-	recordButtonInner: {
-		width: 60,
-		height: 60,
-		borderRadius: 30,
-		backgroundColor: "#ff3b30",
+	searchBar: {
+		marginTop: 8,
 	},
-	recordButtonInnerActive: {
-		width: 28,
-		height: 28,
-		borderRadius: 4,
+	filterContainer: {
+		marginBottom: 8,
 	},
-	hint: {
-		fontSize: 14,
-		color: "#888",
+	filterContent: {
+		paddingHorizontal: 24,
+		paddingBottom: 8,
+	},
+	contentContainer: {
+		flex: 1,
+		paddingHorizontal: 24,
+	},
+	sectionTitle: {
+		fontSize: 18,
+		fontWeight: "600",
+		color: ReluneColors.text,
+		marginBottom: 16,
+		marginTop: 8,
+	},
+	listContent: {
+		paddingBottom: 120, // Space for floating button
+	},
+	floatingButtonContainer: {
+		position: "absolute",
+		bottom: 32,
+		left: 0,
+		right: 0,
+		alignItems: "center",
+	},
+	recordingOverlay: {
+		position: "absolute",
+		top: 200,
+		alignSelf: "center",
+		backgroundColor: ReluneColors.primaryPurple,
+		padding: 12,
+		borderRadius: 20,
+		zIndex: 10,
+	},
+	recordingText: {
+		color: "white",
+		fontWeight: "600",
 	},
 });
