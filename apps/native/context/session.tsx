@@ -10,12 +10,12 @@ import {
 import { AppState, Platform } from "react-native";
 import { initMmkv } from "@/lib/mmkv";
 import { getSupabaseClient } from "@/lib/supabase";
-import { useAuthStore } from "@/stores/auth";
-import { useUploadQueueStore } from "@/stores/upload-queue";
+import { authStore } from "@/stores/auth";
+import { uploadQueueStore } from "@/stores/upload-queue";
 
 interface SessionContextValue {
 	session: Session | null;
-	isLoading: boolean;
+	isInitialized: boolean;
 	error: Error | null;
 	retry: () => void;
 	signOut: () => void;
@@ -36,27 +36,22 @@ interface SessionProviderProps {
 }
 
 export function SessionProvider({ children }: SessionProviderProps) {
-	const [isLoading, setIsLoading] = useState(true);
+	const [isInitialized, setIsInitialized] = useState(false);
 	const [error, setError] = useState<Error | null>(null);
-	const session = useAuthStore.use.session();
+	const session = authStore.use.session();
 
 	const bootstrap = useCallback(async () => {
 		try {
 			setError(null);
-			setIsLoading(true);
-
 			// 1. Initialize MMKV storage (on native platforms)
 			if (Platform.OS !== "web") {
 				await initMmkv();
-
 				// 2. Rehydrate zustand stores after MMKV is ready
-				await useAuthStore.persist.rehydrate();
-				await useUploadQueueStore.persist.rehydrate();
+				await authStore.persist.rehydrate();
+				await uploadQueueStore.persist.rehydrate();
 			}
-
 			// 3. Get Supabase client (will use MMKV storage on native, localStorage on web)
 			const supabase = getSupabaseClient();
-
 			// 4. Register AppState listener for token refresh (only on native, only once)
 			if (Platform.OS !== "web") {
 				AppState.addEventListener("change", (state) => {
@@ -67,24 +62,16 @@ export function SessionProvider({ children }: SessionProviderProps) {
 					}
 				});
 			}
-
 			// 5. Get initial session
 			const {
 				data: { session: initialSession },
 			} = await supabase.auth.getSession();
-
-			useAuthStore.getState().setSession(initialSession);
-
-			// 6. Subscribe to auth state changes
-			supabase.auth.onAuthStateChange((_event, newSession) => {
-				useAuthStore.getState().setSession(newSession);
-			});
-
-			setIsLoading(false);
+			authStore.getState().setSession(initialSession);
+			setIsInitialized(true);
 		} catch (err) {
 			console.error("Bootstrap failed:", err);
 			setError(err instanceof Error ? err : new Error("Bootstrap failed"));
-			setIsLoading(false);
+			setIsInitialized(false);
 		}
 	}, []);
 
@@ -92,17 +79,32 @@ export function SessionProvider({ children }: SessionProviderProps) {
 		void bootstrap();
 	}, [bootstrap]);
 
+	useEffect(() => {
+		if (!isInitialized) return;
+
+		const supabase = getSupabaseClient();
+		const {
+			data: { subscription },
+		} = supabase.auth.onAuthStateChange((_event, newSession) => {
+			authStore.getState().setSession(newSession);
+		});
+
+		return () => {
+			subscription.unsubscribe();
+		};
+	}, [isInitialized]);
+
 	const signOut = async () => {
 		const supabase = getSupabaseClient();
 		await supabase.auth.signOut();
-		useAuthStore.getState().signOut();
+		authStore.getState().signOut();
 	};
 
 	return (
 		<SessionContext.Provider
 			value={{
 				session,
-				isLoading,
+				isInitialized,
 				error,
 				retry: bootstrap,
 				signOut,

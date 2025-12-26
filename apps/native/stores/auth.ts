@@ -10,7 +10,7 @@ interface AuthState {
 	signOut: () => void;
 }
 
-const useAuthStoreBase = create<AuthState>()(
+const authStoreBase = create<AuthState>()(
 	persist(
 		(set) => ({
 			session: null,
@@ -25,4 +25,4 @@ const useAuthStoreBase = create<AuthState>()(
 	),
 );
 
-export const useAuthStore = createSelectors(useAuthStoreBase);
+export const authStore = createSelectors(authStoreBase);

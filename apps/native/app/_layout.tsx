@@ -14,7 +14,7 @@ import { BootstrapErrorScreen } from "@/components/BootstrapErrorScreen";
 import { QueryProvider } from "@/components/QueryProvider";
 import { SessionProvider, useSession } from "@/context/session";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useUploadQueueStore } from "@/stores/upload-queue";
+import { uploadQueueStore } from "@/stores/upload-queue";
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -25,15 +25,15 @@ export const unstable_settings = {
 
 function RootLayoutNav() {
 	const colorScheme = useColorScheme();
-	const { isLoading, error, retry, session } = useSession();
-	const processQueue = useUploadQueueStore.use.processQueue();
+	const { isInitialized, error, retry, session } = useSession();
+	const processQueue = uploadQueueStore.use.processQueue();
 
 	// Hide splash screen when bootstrap completes
 	const onLayoutRootView = useCallback(async () => {
-		if (!isLoading) {
+		if (isInitialized) {
 			await SplashScreen.hideAsync();
 		}
-	}, [isLoading]);
+	}, [isInitialized]);
 
 	// Process queued uploads when app comes to foreground
 	useEffect(() => {
@@ -59,7 +59,7 @@ function RootLayoutNav() {
 	}
 
 	// Return null while loading (splash screen stays visible)
-	if (isLoading) {
+	if (!isInitialized) {
 		return null;
 	}
 

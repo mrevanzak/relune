@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { getSupabaseClient } from "@/lib/supabase";
-import { useAuthStore } from "@/stores/auth";
+import { authStore } from "@/stores/auth";
 
 interface AuthCredentials {
 	email: string;
@@ -73,7 +73,7 @@ export function useResetPasswordMutation() {
  * via Supabase's onAuthStateChange subscription.
  */
 export function useSignOutMutation() {
-	const signOutStore = useAuthStore.use.signOut();
+	const signOutStore = authStore.use.signOut();
 
 	return useMutation({
 		mutationFn: async () => {

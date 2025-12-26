@@ -9,7 +9,7 @@ import {
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { isNetworkError } from "@/lib/api";
 import { useUploadRecordingMutation } from "@/queries/recordings";
-import { useUploadQueueStore } from "@/stores/upload-queue";
+import { uploadQueueStore } from "@/stores/upload-queue";
 
 function formatDuration(ms: number): string {
 	const totalSeconds = Math.floor(ms / 1000);
@@ -26,7 +26,7 @@ export default function RecordScreen() {
 
 	const { mutate: uploadRecording, isPending: isUploading } =
 		useUploadRecordingMutation();
-	const queueLength = useUploadQueueStore.use.queue().length;
+	const queueLength = uploadQueueStore.use.queue().length;
 
 	const [displayDuration, setDisplayDuration] = useState(0);
 	const [lastRecording, setLastRecording] = useState<{

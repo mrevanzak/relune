@@ -40,7 +40,7 @@ interface UploadQueueState {
 
 const MAX_RETRIES = 3;
 
-const useUploadQueueStoreBase = create<UploadQueueState>()(
+const uploadQueueStoreBase = create<UploadQueueState>()(
 	persist(
 		(set, get) => ({
 			queue: [],
@@ -181,4 +181,4 @@ const useUploadQueueStoreBase = create<UploadQueueState>()(
 	),
 );
 
-export const useUploadQueueStore = createSelectors(useUploadQueueStoreBase);
+export const uploadQueueStore = createSelectors(uploadQueueStoreBase);

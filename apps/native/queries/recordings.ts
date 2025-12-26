@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { isNetworkError } from "@/lib/api";
 import { uploadRecording } from "@/lib/upload-recording";
-import { useUploadQueueStore } from "@/stores/upload-queue";
+import { uploadQueueStore } from "@/stores/upload-queue";
 
 export interface UploadRecordingParams {
 	uri: string;
@@ -17,7 +17,7 @@ export interface UploadRecordingParams {
  */
 export function useUploadRecordingMutation() {
 	const queryClient = useQueryClient();
-	const addToQueue = useUploadQueueStore.use.addToQueue();
+	const addToQueue = uploadQueueStore.use.addToQueue();
 
 	return useMutation({
 		mutationFn: async (params: UploadRecordingParams) => {
