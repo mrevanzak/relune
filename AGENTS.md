@@ -96,6 +96,15 @@ apps/server/src
 
 See `.cursor/rules/ultracite.mdc` for comprehensive Biome/Ultracite standards.
 
+## Type Sharing (Monorepo)
+
+- **Server types are the source of truth**: API types live in `apps/server/src/modules/<feature>/service.ts` or `model.ts`
+- **Native app uses Eden type inference**: The `api` client (Eden Treaty) automatically infers types from the server's `App` export. Don't manually duplicate API response types.
+- **When you need explicit types in native app**:
+  - Prefer inferring from the API: `type Response = Awaited<ReturnType<typeof api.endpoint.get>>['data']`
+  - Or import from server: `import type { SomeType } from "server/src/modules/<feature>/service"`
+- **Never duplicate types** between server and native app - this leads to drift and maintenance burden
+
 <skills_system priority="1">
 
 ## Available Skills

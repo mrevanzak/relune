@@ -6,6 +6,7 @@ import { queryClient } from "@/lib/query-client";
 import { uploadRecording } from "@/lib/upload-recording";
 import { createSelectors } from "@/lib/utils";
 import { zustandStorage } from "@/lib/zustand-storage";
+import { recordingsQueryOptions } from "@/queries/recordings";
 
 /**
  * Represents a recording queued for upload
@@ -120,7 +121,9 @@ const uploadQueueStoreBase = create<UploadQueueState>()(
 
 						// Success - remove from queue and invalidate recordings cache
 						get().removeFromQueue(item.id);
-						queryClient.invalidateQueries({ queryKey: ["recordings"] });
+						queryClient.invalidateQueries({
+							queryKey: recordingsQueryOptions().queryKey,
+						});
 					} catch (error) {
 						const message =
 							error instanceof Error ? error.message : "Upload failed";

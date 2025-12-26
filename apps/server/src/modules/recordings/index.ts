@@ -25,12 +25,11 @@ export const recordings = new Elysia({
 	.use(authMiddleware)
 	.get(
 		"/",
-		async ({ user, query }) => {
-			const limit = Number(query.limit) || 20;
-			const offset = Number(query.offset) || 0;
+		async ({ query }) => {
+			const limit = query.limit || 20;
+			const offset = query.offset || 0;
 
 			return await RecordingsService.listRecordings({
-				userId: user.id,
 				limit,
 				offset,
 			});

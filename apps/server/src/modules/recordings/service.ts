@@ -4,9 +4,10 @@ import type { Recording } from "@relune/db/schema";
 import { keywords, recordingKeywords, recordings } from "@relune/db/schema";
 import { env } from "@relune/env";
 import { generateText } from "ai";
-import { count, desc, eq, isNull } from "drizzle-orm";
+import { count, desc, eq, inArray, isNull } from "drizzle-orm";
 import { convertToM4a, needsConversion } from "@/shared/audio-converter";
 import { getContentType, uploadAudioToStorage } from "@/shared/storage";
+import type { ListRecordingsParam } from "./model";
 
 /**
  * Non-request-dependent business logic for recordings
@@ -18,32 +19,56 @@ const openai = createOpenAI({
 	apiKey: env.OPENAI_API_KEY,
 });
 
-export type ListRecordingsOptions = {
-	userId: string;
-	limit: number;
-	offset: number;
+export type RecordingKeywordItem = {
+	id: string;
+	name: string;
 };
 
-export type ListRecordingsResult = {
-	recordings: Recording[];
-	limit: number;
-	offset: number;
+export type RecordingWithKeywords = Recording & {
+	keywords: RecordingKeywordItem[];
 };
 
 export async function listRecordings({
-	userId,
 	limit,
 	offset,
-}: ListRecordingsOptions): Promise<ListRecordingsResult> {
-	const results = await db
+}: Required<ListRecordingsParam>): Promise<RecordingWithKeywords[]> {
+	// 1. Fetch recordings with pagination
+	const recordingResults = await db
 		.select()
 		.from(recordings)
-		.where(eq(recordings.userId, userId))
 		.orderBy(desc(recordings.recordedAt))
 		.limit(limit)
 		.offset(offset);
 
-	return { recordings: results, limit, offset };
+	if (recordingResults.length === 0) {
+		return [];
+	}
+
+	// 2. Batch fetch all keywords for these recordings
+	const recordingIds = recordingResults.map((r) => r.id);
+	const keywordResults = await db
+		.select({
+			recordingId: recordingKeywords.recordingId,
+			keywordId: keywords.id,
+			keywordName: keywords.name,
+		})
+		.from(recordingKeywords)
+		.innerJoin(keywords, eq(recordingKeywords.keywordId, keywords.id))
+		.where(inArray(recordingKeywords.recordingId, recordingIds));
+
+	// 3. Group keywords by recording ID
+	const keywordsByRecording = new Map<string, RecordingKeywordItem[]>();
+	for (const kw of keywordResults) {
+		const existing = keywordsByRecording.get(kw.recordingId) ?? [];
+		existing.push({ id: kw.keywordId, name: kw.keywordName });
+		keywordsByRecording.set(kw.recordingId, existing);
+	}
+
+	// 4. Combine recordings with their keywords
+	return recordingResults.map((r) => ({
+		...r,
+		keywords: keywordsByRecording.get(r.id) ?? [],
+	}));
 }
 
 export type GetRecordingOptions = {
@@ -52,7 +77,7 @@ export type GetRecordingOptions = {
 };
 
 export type GetRecordingResult =
-	| { recording: Recording; error: null }
+	| { recording: RecordingWithKeywords; error: null }
 	| { recording: null; error: "not_found" | "forbidden" };
 
 export async function getRecording({
@@ -75,7 +100,25 @@ export async function getRecording({
 		return { recording: null, error: "forbidden" };
 	}
 
-	return { recording, error: null };
+	// Fetch keywords for this recording
+	const keywordResults = await db
+		.select({
+			keywordId: keywords.id,
+			keywordName: keywords.name,
+		})
+		.from(recordingKeywords)
+		.innerJoin(keywords, eq(recordingKeywords.keywordId, keywords.id))
+		.where(eq(recordingKeywords.recordingId, id));
+
+	const recordingWithKeywords: RecordingWithKeywords = {
+		...recording,
+		keywords: keywordResults.map((kw) => ({
+			id: kw.keywordId,
+			name: kw.keywordName,
+		})),
+	};
+
+	return { recording: recordingWithKeywords, error: null };
 }
 
 /**

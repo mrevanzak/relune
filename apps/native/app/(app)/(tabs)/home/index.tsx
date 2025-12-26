@@ -1,59 +1,102 @@
 import { Ionicons } from "@expo/vector-icons";
 import { HeaderButton } from "@react-navigation/elements";
+import { useQuery } from "@tanstack/react-query";
 import { router, Stack } from "expo-router";
-import { useState } from "react";
-import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import {
+	ActivityIndicator,
+	FlatList,
+	ScrollView,
+	StyleSheet,
+	Text,
+	View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AudioCard, type AudioCardProps } from "@/components/ui/AudioCard";
+import { AudioCard } from "@/components/ui/AudioCard";
 import { FilterPill } from "@/components/ui/FilterPill";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useRecordingPlayer } from "@/hooks/use-audio-player";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { useUploadRecordingMutation } from "@/queries/recordings";
-
-// Mock Data
-const MOCK_RECORDINGS: AudioCardProps[] = [
-	{
-		title: "Project Update",
-		date: "Today, 9:45 AM",
-		description:
-			"I finished the report and sent it over. Let's discuss the next steps for the Q3 roadmap...",
-		tags: ["work", "deadline"],
-		duration: "0:45",
-	},
-	{
-		title: "Weekend Plans",
-		date: "Yesterday, 4:30 PM",
-		description:
-			"Let's meet at the cafe around 3 PM, then head to the museum exhibition before dinner...",
-		tags: ["plans", "weekend"],
-		duration: "1:20",
-	},
-	{
-		title: "Investment Ideas",
-		date: "Apr 14, 11:15 AM",
-		description:
-			"I was thinking about that new opportunity in the tech sector regarding AI startups...",
-		tags: ["finance", "opportunity"],
-		duration: "3:10",
-	},
-	{
-		title: "Travel Notes",
-		date: "Apr 10, 8:20 PM",
-		description:
-			"Remember to pack the documents and book the hotel for the second leg of the trip...",
-		tags: ["travel", "documents"],
-		duration: "2:05",
-	},
-];
+import { recordingsQueryOptions } from "@/queries/recordings";
 
 const FILTERS = ["Today", "This Week", "All Time"];
 
-export default function HomeScreen() {
-	const { isRecording, start, stop, hasPermission, requestPermission } =
-		useAudioRecorder();
+/**
+ * Format a date for display
+ */
+function formatDate(date: Date | string): string {
+	const d = new Date(date);
+	const now = new Date();
+	const yesterday = new Date(now);
+	yesterday.setDate(yesterday.getDate() - 1);
 
-	const { mutate: uploadRecording } = useUploadRecordingMutation();
+	if (d.toDateString() === now.toDateString()) {
+		return `Today, ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+	}
+	if (d.toDateString() === yesterday.toDateString()) {
+		return `Yesterday, ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+	}
+	return d.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+/**
+ * Format duration in seconds to "m:ss" format
+ */
+function formatDuration(seconds: number | null): string | undefined {
+	if (seconds === null || seconds === undefined) return undefined;
+	const m = Math.floor(seconds / 60);
+	const s = Math.floor(seconds % 60);
+	return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+/**
+ * Generate title for a recording (date-based)
+ */
+function generateTitle(recordedAt: Date | string): string {
+	const date = new Date(recordedAt);
+	return `Recording - ${date.toLocaleDateString([], { month: "short", day: "numeric" })}`;
+}
+
+/**
+ * Check if a date is within today
+ */
+function isToday(date: Date | string): boolean {
+	const d = new Date(date);
+	const now = new Date();
+	return d.toDateString() === now.toDateString();
+}
+
+/**
+ * Check if a date is within this week
+ */
+function isThisWeek(date: Date | string): boolean {
+	const d = new Date(date);
+	const now = new Date();
+	const weekAgo = new Date(now);
+	weekAgo.setDate(weekAgo.getDate() - 7);
+	return d >= weekAgo && d <= now;
+}
+
+export default function HomeScreen() {
+	const { isRecording } = useAudioRecorder();
+
+	// Fetch recordings from server
+	const {
+		data: recordings = [],
+		isLoading,
+		error,
+	} = useQuery(recordingsQueryOptions());
+
+	// Currently playing recording
+	const [currentlyPlayingId, setCurrentlyPlayingId] = useState<string | null>(
+		null,
+	);
+	const currentAudioUrl = useMemo(
+		() => recordings.find((r) => r.id === currentlyPlayingId)?.audioUrl ?? null,
+		[recordings, currentlyPlayingId],
+	);
+	const player = useRecordingPlayer(currentAudioUrl);
 
 	// Theme colors
 	const tint = useThemeColor({}, "tint");
@@ -62,26 +105,48 @@ export default function HomeScreen() {
 	const surface = useThemeColor({}, "surface");
 	const lilac = useThemeColor({}, "lilac");
 
-	const [activeFilter, setActiveFilter] = useState("Today");
+	const [activeFilter, setActiveFilter] = useState("All Time");
 	const [searchQuery, setSearchQuery] = useState("");
 
-	// Recording is handled by the tab bar button, but we keep the logic here
-	// for potential future use (e.g., floating button overlay)
-	void hasPermission;
-	void requestPermission;
-	void start;
-	void stop;
-	void uploadRecording;
+	// Filter recordings based on search query and time filter
+	const filteredRecordings = useMemo(() => {
+		return recordings.filter((recording) => {
+			// Time filter
+			if (activeFilter === "Today" && !isToday(recording.recordedAt)) {
+				return false;
+			}
+			if (activeFilter === "This Week" && !isThisWeek(recording.recordedAt)) {
+				return false;
+			}
 
-	// Filter recordings based on search query
-	const filteredRecordings = MOCK_RECORDINGS.filter(
-		(recording) =>
-			recording.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			recording.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			recording.tags.some((tag) =>
-				tag.toLowerCase().includes(searchQuery.toLowerCase()),
-			),
-	);
+			// Search filter
+			if (searchQuery) {
+				const query = searchQuery.toLowerCase();
+				const titleMatch = generateTitle(recording.recordedAt)
+					.toLowerCase()
+					.includes(query);
+				const transcriptMatch = recording.transcript
+					?.toLowerCase()
+					.includes(query);
+				const keywordMatch = recording.keywords.some((kw) =>
+					kw.name.toLowerCase().includes(query),
+				);
+				return titleMatch || transcriptMatch || keywordMatch;
+			}
+
+			return true;
+		});
+	}, [recordings, activeFilter, searchQuery]);
+
+	// Handle play button press
+	const handlePlay = (recordingId: string) => {
+		if (currentlyPlayingId === recordingId) {
+			player.togglePlayPause();
+		} else {
+			setCurrentlyPlayingId(recordingId);
+			// Player will auto-play when URL changes
+		}
+	};
 
 	return (
 		<SafeAreaView
@@ -130,21 +195,45 @@ export default function HomeScreen() {
 				<Text style={[styles.sectionTitle, { color: text }]}>
 					Recent Recordings
 				</Text>
-				<FlatList
-					data={filteredRecordings}
-					keyExtractor={(_, index) => index.toString()}
-					renderItem={({ item }) => <AudioCard {...item} />}
-					contentContainerStyle={styles.listContent}
-					showsVerticalScrollIndicator={false}
-					ListEmptyComponent={
-						<View style={styles.emptyState}>
-							<Ionicons name="mic-off-outline" size={48} color={lilac} />
-							<Text style={[styles.emptyText, { color: textSecondary }]}>
-								No recordings found
-							</Text>
-						</View>
-					}
-				/>
+
+				{isLoading ? (
+					<View style={styles.loadingState}>
+						<ActivityIndicator size="large" color={tint} />
+					</View>
+				) : error ? (
+					<View style={styles.emptyState}>
+						<Ionicons name="alert-circle-outline" size={48} color={lilac} />
+						<Text style={[styles.emptyText, { color: textSecondary }]}>
+							Failed to load recordings
+						</Text>
+					</View>
+				) : (
+					<FlatList
+						data={filteredRecordings}
+						keyExtractor={(item) => item.id}
+						renderItem={({ item }) => (
+							<AudioCard
+								title={generateTitle(item.recordedAt)}
+								date={formatDate(item.recordedAt)}
+								description={item.transcript ?? undefined}
+								tags={item.keywords.map((kw) => kw.name)}
+								duration={formatDuration(item.durationSeconds)}
+								isPlaying={currentlyPlayingId === item.id && player.isPlaying}
+								onPlay={() => handlePlay(item.id)}
+							/>
+						)}
+						contentContainerStyle={styles.listContent}
+						showsVerticalScrollIndicator={false}
+						ListEmptyComponent={
+							<View style={styles.emptyState}>
+								<Ionicons name="mic-off-outline" size={48} color={lilac} />
+								<Text style={[styles.emptyText, { color: textSecondary }]}>
+									No recordings found
+								</Text>
+							</View>
+						}
+					/>
+				)}
 			</View>
 
 			{/* Recording Overlay */}
@@ -192,6 +281,10 @@ const styles = StyleSheet.create({
 	},
 	listContent: {
 		paddingBottom: 120,
+	},
+	loadingState: {
+		alignItems: "center",
+		paddingTop: 60,
 	},
 	emptyState: {
 		alignItems: "center",

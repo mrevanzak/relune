@@ -10,9 +10,10 @@ import { SoftCard } from "./SoftCard";
 export interface AudioCardProps {
 	title: string;
 	date: string;
-	description: string;
+	description?: string;
 	tags: string[];
 	duration?: string;
+	isPlaying?: boolean;
 	onPlay?: () => void;
 }
 
@@ -29,6 +30,7 @@ export function AudioCard({
 	description,
 	tags,
 	duration,
+	isPlaying,
 	onPlay,
 }: AudioCardProps) {
 	const text = useThemeColor({}, "text");
@@ -55,9 +57,11 @@ export function AudioCard({
 				</View>
 			</View>
 
-			<Text style={[styles.description, { color: text }]} numberOfLines={2}>
-				{description}
-			</Text>
+			{description ? (
+				<Text style={[styles.description, { color: text }]} numberOfLines={2}>
+					{description}
+				</Text>
+			) : null}
 
 			<View style={styles.footer}>
 				<View style={styles.tags}>
@@ -95,7 +99,7 @@ export function AudioCard({
 							end={{ x: 1, y: 1 }}
 						>
 							<Ionicons
-								name="play"
+								name={isPlaying ? "pause" : "play"}
 								size={20}
 								color={surface}
 								style={styles.playIcon}

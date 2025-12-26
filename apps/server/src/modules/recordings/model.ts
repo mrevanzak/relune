@@ -5,8 +5,8 @@ import { t } from "elysia";
  */
 
 export const listQuerySchema = t.Object({
-	limit: t.Optional(t.String()),
-	offset: t.Optional(t.String()),
+	limit: t.Optional(t.Number()),
+	offset: t.Optional(t.Number()),
 });
 
 export const recordingIdParamSchema = t.Object({
@@ -27,7 +27,7 @@ export const createRecordingBodySchema = t.Object({
 });
 
 // Type exports for use in services/controllers
-export type ListQuery = typeof listQuerySchema.static;
+export type ListRecordingsParam = typeof listQuerySchema.static;
 export type RecordingIdParam = typeof recordingIdParamSchema.static;
 export type ProcessPendingQuery = typeof processPendingQuerySchema.static;
 export type CreateRecordingBody = typeof createRecordingBodySchema.static;
