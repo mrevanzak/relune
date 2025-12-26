@@ -3,7 +3,7 @@ import { db } from "@relune/db";
 import type { Recording } from "@relune/db/schema";
 import { keywords, recordingKeywords, recordings } from "@relune/db/schema";
 import { env } from "@relune/env";
-import { generateText, experimental_transcribe as transcribe } from "ai";
+import { generateText } from "ai";
 import { count, desc, eq, isNull } from "drizzle-orm";
 import { convertToM4a, needsConversion } from "@/shared/audio-converter";
 import { getContentType, uploadAudioToStorage } from "@/shared/storage";
@@ -13,7 +13,7 @@ import { getContentType, uploadAudioToStorage } from "@/shared/storage";
  * Services accept primitives and return domain data (no Elysia Context)
  */
 
-// Initialize OpenAI provider for transcription and keyword generation
+// Initialize OpenAI provider for keyword generation
 const openai = createOpenAI({
 	apiKey: env.OPENAI_API_KEY,
 });
@@ -93,16 +93,36 @@ export async function getPendingRecordings(
 }
 
 /**
- * Transcribe audio using OpenAI Whisper via AI SDK
- * Uses URL to allow OpenAI to detect format from the file extension
+ * Transcribe audio using OpenAI Whisper API via plain fetch
+ * Converts unsupported formats (opus, ogg, etc.) to m4a before transcription
  */
-async function transcribeAudio(audioUrl: string): Promise<string> {
-	const { text } = await transcribe({
-		model: openai.transcription("whisper-1"),
-		audio: new URL(audioUrl),
-	});
+export async function transcribeAudio(audioUrl: string): Promise<string> {
+	const audioBlob = await fetch(audioUrl).then((res) => res.blob());
 
-	return text;
+	// Create FormData for OpenAI Whisper API
+	const formData = new FormData();
+	formData.append("file", audioBlob, "audio.m4a");
+	formData.append("model", "whisper-1");
+
+	// Call OpenAI Whisper API directly
+	const response = await fetch(
+		"https://api.openai.com/v1/audio/transcriptions",
+		{
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+			},
+			body: formData,
+		},
+	);
+
+	if (!response.ok) {
+		const error = await response.text();
+		throw new Error(`OpenAI transcription failed: ${response.status} ${error}`);
+	}
+
+	const result = (await response.json()) as { text: string };
+	return result.text;
 }
 
 /**
