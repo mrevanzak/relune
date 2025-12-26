@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { HeaderButton } from "@react-navigation/elements";
 import { router, Stack } from "expo-router";
 import { useState } from "react";
 import {
@@ -12,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AudioCard, type AudioCardProps } from "@/components/ui/AudioCard";
 import { FilterPill } from "@/components/ui/FilterPill";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useUploadRecordingMutation } from "@/queries/recordings";
@@ -99,13 +101,9 @@ export default function HomeScreen() {
 					title: "Relune",
 					headerTransparent: true,
 					headerRight: () => (
-						<Pressable
-							onPress={() => router.push("/(app)/import")}
-							style={styles.headerButton}
-							hitSlop={8}
-						>
-							<Ionicons name="download-outline" size={24} color={tint} />
-						</Pressable>
+						<HeaderButton onPress={() => router.push("/import")}>
+							<IconSymbol name="square.and.arrow.up" size={24} color={tint} />
+						</HeaderButton>
 					),
 					headerSearchBarOptions: {
 						placeholder: "Search by keyword",
@@ -179,9 +177,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-	},
-	headerButton: {
-		padding: 8,
 	},
 	filterContainer: {
 		marginTop: 8,
