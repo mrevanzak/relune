@@ -22,7 +22,11 @@ export default function TabLayout() {
 	}, [isRecording, start, stop]);
 
 	return (
-		<Tabs initialRouteName="home" tabBarActiveTintColor={theme.tint}>
+		<Tabs
+			hapticFeedbackEnabled
+			initialRouteName="home"
+			tabBarActiveTintColor={theme.tint}
+		>
 			<Tabs.Screen
 				name="home"
 				options={{

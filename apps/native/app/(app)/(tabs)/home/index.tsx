@@ -1,7 +1,5 @@
 import { useCallback, useState } from "react";
 import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { RecordButton } from "@/components/RecordButton";
 import { AudioCard, type AudioCardProps } from "@/components/ui/AudioCard";
 import { FilterPill } from "@/components/ui/FilterPill";
 import { ReluneColors } from "@/constants/theme";
@@ -90,7 +88,7 @@ export default function HomeScreen() {
 	]);
 
 	return (
-		<SafeAreaView style={styles.safeArea}>
+		<View style={styles.container}>
 			{/* Filters */}
 			<View style={styles.filterContainer}>
 				<ScrollView
@@ -127,14 +125,13 @@ export default function HomeScreen() {
 					<Text style={styles.recordingText}>Recording...</Text>
 				</View>
 			)}
-		</SafeAreaView>
+		</View>
 	);
 }
 
 const styles = StyleSheet.create({
-	safeArea: {
+	container: {
 		flex: 1,
-		backgroundColor: ReluneColors.background,
 	},
 	filterContainer: {
 		marginBottom: 8,

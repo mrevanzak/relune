@@ -1,14 +1,26 @@
 import { Stack } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 export default function HomeLayout() {
+	const { top } = useSafeAreaInsets();
+	const backgroundColor = useThemeColor({}, "background");
+
 	return (
 		<Stack
 			screenOptions={{
-				headerShown: false,
+				header: () => null,
+				// headerTransparent: true,
+				headerTitle: "",
 				headerSearchBarOptions: {
-					placement: "automatic",
-					placeholder: "Search",
-					onChangeText: () => {},
+					placeholder: "Search...",
+					onChangeText: (text) => {
+						console.log("text", text);
+					},
+				},
+				contentStyle: {
+					paddingTop: top,
+					backgroundColor,
 				},
 			}}
 		/>
