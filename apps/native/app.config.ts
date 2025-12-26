@@ -44,6 +44,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 			],
 			"expo-audio",
 			"react-native-bottom-tabs",
+			"expo-document-picker",
 		],
 		experiments: {
 			typedRoutes: true,

@@ -25,8 +25,13 @@ export default function AppLayout() {
 			<Stack initialRouteName="(tabs)">
 				<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 				<Stack.Screen
-					name="modal"
-					options={{ presentation: "modal", title: "Modal" }}
+					name="import"
+					options={{
+						presentation: "formSheet",
+						title: "Import WhatsApp",
+						sheetGrabberVisible: true,
+						sheetAllowedDetents: "fitToContents",
+					}}
 				/>
 				<Stack.Screen name="index" redirect />
 			</Stack>

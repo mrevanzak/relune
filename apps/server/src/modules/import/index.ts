@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import { fileTypeFromBuffer } from "file-type";
 import JSZip from "jszip";
 import { convertToM4a, needsConversion } from "@/shared/audio-converter";
 import { BadRequestError } from "../../shared/errors";
@@ -21,24 +22,20 @@ export const importRoutes = new Elysia({
 		async ({ body }) => {
 			const { file } = body;
 
-			if (!file) {
-				throw new BadRequestError("No file provided", "MISSING_FILE");
-			}
+			// Convert base64 string to buffer
+			const fileBuffer = Buffer.from(file, "base64");
 
 			// Validate it's a zip file
-			if (!file.name.endsWith(".zip") && file.type !== "application/zip") {
+			const fileType = await fileTypeFromBuffer(fileBuffer);
+			if (fileType?.mime !== "application/zip") {
 				throw new BadRequestError(
 					"File must be a ZIP archive",
 					"INVALID_FILE_TYPE",
 				);
 			}
 
-			// Read zip file
-			const zipBuffer = await file.arrayBuffer();
-			const zipData = new Uint8Array(zipBuffer);
-
 			// Use JSZip to extract contents
-			const zip = await JSZip.loadAsync(zipData);
+			const zip = await JSZip.loadAsync(fileBuffer);
 
 			// Find _chat.txt and audio files
 			let chatTxtContent: string | null = null;
@@ -162,7 +159,8 @@ export const importRoutes = new Elysia({
 		},
 		{
 			body: t.Object({
-				file: t.File(),
+				file: t.String(),
 			}),
+			parse: "json",
 		},
 	);

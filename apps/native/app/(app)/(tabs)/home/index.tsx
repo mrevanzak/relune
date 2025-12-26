@@ -1,7 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import { useState } from "react";
-import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+	FlatList,
+	Pressable,
+	ScrollView,
+	StyleSheet,
+	Text,
+	View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AudioCard, type AudioCardProps } from "@/components/ui/AudioCard";
 import { FilterPill } from "@/components/ui/FilterPill";
@@ -91,6 +98,15 @@ export default function HomeScreen() {
 				options={{
 					title: "Relune",
 					headerTransparent: true,
+					headerRight: () => (
+						<Pressable
+							onPress={() => router.push("/(app)/import")}
+							style={styles.headerButton}
+							hitSlop={8}
+						>
+							<Ionicons name="download-outline" size={24} color={tint} />
+						</Pressable>
+					),
 					headerSearchBarOptions: {
 						placeholder: "Search by keyword",
 						onChangeText: (event) => setSearchQuery(event.nativeEvent.text),
@@ -163,6 +179,9 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
+	},
+	headerButton: {
+		padding: 8,
 	},
 	filterContainer: {
 		marginTop: 8,

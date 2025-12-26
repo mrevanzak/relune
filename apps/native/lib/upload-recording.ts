@@ -13,7 +13,7 @@ export interface UploadRecordingParams {
  */
 export async function uploadRecording(params: UploadRecordingParams) {
 	// Convert URI to File
-	const file = await uriToFile(params.uri);
+	const file = uriToFile(params.uri);
 
 	// Upload via API
 	const { data, error } = await api.recordings.post({
