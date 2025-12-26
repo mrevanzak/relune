@@ -43,6 +43,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 				},
 			],
 			"expo-audio",
+			"react-native-bottom-tabs",
 		],
 		experiments: {
 			typedRoutes: true,
