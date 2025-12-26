@@ -20,6 +20,27 @@
 - No `console.log`/`debugger` in production; remove `.only`/`.skip` from tests
 - Security: `rel="noopener"` with `target="_blank"`, avoid `dangerouslySetInnerHTML`
 
+## Native Motion & Micro-interactions (Reanimated)
+
+The native app (`apps/native`) should feel **fluid**: subtle motion on press, smooth transitions, and UI-thread animations.
+
+- **Default animation stack**: use `react-native-reanimated` for UI/motion and `react-native-gesture-handler` for gestures.
+  - Avoid `Animated` from `react-native` for interactive motion (it’s usually JS-thread bound and easier to jank).
+- **Startup requirement**: keep the side-effect import present:
+  - `import "react-native-reanimated";` (currently in `apps/native/app/_layout.tsx`)
+- **Micro-interaction patterns** (preferred):
+  - **Press feedback**: scale/opacity with `useSharedValue` + `useAnimatedStyle` + `withSpring(...)`.
+  - **Quick fades/slides**: `withTiming(...)` for short, predictable transitions.
+  - **Layout changes**: use Reanimated layout/entering/exiting animations (`layout={...}`, `entering={...}`, `exiting={...}`) instead of ad-hoc JS timers.
+- **Performance guardrails**:
+  - Keep hot-path animation logic inside worklets (UI thread). Avoid `runOnJS` unless you truly need it.
+  - Don’t allocate new objects every frame inside animated styles; keep calculations minimal.
+  - Prefer animating `transform` + `opacity` over layout properties.
+- **Reduced motion**:
+  - Respect OS “Reduce Motion” settings. Provide a no-motion / minimal-motion fallback for non-essential flourishes (e.g. disable bounce springs, shorten durations).
+- **Config gotcha (if/when Babel config exists)**:
+  - Ensure `react-native-reanimated/plugin` is included as the **last** Babel plugin (this is the most common cause of “animations not running”).
+
 ## Server (Elysia) Architecture (`apps/server`)
 
 Reference: [Elysia “Best Practice”](https://elysiajs.com/essential/best-practice)
