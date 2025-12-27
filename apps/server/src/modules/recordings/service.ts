@@ -372,6 +372,11 @@ export async function createAppRecording({
 			return { recording: null, error: "Failed to create recording" };
 		}
 
+		// Trigger transcription in background (fire-and-forget)
+		processRecording(recording).catch((err) =>
+			console.error(`Transcription failed for recording ${recording.id}:`, err),
+		);
+
 		return { recording, error: null };
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Unknown error";

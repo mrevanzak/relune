@@ -15,6 +15,7 @@ export interface AudioCardProps {
 	duration?: string;
 	isPlaying?: boolean;
 	onPlay?: () => void;
+	isTranscribing?: boolean;
 }
 
 // Pre-generate waveform data to avoid re-rendering issues
@@ -32,6 +33,7 @@ export function AudioCard({
 	duration,
 	isPlaying,
 	onPlay,
+	isTranscribing = false,
 }: AudioCardProps) {
 	const text = useThemeColor({}, "text");
 	const textSecondary = useThemeColor({}, "textSecondary");
@@ -57,7 +59,14 @@ export function AudioCard({
 				</View>
 			</View>
 
-			{description ? (
+			{isTranscribing ? (
+				<View style={styles.transcribingContainer}>
+					<Ionicons name="sync-outline" size={14} color={textSecondary} />
+					<Text style={[styles.transcribingText, { color: textSecondary }]}>
+						Transcribing...
+					</Text>
+				</View>
+			) : description ? (
 				<Text style={[styles.description, { color: text }]} numberOfLines={2}>
 					{description}
 				</Text>
@@ -136,6 +145,16 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		marginBottom: 16,
 		lineHeight: 20,
+	},
+	transcribingContainer: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		marginBottom: 16,
+	},
+	transcribingText: {
+		fontSize: 14,
+		fontStyle: "italic",
 	},
 	footer: {
 		flexDirection: "row",

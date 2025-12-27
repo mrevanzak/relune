@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { HeaderButton } from "@react-navigation/elements";
-import { useQuery } from "@tanstack/react-query";
 import { router, Stack } from "expo-router";
 import { useMemo, useState } from "react";
 import {
@@ -17,8 +16,8 @@ import { FilterPill } from "@/components/ui/FilterPill";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useRecordingPlayer } from "@/hooks/use-audio-player";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
+import { useRecordingsWithPolling } from "@/hooks/use-recordings-with-polling";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { recordingsQueryOptions } from "@/queries/recordings";
 
 const FILTERS = ["Today", "This Week", "All Time"];
 
@@ -81,12 +80,12 @@ function isThisWeek(date: Date | string): boolean {
 export default function HomeScreen() {
 	const { isRecording } = useAudioRecorder();
 
-	// Fetch recordings from server
+	// Fetch recordings from server (with smart polling)
 	const {
 		data: recordings = [],
 		isLoading,
 		error,
-	} = useQuery(recordingsQueryOptions());
+	} = useRecordingsWithPolling();
 
 	// Currently playing recording
 	const [currentlyPlayingId, setCurrentlyPlayingId] = useState<string | null>(
@@ -220,6 +219,9 @@ export default function HomeScreen() {
 								duration={formatDuration(item.durationSeconds)}
 								isPlaying={currentlyPlayingId === item.id && player.isPlaying}
 								onPlay={() => handlePlay(item.id)}
+								isTranscribing={
+									item.transcript === null || item.transcript === undefined
+								}
 							/>
 						)}
 						contentContainerStyle={styles.listContent}

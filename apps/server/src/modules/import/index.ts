@@ -5,6 +5,7 @@ import { convertToM4a, needsConversion } from "@/shared/audio-converter";
 import { BadRequestError } from "../../shared/errors";
 import { getContentType, uploadAudioToStorage } from "../../shared/storage";
 import { authMiddleware } from "../auth";
+import * as RecordingsService from "../recordings/service";
 import * as ImportService from "./service";
 
 /**
@@ -147,6 +148,14 @@ export const importRoutes = new Elysia({
 						error instanceof Error ? error.message : "Unknown error";
 					failed.push({ filename: msg.filename, error: errorMessage });
 				}
+			}
+
+			// Trigger transcription for all imported recordings (fire-and-forget)
+			if (imported.length > 0) {
+				RecordingsService.processPendingRecordings(imported.length).catch(
+					(err) =>
+						console.error("Transcription failed for imported recordings:", err),
+				);
 			}
 
 			return {
