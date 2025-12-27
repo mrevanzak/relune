@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { useCallback, useRef } from "react";
 import { isNetworkError } from "@/lib/api";
 import { queryClient } from "@/lib/query-client";
 import { uploadRecording } from "@/lib/upload-recording";
@@ -17,11 +18,27 @@ const MAX_RETRIES = 3;
  * Mutation hook for uploading a recording to the server.
  *
  * On success: invalidates the recordings query cache.
- * On network error: queues the upload for later retry.
+ * On network error: caller should queue via uploadQueueStore.
+ *
+ * Usage:
+ * ```tsx
+ * const mutation = useUploadRecordingMutation();
+ *
+ * mutation.mutate(params, {
+ *   onError: (error) => {
+ *     if (isNetworkError(error)) {
+ *       addToQueue({ ... });
+ *     }
+ *   },
+ * });
+ *
+ * // Retry from error state:
+ * if (mutation.isError && mutation.variables) {
+ *   mutation.mutate(mutation.variables);
+ * }
+ * ```
  */
 export function useUploadRecordingMutation() {
-	const addToQueue = uploadQueueStore.use.addToQueue();
-
 	return useMutation({
 		mutationFn: async (params: UploadRecordingParams) => {
 			return uploadRecording({
@@ -30,105 +47,99 @@ export function useUploadRecordingMutation() {
 				recordedAt: (params.recordedAt ?? new Date()).toISOString(),
 			});
 		},
-		onSuccess: (_data, _variables, _onMutateResult, context) => {
-			// Invalidate recordings list to show the new recording
-			context.client.invalidateQueries({
+		onSuccess: () => {
+			queryClient.invalidateQueries({
 				queryKey: recordingsQueryOptions().queryKey,
 			});
-		},
-		onError: (error, variables) => {
-			// If offline, queue for later
-			if (isNetworkError(error)) {
-				addToQueue({
-					uri: variables.uri,
-					durationSeconds: variables.durationSeconds,
-					recordedAt: (variables.recordedAt ?? new Date()).toISOString(),
-				});
-			}
 		},
 	});
 }
 
 /**
- * Processes the upload queue, retrying failed uploads.
- * Should be called when network connectivity is restored or on app foreground.
+ * Hook that returns a function to process the upload queue.
+ * Retries failed uploads when called (e.g., on app foreground, network restore).
  *
- * This is the orchestration function that coordinates:
- * - Reading pending items from the upload queue store
- * - Calling the upload function for each item
- * - Updating store state based on results
- * - Invalidating query cache on success
+ * Uses mutation internally for each queue item to get proper state tracking.
  */
-export async function processUploadQueue(): Promise<void> {
-	const state = uploadQueueStore.getState();
+export function useProcessUploadQueue() {
+	const isProcessingRef = useRef(false);
 
-	// Prevent concurrent processing
-	if (state.isProcessing) {
-		return;
-	}
+	const processQueue = useCallback(async (): Promise<void> => {
+		const state = uploadQueueStore.getState();
 
-	// Get pending items that haven't exceeded max retries
-	const pendingItems = state.queue.filter(
-		(item) =>
-			(item.status === "pending" || item.status === "failed") &&
-			item.retryCount < MAX_RETRIES,
-	);
-
-	if (pendingItems.length === 0) {
-		return;
-	}
-
-	uploadQueueStore.setState({ isProcessing: true });
-
-	for (const item of pendingItems) {
-		try {
-			state.updateStatus(item.id, "uploading");
-
-			// Upload using shared function
-			await uploadRecording({
-				uri: item.uri,
-				durationSeconds: item.durationSeconds,
-				recordedAt: item.recordedAt,
-			});
-
-			// Success - remove from queue and invalidate recordings cache
-			uploadQueueStore.getState().removeFromQueue(item.id);
-			queryClient.invalidateQueries({
-				queryKey: recordingsQueryOptions().queryKey,
-			});
-		} catch (error) {
-			const message = error instanceof Error ? error.message : "Upload failed";
-
-			// If it's a network error, stop processing and try later
-			// Don't increment retry count for network errors (they're temporary)
-			if (isNetworkError(error)) {
-				uploadQueueStore
-					.getState()
-					.updateStatus(item.id, "pending", "Network unavailable");
-				break;
-			}
-
-			// Check if it's an auth error (401/403) - don't burn retries
-			const isAuthError =
-				error instanceof Error &&
-				(message.includes("401") ||
-					message.includes("403") ||
-					message.includes("Unauthorized") ||
-					message.includes("Forbidden"));
-
-			if (isAuthError) {
-				// Reset to pending without incrementing retry count
-				// Auth errors are usually temporary (session expired, etc.)
-				uploadQueueStore
-					.getState()
-					.updateStatus(item.id, "pending", "Authentication required");
-				break;
-			}
-
-			// Mark as failed for retry (only for actual server errors)
-			uploadQueueStore.getState().updateStatus(item.id, "failed", message);
+		// Prevent concurrent processing
+		if (isProcessingRef.current || state.isProcessing) {
+			return;
 		}
-	}
 
-	uploadQueueStore.setState({ isProcessing: false });
+		// Get pending items that haven't exceeded max retries
+		const pendingItems = state.queue.filter(
+			(item) =>
+				(item.status === "pending" || item.status === "failed") &&
+				item.retryCount < MAX_RETRIES,
+		);
+
+		if (pendingItems.length === 0) {
+			return;
+		}
+
+		isProcessingRef.current = true;
+		uploadQueueStore.setState({ isProcessing: true });
+
+		for (const item of pendingItems) {
+			try {
+				uploadQueueStore.getState().updateStatus(item.id, "uploading");
+
+				// Upload using shared function
+				await uploadRecording({
+					uri: item.uri,
+					durationSeconds: item.durationSeconds,
+					recordedAt: item.recordedAt,
+				});
+
+				// Success - remove from queue and invalidate recordings cache
+				uploadQueueStore.getState().removeFromQueue(item.id);
+				queryClient.invalidateQueries({
+					queryKey: recordingsQueryOptions().queryKey,
+				});
+			} catch (error) {
+				const message =
+					error instanceof Error ? error.message : "Upload failed";
+
+				// If it's a network error, stop processing and try later
+				// Don't increment retry count for network errors (they're temporary)
+				if (isNetworkError(error)) {
+					uploadQueueStore
+						.getState()
+						.updateStatus(item.id, "pending", "Network unavailable");
+					break;
+				}
+
+				// Check if it's an auth error (401/403) - don't burn retries
+				const isAuthError =
+					error instanceof Error &&
+					(message.includes("401") ||
+						message.includes("403") ||
+						message.includes("Unauthorized") ||
+						message.includes("Forbidden"));
+
+				if (isAuthError) {
+					// Reset to pending without incrementing retry count
+					// Auth errors are usually temporary (session expired, etc.)
+					uploadQueueStore
+						.getState()
+						.updateStatus(item.id, "pending", "Authentication required");
+					break;
+				}
+
+				// Mark as failed for retry (only for actual server errors)
+				uploadQueueStore.getState().updateStatus(item.id, "failed", message);
+			}
+		}
+
+		uploadQueueStore.setState({ isProcessing: false });
+		isProcessingRef.current = false;
+	}, []);
+
+	return { processQueue };
 }

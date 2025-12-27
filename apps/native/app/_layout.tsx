@@ -15,7 +15,7 @@ import { BootstrapErrorScreen } from "@/components/BootstrapErrorScreen";
 import { QueryProvider } from "@/components/QueryProvider";
 import { GradientBackground } from "@/components/ui/GradientBackground";
 import { SessionProvider, useSession } from "@/context/session";
-import { processUploadQueue } from "@/features/upload";
+import { useProcessUploadQueue } from "@/features/upload";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 // Prevent splash screen from auto-hiding
@@ -28,6 +28,7 @@ export const unstable_settings = {
 function RootLayoutNav() {
 	const colorScheme = useColorScheme();
 	const { isInitialized, error, retry, session } = useSession();
+	const { processQueue } = useProcessUploadQueue();
 
 	// Hide splash screen when bootstrap completes
 	const onLayoutRootView = useCallback(async () => {
@@ -42,17 +43,17 @@ function RootLayoutNav() {
 
 		const subscription = AppState.addEventListener("change", (nextAppState) => {
 			if (nextAppState === "active") {
-				void processUploadQueue();
+				void processQueue();
 			}
 		});
 
 		// Also process on initial mount
-		void processUploadQueue();
+		void processQueue();
 
 		return () => {
 			subscription.remove();
 		};
-	}, [session]);
+	}, [session, processQueue]);
 
 	// Show error screen if bootstrap failed
 	if (error) {

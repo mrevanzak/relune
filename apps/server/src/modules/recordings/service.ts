@@ -309,7 +309,8 @@ export async function processPendingRecordings(
  */
 export type CreateAppRecordingOptions = {
 	userId: string;
-	file: File;
+	file: string; // base64-encoded audio data
+	filename: string;
 	durationSeconds?: number;
 	recordedAt?: Date;
 };
@@ -321,18 +322,20 @@ export type CreateAppRecordingResult =
 export async function createAppRecording({
 	userId,
 	file,
+	filename,
 	durationSeconds,
 	recordedAt,
 }: CreateAppRecordingOptions): Promise<CreateAppRecordingResult> {
 	try {
-		// Read file content
-		const fileContent = new Uint8Array(await file.arrayBuffer());
+		// Decode base64 file content
+		const fileBuffer = Buffer.from(file, "base64");
+		const fileContent = new Uint8Array(fileBuffer);
 
 		// Convert to m4a if needed (opus, ogg, wav, etc.)
 		let finalContent: Uint8Array<ArrayBufferLike> = fileContent;
-		let finalFilename = file.name;
-		if (needsConversion(file.name)) {
-			const converted = await convertToM4a(fileContent, file.name);
+		let finalFilename = filename;
+		if (needsConversion(filename)) {
+			const converted = await convertToM4a(fileContent, filename);
 			finalContent = converted.data;
 			finalFilename = converted.filename;
 		}
@@ -359,8 +362,8 @@ export async function createAppRecording({
 				durationSeconds: durationSeconds ?? null,
 				fileSizeBytes: finalContent.length,
 				recordedAt: recordedAt ?? new Date(),
-				importSource: "app",
-				originalFilename: file.name,
+				importSource: "app" as const,
+				originalFilename: finalFilename,
 			})
 			.returning();
 

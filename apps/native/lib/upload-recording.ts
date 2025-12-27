@@ -1,5 +1,5 @@
+import { File } from "expo-file-system";
 import { api } from "@/lib/api";
-import { uriToFile } from "@/lib/file-utils";
 
 export interface UploadRecordingParams {
 	uri: string;
@@ -13,11 +13,14 @@ export interface UploadRecordingParams {
  */
 export async function uploadRecording(params: UploadRecordingParams) {
 	// Convert URI to File
-	const file = uriToFile(params.uri);
+	const file = new File(params.uri);
+
+	const filename = file.name;
 
 	// Upload via API
 	const { data, error } = await api.recordings.post({
-		file,
+		file: file.base64Sync(),
+		filename,
 		durationSeconds: params.durationSeconds,
 		recordedAt: params.recordedAt,
 	});

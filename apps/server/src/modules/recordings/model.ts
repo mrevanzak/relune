@@ -19,9 +19,11 @@ export const processPendingQuerySchema = t.Object({
 
 /**
  * Schema for creating a new recording via file upload
+ * Client sends audio as base64-encoded string with filename
  */
 export const createRecordingBodySchema = t.Object({
-	file: t.File(),
+	file: t.String(), // base64-encoded audio data
+	filename: t.String(), // original filename (e.g., "recording.m4a")
 	durationSeconds: t.Optional(t.Numeric()),
 	recordedAt: t.Optional(t.String()), // ISO 8601 string
 });

@@ -1,57 +1,157 @@
-import { useCallback } from "react";
+import * as FileSystem from "expo-file-system";
+import { useCallback, useEffect, useRef } from "react";
+import { View } from "react-native";
 import { Tabs } from "@/components/NativeBottomTabs";
+import { RecordingAccessoryView } from "@/components/RecordingAccessoryView";
 import { Colors } from "@/constants/theme";
+import { useUploadRecordingMutation } from "@/features/upload";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { isNetworkError } from "@/lib/api";
+import { recordingUIStore } from "@/stores/recording-ui";
+import { uploadQueueStore } from "@/stores/upload-queue";
 
 export default function TabLayout() {
 	const colorScheme = useColorScheme();
 	const theme = Colors[colorScheme ?? "light"];
-	const { isRecording, start, stop } = useAudioRecorder();
+	const { isRecording, start, stop, durationMs } = useAudioRecorder();
+	const durationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+		null,
+	);
+
+	// TanStack Query mutation for uploads
+	const mutation = useUploadRecordingMutation();
+	const addToQueue = uploadQueueStore.use.addToQueue();
+
+	// Recording UI store
+	const isRecordingUI = recordingUIStore.use.isRecording();
+	const uiDurationMs = recordingUIStore.use.durationMs();
+	const startRecordingUI = recordingUIStore.use.startRecording();
+	const updateDurationUI = recordingUIStore.use.updateDuration();
+	const stopRecordingUI = recordingUIStore.use.stopRecording();
+	const resetUI = recordingUIStore.use.reset();
+
+	// Update duration in store while recording
+	useEffect(() => {
+		if (isRecording) {
+			durationIntervalRef.current = setInterval(() => {
+				updateDurationUI(durationMs);
+			}, 100);
+		} else {
+			if (durationIntervalRef.current) {
+				clearInterval(durationIntervalRef.current);
+				durationIntervalRef.current = null;
+			}
+		}
+		return () => {
+			if (durationIntervalRef.current) {
+				clearInterval(durationIntervalRef.current);
+			}
+		};
+	}, [isRecording, durationMs, updateDurationUI]);
 
 	const handleRecordPress = useCallback(async () => {
 		if (isRecording) {
 			const result = await stop();
 			if (result) {
-				// TODO: Handle the recording result (upload, save, etc.)
-				console.log("Recording stopped:", result);
+				// Transition to uploading state
+				stopRecordingUI();
+
+				const params = {
+					uri: result.uri,
+					durationSeconds: result.durationSeconds,
+					recordedAt: new Date(),
+				};
+
+				// Trigger upload mutation
+				mutation.mutate(params, {
+					onError: (error) => {
+						// Queue for later if network error
+						if (isNetworkError(error)) {
+							addToQueue({
+								uri: params.uri,
+								durationSeconds: params.durationSeconds,
+								recordedAt: params.recordedAt.toISOString(),
+							});
+						}
+					},
+				});
 			}
 		} else {
+			startRecordingUI();
 			await start();
 		}
-	}, [isRecording, start, stop]);
+	}, [
+		isRecording,
+		start,
+		stop,
+		startRecordingUI,
+		stopRecordingUI,
+		mutation,
+		addToQueue,
+	]);
+
+	// Handle discard during recording
+	const handleDiscardRecording = useCallback(async () => {
+		const result = await stop();
+		if (result?.uri) {
+			try {
+				await FileSystem.deleteAsync(result.uri, { idempotent: true });
+			} catch {
+				// Ignore deletion errors
+			}
+		}
+		resetUI();
+	}, [stop, resetUI]);
+
+	// Show accessory view when recording or mutation is active
+	const showAccessoryView =
+		isRecordingUI ||
+		mutation.isPending ||
+		mutation.isSuccess ||
+		mutation.isError;
 
 	return (
-		<Tabs
-			hapticFeedbackEnabled
-			initialRouteName="home"
-			tabBarActiveTintColor={theme.tint}
-			// renderBottomAccessoryView={(props) => <Text>Hello</Text>}
-		>
-			<Tabs.Screen
-				name="home"
-				options={{
-					role: "search",
-					title: "Search",
-					tabBarIcon: () => ({ sfSymbol: "magnifyingglass" }),
-				}}
-			/>
-			<Tabs.Screen
-				name="record"
-				options={{
-					title: isRecording ? "Stop" : "Record",
-					preventsDefault: true,
-					tabBarIcon: () => ({
-						sfSymbol: isRecording ? "stop.circle.fill" : "mic.circle.fill",
-					}),
-				}}
-				listeners={{
-					tabPress: (e) => {
-						e.preventDefault();
-						handleRecordPress();
-					},
-				}}
-			/>
-		</Tabs>
+		<View style={{ flex: 1 }}>
+			<Tabs
+				hapticFeedbackEnabled
+				initialRouteName="home"
+				tabBarActiveTintColor={theme.tint}
+			>
+				<Tabs.Screen
+					name="home"
+					options={{
+						role: "search",
+						title: "Search",
+						tabBarIcon: () => ({ sfSymbol: "magnifyingglass" }),
+					}}
+				/>
+				<Tabs.Screen
+					name="record"
+					options={{
+						title: isRecording ? "Stop" : "Record",
+						preventsDefault: true,
+						tabBarIcon: () => ({
+							sfSymbol: isRecording ? "stop.circle.fill" : "mic.circle.fill",
+						}),
+					}}
+					listeners={{
+						tabPress: (e) => {
+							e.preventDefault();
+							handleRecordPress();
+						},
+					}}
+				/>
+			</Tabs>
+
+			{showAccessoryView && (
+				<RecordingAccessoryView
+					isRecording={isRecordingUI}
+					durationMs={uiDurationMs}
+					onDiscardRecording={handleDiscardRecording}
+					mutation={mutation}
+				/>
+			)}
+		</View>
 	);
 }

@@ -73,11 +73,12 @@ export const recordings = new Elysia({
 	.post(
 		"/",
 		async ({ user, body }) => {
-			const { file, durationSeconds, recordedAt } = body;
+			const { file, filename, durationSeconds, recordedAt } = body;
 
 			const result = await RecordingsService.createAppRecording({
 				userId: user.id,
 				file,
+				filename,
 				durationSeconds: durationSeconds ? Number(durationSeconds) : undefined,
 				recordedAt: recordedAt ? new Date(recordedAt) : undefined,
 			});

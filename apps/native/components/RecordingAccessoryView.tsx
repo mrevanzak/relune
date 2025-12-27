@@ -1,0 +1,430 @@
+import type { UseMutationResult } from "@tanstack/react-query";
+import { BlurView } from "expo-blur";
+import * as FileSystem from "expo-file-system";
+import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import * as Haptics from "expo-haptics";
+import { useEffect, useMemo } from "react";
+import {
+	ActivityIndicator,
+	Alert,
+	StyleSheet,
+	Text,
+	TouchableOpacity,
+	View,
+} from "react-native";
+import Animated, {
+	type EntryAnimationsValues,
+	type ExitAnimationsValues,
+	useAnimatedStyle,
+	useSharedValue,
+	withRepeat,
+	withSequence,
+	withTiming,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ReluneColors } from "@/constants/theme";
+import type { UploadRecordingParams } from "@/features/upload";
+import { recordingUIStore } from "@/stores/recording-ui";
+
+// Layout constants
+const TAB_BAR_HEIGHT = 49; // Standard iOS native tab bar height
+const ACCESSORY_MARGIN = 16;
+const ACCESSORY_MARGIN_BOTTOM = 8;
+
+// Custom entering animation: slide up + fade in
+const enteringAnimation = (values: EntryAnimationsValues) => {
+	"worklet";
+	return {
+		initialValues: {
+			opacity: 0,
+			transform: [{ translateY: values.targetHeight + 50 }],
+		},
+		animations: {
+			opacity: withTiming(1, { duration: 200 }),
+			transform: [{ translateY: withTiming(0, { duration: 200 }) }],
+		},
+	};
+};
+
+// Custom exiting animation: slide down + fade out
+const exitingAnimation = (_values: ExitAnimationsValues) => {
+	"worklet";
+	return {
+		initialValues: {
+			opacity: 1,
+			transform: [{ translateY: 0 }],
+		},
+		animations: {
+			opacity: withTiming(0, { duration: 150 }),
+			transform: [{ translateY: withTiming(100, { duration: 200 }) }],
+		},
+	};
+};
+
+/**
+ * Formats milliseconds to MM:SS display format
+ */
+function formatDuration(ms: number): string {
+	const totalSeconds = Math.floor(ms / 1000);
+	const minutes = Math.floor(totalSeconds / 60);
+	const seconds = totalSeconds % 60;
+	return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+}
+
+/**
+ * Pulsing red dot indicator for recording state
+ */
+function RecordingDot() {
+	const opacity = useSharedValue(1);
+
+	useEffect(() => {
+		opacity.value = withRepeat(
+			withSequence(
+				withTiming(0.3, { duration: 800 }),
+				withTiming(1, { duration: 800 }),
+			),
+			-1,
+			true,
+		);
+	}, [opacity]);
+
+	const animatedStyle = useAnimatedStyle(() => ({
+		opacity: opacity.value,
+	}));
+
+	return <Animated.View style={[styles.recordingDot, animatedStyle]} />;
+}
+
+/**
+ * Recording indicator with duration and discard button
+ */
+function RecordingIndicator({
+	durationMs,
+	onDiscard,
+}: {
+	durationMs: number;
+	onDiscard: () => void;
+}) {
+	return (
+		<View style={styles.content}>
+			<RecordingDot />
+			<Text style={styles.statusText}>Recording</Text>
+			<Text style={styles.duration}>{formatDuration(durationMs)}</Text>
+			<TouchableOpacity onPress={onDiscard} style={styles.actionButton}>
+				<Text style={styles.discardText}>Discard</Text>
+			</TouchableOpacity>
+		</View>
+	);
+}
+
+/**
+ * Uploading spinner with duration display
+ */
+function UploadingIndicator({ durationSeconds }: { durationSeconds: number }) {
+	return (
+		<View style={styles.content}>
+			<ActivityIndicator size="small" color={ReluneColors.textSecondary} />
+			<Text style={styles.statusText}>Saving...</Text>
+			<Text style={styles.duration}>
+				{formatDuration(durationSeconds * 1000)}
+			</Text>
+		</View>
+	);
+}
+
+/**
+ * Success checkmark indicator (auto-dismisses)
+ */
+function SuccessIndicator() {
+	return (
+		<View style={styles.content}>
+			<Text style={styles.successIcon}>✓</Text>
+			<Text style={styles.successText}>Saved</Text>
+		</View>
+	);
+}
+
+/**
+ * Error indicator with retry and discard options
+ */
+function ErrorIndicator({
+	message,
+	onRetry,
+	onDiscard,
+}: {
+	message: string;
+	onRetry: () => void;
+	onDiscard: () => void;
+}) {
+	return (
+		<View style={styles.content}>
+			<Text style={styles.errorIcon}>✗</Text>
+			<Text style={styles.errorText} numberOfLines={1}>
+				{message || "Failed to save"}
+			</Text>
+			<TouchableOpacity onPress={onDiscard} style={styles.actionButton}>
+				<Text style={styles.discardText}>Discard</Text>
+			</TouchableOpacity>
+			<TouchableOpacity onPress={onRetry} style={styles.retryButton}>
+				<Text style={styles.retryText}>Retry</Text>
+			</TouchableOpacity>
+		</View>
+	);
+}
+
+type AccessoryStatus = "recording" | "uploading" | "success" | "error";
+
+interface RecordingAccessoryViewProps {
+	/**
+	 * Recording phase state (from recording-ui store)
+	 */
+	isRecording: boolean;
+	durationMs: number;
+	onDiscardRecording: () => void;
+
+	/**
+	 * Upload phase state (from TanStack Query mutation)
+	 */
+	mutation: UseMutationResult<unknown, Error, UploadRecordingParams>;
+}
+
+/**
+ * Floating accessory view that displays recording session status.
+ * Positioned above the tab bar with glass/blur background effect.
+ *
+ * State is derived from:
+ * - Recording phase: isRecording + durationMs props (from recording-ui store)
+ * - Upload phase: mutation state (isPending, isSuccess, isError)
+ */
+export function RecordingAccessoryView({
+	isRecording,
+	durationMs,
+	onDiscardRecording,
+	mutation,
+}: RecordingAccessoryViewProps) {
+	const insets = useSafeAreaInsets();
+	const useLiquidGlass = isLiquidGlassAvailable();
+	const resetUI = recordingUIStore.use.reset();
+
+	// Derive status from props
+	const status: AccessoryStatus | null = useMemo(() => {
+		if (isRecording) return "recording";
+		if (mutation.isPending) return "uploading";
+		if (mutation.isSuccess) return "success";
+		if (mutation.isError) return "error";
+		return null;
+	}, [isRecording, mutation.isPending, mutation.isSuccess, mutation.isError]);
+
+	// Auto-dismiss success after 2 seconds
+	useEffect(() => {
+		if (status === "success") {
+			const timer = setTimeout(() => {
+				mutation.reset();
+				resetUI();
+			}, 2000);
+			return () => clearTimeout(timer);
+		}
+	}, [status, mutation, resetUI]);
+
+	// Haptic feedback on state changes
+	useEffect(() => {
+		const triggerHaptic = async (type: AccessoryStatus) => {
+			switch (type) {
+				case "recording":
+					await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+					break;
+				case "uploading":
+					await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+					break;
+				case "success":
+					await Haptics.notificationAsync(
+						Haptics.NotificationFeedbackType.Success,
+					);
+					break;
+				case "error":
+					await Haptics.notificationAsync(
+						Haptics.NotificationFeedbackType.Error,
+					);
+					break;
+			}
+		};
+
+		if (status) {
+			triggerHaptic(status);
+		}
+	}, [status]);
+
+	const handleDiscardRecording = () => {
+		Alert.alert(
+			"Discard Recording",
+			"Stop and discard this recording?",
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Discard",
+					style: "destructive",
+					onPress: onDiscardRecording,
+				},
+			],
+			{ cancelable: true },
+		);
+	};
+
+	const handleDiscardUpload = async () => {
+		const uri = mutation.variables?.uri;
+		if (uri) {
+			try {
+				await FileSystem.deleteAsync(uri, { idempotent: true });
+			} catch {
+				// Ignore deletion errors
+			}
+		}
+		mutation.reset();
+		resetUI();
+	};
+
+	const handleDiscardError = () => {
+		Alert.alert(
+			"Discard Recording",
+			"Discard this recording? It won't be saved.",
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Discard",
+					style: "destructive",
+					onPress: handleDiscardUpload,
+				},
+			],
+			{ cancelable: true },
+		);
+	};
+
+	const handleRetry = () => {
+		if (mutation.variables) {
+			mutation.mutate(mutation.variables);
+		}
+	};
+
+	const renderContent = () => {
+		switch (status) {
+			case "recording":
+				return (
+					<RecordingIndicator
+						durationMs={durationMs}
+						onDiscard={handleDiscardRecording}
+					/>
+				);
+			case "uploading":
+				return (
+					<UploadingIndicator
+						durationSeconds={mutation.variables?.durationSeconds ?? 0}
+					/>
+				);
+			case "success":
+				return <SuccessIndicator />;
+			case "error":
+				return (
+					<ErrorIndicator
+						message={mutation.error?.message ?? "Failed to save"}
+						onRetry={handleRetry}
+						onDiscard={handleDiscardError}
+					/>
+				);
+			default:
+				return null;
+		}
+	};
+
+	// Calculate bottom position above tab bar
+	const bottomPosition =
+		TAB_BAR_HEIGHT + insets.bottom + ACCESSORY_MARGIN_BOTTOM;
+
+	return (
+		<Animated.View
+			entering={enteringAnimation}
+			exiting={exitingAnimation}
+			style={[styles.container, { bottom: bottomPosition }]}
+		>
+			{/* Glass/Blur background */}
+			{useLiquidGlass ? (
+				<GlassView style={StyleSheet.absoluteFill} />
+			) : (
+				<BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill} />
+			)}
+
+			{/* Content */}
+			{renderContent()}
+		</Animated.View>
+	);
+}
+
+const styles = StyleSheet.create({
+	container: {
+		position: "absolute",
+		left: ACCESSORY_MARGIN,
+		right: ACCESSORY_MARGIN,
+		borderRadius: 1000,
+		overflow: "hidden",
+	},
+	content: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 8,
+		paddingHorizontal: 16,
+		paddingVertical: 12,
+	},
+	recordingDot: {
+		width: 10,
+		height: 10,
+		borderRadius: 5,
+		backgroundColor: "#E85A5A",
+	},
+	statusText: {
+		fontSize: 14,
+		color: ReluneColors.text,
+		flex: 1,
+	},
+	duration: {
+		fontSize: 14,
+		fontVariant: ["tabular-nums"],
+		color: ReluneColors.textSecondary,
+	},
+	actionButton: {
+		paddingVertical: 6,
+		paddingHorizontal: 12,
+	},
+	discardText: {
+		fontSize: 14,
+		color: ReluneColors.textSecondary,
+	},
+	retryButton: {
+		paddingVertical: 6,
+		paddingHorizontal: 12,
+		backgroundColor: ReluneColors.primaryPurple,
+		borderRadius: 8,
+	},
+	retryText: {
+		fontSize: 14,
+		color: "#FFFFFF",
+		fontWeight: "500",
+	},
+	successIcon: {
+		fontSize: 16,
+		color: ReluneColors.success,
+		fontWeight: "bold",
+	},
+	successText: {
+		fontSize: 14,
+		color: ReluneColors.success,
+	},
+	errorIcon: {
+		fontSize: 16,
+		color: ReluneColors.error,
+		fontWeight: "bold",
+	},
+	errorText: {
+		fontSize: 14,
+		color: ReluneColors.error,
+		flex: 1,
+	},
+});

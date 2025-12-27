@@ -1,3 +1,6 @@
+import { db } from "@relune/db";
+import { users } from "@relune/db/schema";
+import { eq } from "drizzle-orm";
 import { Elysia } from "elysia";
 import { ForbiddenError, UnauthorizedError } from "../../shared/errors";
 
@@ -21,6 +24,26 @@ export type CreateAuthPluginOptions = {
 function normalizeEmail(email: string | null | undefined): string | null {
 	const normalized = email?.trim().toLowerCase();
 	return normalized ? normalized : null;
+}
+
+/**
+ * Ensure user exists in the public.users table.
+ * Creates the user row if it doesn't exist (just-in-time provisioning).
+ * This is needed because Supabase Auth users are separate from our app's users table.
+ */
+async function ensureUserExists(user: AuthUser): Promise<void> {
+	const existing = await db
+		.select({ id: users.id })
+		.from(users)
+		.where(eq(users.id, user.id))
+		.limit(1);
+
+	if (existing.length === 0) {
+		await db.insert(users).values({
+			id: user.id,
+			email: user.email ?? "",
+		});
+	}
 }
 
 /**
@@ -94,6 +117,9 @@ export function createAuthPlugin({
 					}
 				}
 
+				// Ensure user exists in public.users table
+				await ensureUserExists(existingUser);
+
 				return { user: existingUser };
 			}
 
@@ -122,6 +148,9 @@ export function createAuthPlugin({
 						);
 					}
 				}
+
+				// Ensure user exists in public.users table (just-in-time provisioning)
+				await ensureUserExists(user);
 
 				return { user };
 			} catch (error) {

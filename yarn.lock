@@ -3711,6 +3711,11 @@ expo-audio@~1.1.1:
   resolved "https://registry.npmjs.org/expo-audio/-/expo-audio-1.1.1.tgz"
   integrity sha512-CPCpJ+0AEHdzWROc0f00Zh6e+irLSl2ALos/LPvxEeIcJw1APfBa4DuHPkL4CQCWsVe7EnUjFpdwpqsEUWcP0g==
 
+expo-blur@~15.0.8:
+  version "15.0.8"
+  resolved "https://registry.npmjs.org/expo-blur/-/expo-blur-15.0.8.tgz"
+  integrity sha512-rWyE1NBRZEu9WD+X+5l7gyPRszw7n12cW3IRNAb5i6KFzaBp8cxqT5oeaphJapqURvcqhkOZn2k5EtBSbsuU7w==
+
 expo-constants@*, expo-constants@^18.0.12, expo-constants@~18.0.12:
   version "18.0.12"
   resolved "https://registry.npmjs.org/expo-constants/-/expo-constants-18.0.12.tgz"
@@ -3742,6 +3747,11 @@ expo-font@>=14.0.4, expo-font@~14.0.10:
   integrity sha512-UqyNaaLKRpj4pKAP4HZSLnuDQqueaO5tB1c/NWu5vh1/LF9ulItyyg2kF/IpeOp0DeOLk0GY0HrIXaKUMrwB+Q==
   dependencies:
     fontfaceobserver "^2.1.0"
+
+expo-glass-effect@~0.1.8:
+  version "0.1.8"
+  resolved "https://registry.npmjs.org/expo-glass-effect/-/expo-glass-effect-0.1.8.tgz"
+  integrity sha512-9Cp17ax0Fpugue8+Bd7Ndl/dSAvGmt4bQ5mQLw9zc1A2lctUse3cEg9nI7TnDJiwKf+A/VAPN6+3K12JVMYgZg==
 
 expo-haptics@~15.0.8:
   version "15.0.8"
@@ -3914,17 +3924,7 @@ fdir@^6.5.0:
   resolved "https://registry.npmjs.org/fdir/-/fdir-6.5.0.tgz"
   integrity sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==
 
-"file-type@>= 20.0.0":
-  version "21.1.1"
-  resolved "https://registry.npmjs.org/file-type/-/file-type-21.1.1.tgz"
-  integrity sha512-ifJXo8zUqbQ/bLbl9sFoqHNTNWbnPY1COImFfM6CCy7z+E+jC1eY9YfOKkx0fckIg+VljAy2/87T61fp0+eEkg==
-  dependencies:
-    "@tokenizer/inflate" "^0.4.1"
-    strtok3 "^10.3.4"
-    token-types "^6.1.1"
-    uint8array-extras "^1.4.0"
-
-file-type@^21.2.0:
+"file-type@>= 20.0.0", file-type@^21.2.0:
   version "21.2.0"
   resolved "https://registry.npmjs.org/file-type/-/file-type-21.2.0.tgz"
   integrity sha512-vCYBgFOrJQLoTzDyAXAL/RFfKnXXpUYt4+tipVy26nJJhT7ftgGETf2tAQF59EEL61i3MrorV/PG6tf7LJK7eg==
@@ -5789,11 +5789,13 @@ regjsparser@^0.13.0:
     "@tanstack/react-query" "^5.62.11"
     expo "~54.0.30"
     expo-audio "~1.1.1"
+    expo-blur "~15.0.8"
     expo-constants "~18.0.12"
     expo-crypto "^15.0.8"
     expo-document-picker "~14.0.8"
     expo-file-system "~19.0.11"
     expo-font "~14.0.10"
+    expo-glass-effect "~0.1.8"
     expo-haptics "~15.0.8"
     expo-image "~3.0.11"
     expo-linear-gradient "~15.0.8"
