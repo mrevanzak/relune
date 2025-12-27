@@ -24,6 +24,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ReluneColors } from "@/constants/theme";
 import type { UploadRecordingParams } from "@/features/upload";
+import { formatDurationMs } from "@/lib/date";
 import { recordingUIStore } from "@/stores/recording-ui";
 
 // Layout constants
@@ -60,16 +61,6 @@ const exitingAnimation = (_values: ExitAnimationsValues) => {
 		},
 	};
 };
-
-/**
- * Formats milliseconds to MM:SS display format
- */
-function formatDuration(ms: number): string {
-	const totalSeconds = Math.floor(ms / 1000);
-	const minutes = Math.floor(totalSeconds / 60);
-	const seconds = totalSeconds % 60;
-	return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-}
 
 /**
  * Pulsing red dot indicator for recording state
@@ -109,7 +100,7 @@ function RecordingIndicator({
 		<View style={styles.content}>
 			<RecordingDot />
 			<Text style={styles.statusText}>Recording</Text>
-			<Text style={styles.duration}>{formatDuration(durationMs)}</Text>
+			<Text style={styles.duration}>{formatDurationMs(durationMs)}</Text>
 			<TouchableOpacity onPress={onDiscard} style={styles.actionButton}>
 				<Text style={styles.discardText}>Discard</Text>
 			</TouchableOpacity>
@@ -126,7 +117,7 @@ function UploadingIndicator({ durationSeconds }: { durationSeconds: number }) {
 			<ActivityIndicator size="small" color={ReluneColors.textSecondary} />
 			<Text style={styles.statusText}>Saving...</Text>
 			<Text style={styles.duration}>
-				{formatDuration(durationSeconds * 1000)}
+				{formatDurationMs(durationSeconds * 1000)}
 			</Text>
 		</View>
 	);

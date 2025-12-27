@@ -5,13 +5,7 @@ import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useRecordingPlayer } from "@/hooks/use-audio-player";
 import { useThemeColor } from "@/hooks/use-theme-color";
-
-function formatDuration(seconds: number | null | undefined): string | null {
-	if (seconds === null || seconds === undefined) return null;
-	const m = Math.floor(seconds / 60);
-	const s = Math.floor(seconds % 60);
-	return `${m}:${s.toString().padStart(2, "0")}`;
-}
+import { formatDuration } from "@/lib/date";
 
 export function AudioPlayer({
 	audioUrl,

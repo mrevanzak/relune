@@ -18,64 +18,15 @@ import { useRecordingPlayer } from "@/hooks/use-audio-player";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { useRecordingsWithPolling } from "@/hooks/use-recordings-with-polling";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import {
+	formatDuration,
+	formatRelativeDate,
+	generateRecordingTitle,
+	isDateThisWeek,
+	isDateToday,
+} from "@/lib/date";
 
 const FILTERS = ["Today", "This Week", "All Time"];
-
-/**
- * Format a date for display
- */
-function formatDate(date: Date | string): string {
-	const d = new Date(date);
-	const now = new Date();
-	const yesterday = new Date(now);
-	yesterday.setDate(yesterday.getDate() - 1);
-
-	if (d.toDateString() === now.toDateString()) {
-		return `Today, ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
-	}
-	if (d.toDateString() === yesterday.toDateString()) {
-		return `Yesterday, ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
-	}
-	return d.toLocaleDateString([], { month: "short", day: "numeric" });
-}
-
-/**
- * Format duration in seconds to "m:ss" format
- */
-function formatDuration(seconds: number | null): string | undefined {
-	if (seconds === null || seconds === undefined) return undefined;
-	const m = Math.floor(seconds / 60);
-	const s = Math.floor(seconds % 60);
-	return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-/**
- * Generate title for a recording (date-based)
- */
-function generateTitle(recordedAt: Date | string): string {
-	const date = new Date(recordedAt);
-	return `Recording - ${date.toLocaleDateString([], { month: "short", day: "numeric" })}`;
-}
-
-/**
- * Check if a date is within today
- */
-function isToday(date: Date | string): boolean {
-	const d = new Date(date);
-	const now = new Date();
-	return d.toDateString() === now.toDateString();
-}
-
-/**
- * Check if a date is within this week
- */
-function isThisWeek(date: Date | string): boolean {
-	const d = new Date(date);
-	const now = new Date();
-	const weekAgo = new Date(now);
-	weekAgo.setDate(weekAgo.getDate() - 7);
-	return d >= weekAgo && d <= now;
-}
 
 export default function HomeScreen() {
 	const { isRecording } = useAudioRecorder();
@@ -111,17 +62,20 @@ export default function HomeScreen() {
 	const filteredRecordings = useMemo(() => {
 		return recordings.filter((recording) => {
 			// Time filter
-			if (activeFilter === "Today" && !isToday(recording.recordedAt)) {
+			if (activeFilter === "Today" && !isDateToday(recording.recordedAt)) {
 				return false;
 			}
-			if (activeFilter === "This Week" && !isThisWeek(recording.recordedAt)) {
+			if (
+				activeFilter === "This Week" &&
+				!isDateThisWeek(recording.recordedAt)
+			) {
 				return false;
 			}
 
 			// Search filter
 			if (searchQuery) {
 				const query = searchQuery.toLowerCase();
-				const titleMatch = generateTitle(recording.recordedAt)
+				const titleMatch = generateRecordingTitle(recording.recordedAt)
 					.toLowerCase()
 					.includes(query);
 				const transcriptMatch = recording.transcript
@@ -212,11 +166,11 @@ export default function HomeScreen() {
 						keyExtractor={(item) => item.id}
 						renderItem={({ item }) => (
 							<AudioCard
-								title={generateTitle(item.recordedAt)}
-								date={formatDate(item.recordedAt)}
+								title={generateRecordingTitle(item.recordedAt)}
+								date={formatRelativeDate(item.recordedAt)}
 								description={item.transcript ?? undefined}
 								tags={item.keywords.map((kw) => kw.name)}
-								duration={formatDuration(item.durationSeconds)}
+								duration={formatDuration(item.durationSeconds) ?? undefined}
 								isPlaying={currentlyPlayingId === item.id && player.isPlaying}
 								onPlay={() => handlePlay(item.id)}
 								onPress={() => router.push(`/recording/${item.id}`)}

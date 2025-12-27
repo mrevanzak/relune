@@ -6,28 +6,11 @@ import { GradientBackground } from "@/components/ui/GradientBackground";
 import { SoftCard } from "@/components/ui/SoftCard";
 import { Shadows } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
-
-function formatDateTime(date: Date | string): string {
-	const d = new Date(date);
-	return d.toLocaleString([], {
-		month: "short",
-		day: "numeric",
-		hour: "numeric",
-		minute: "2-digit",
-	});
-}
-
-function formatDuration(seconds: number | null): string | null {
-	if (seconds === null) return null;
-	const m = Math.floor(seconds / 60);
-	const s = Math.floor(seconds % 60);
-	return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-function generateTitle(recordedAt: Date | string): string {
-	const date = new Date(recordedAt);
-	return `Recording — ${date.toLocaleDateString([], { month: "short", day: "numeric" })}`;
-}
+import {
+	formatDateTime,
+	formatDuration,
+	generateRecordingTitle,
+} from "@/lib/date";
 
 export function RecordingDetail({
 	recording,
@@ -39,7 +22,10 @@ export function RecordingDetail({
 	const surface = useThemeColor({}, "surface");
 	const dustyPink = useThemeColor({}, "dustyPink");
 
-	const title = useMemo(() => generateTitle(recording.recordedAt), [recording]);
+	const title = useMemo(
+		() => generateRecordingTitle(recording.recordedAt),
+		[recording],
+	);
 	const meta = useMemo(() => {
 		const date = formatDateTime(recording.recordedAt);
 		const dur = formatDuration(recording.durationSeconds);
