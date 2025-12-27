@@ -15,9 +15,13 @@ export default function TabLayout() {
 	const colorScheme = useColorScheme();
 	const theme = Colors[colorScheme ?? "light"];
 	const { isRecording, start, stop, durationMs } = useAudioRecorder();
+	const durationMsRef = useRef(durationMs);
 	const durationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
 		null,
 	);
+
+	// Keep latest duration for interval callback without recreating the interval.
+	durationMsRef.current = durationMs;
 
 	// TanStack Query mutation for uploads
 	const mutation = useUploadRecordingMutation();
@@ -33,22 +37,24 @@ export default function TabLayout() {
 
 	// Update duration in store while recording
 	useEffect(() => {
-		if (isRecording) {
-			durationIntervalRef.current = setInterval(() => {
-				updateDurationUI(durationMs);
-			}, 100);
-		} else {
+		if (!isRecording) return;
+
+		if (durationIntervalRef.current) {
+			clearInterval(durationIntervalRef.current);
+			durationIntervalRef.current = null;
+		}
+
+		durationIntervalRef.current = setInterval(() => {
+			updateDurationUI(durationMsRef.current);
+		}, 100);
+
+		return () => {
 			if (durationIntervalRef.current) {
 				clearInterval(durationIntervalRef.current);
 				durationIntervalRef.current = null;
 			}
-		}
-		return () => {
-			if (durationIntervalRef.current) {
-				clearInterval(durationIntervalRef.current);
-			}
 		};
-	}, [isRecording, durationMs, updateDurationUI]);
+	}, [isRecording, updateDurationUI]);
 
 	const handleRecordPress = useCallback(async () => {
 		if (isRecording) {
