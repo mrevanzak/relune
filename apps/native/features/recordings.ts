@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import type { UpdateRecordingBody } from "server/src/modules/recordings/model";
 import type { RecordingWithKeywords } from "server/src/modules/recordings/service";
 import { api } from "@/lib/api";
 
@@ -37,6 +38,35 @@ export function useDeleteRecordingMutation() {
 
 			// Also invalidate specific recording query
 			context.client.invalidateQueries({ queryKey: ["recordings", id] });
+		},
+	});
+}
+
+export type UpdateRecordingParams = {
+	id: string;
+} & UpdateRecordingBody;
+
+export function useUpdateRecordingMutation() {
+	return useMutation({
+		mutationFn: async ({ id, recordedAt, keywords }: UpdateRecordingParams) => {
+			const { data, error } = await api.recordings({ id }).patch({
+				recordedAt,
+				keywords,
+			});
+
+			if (error) {
+				throw new Error(error.value?.message ?? "Failed to update recording");
+			}
+
+			if ("error" in data) {
+				throw new Error(data.error.message ?? "Failed to update recording");
+			}
+
+			return data;
+		},
+		onSuccess: (_, _variables, _onMutateResult, context) => {
+			// Invalidate recordings list query to refetch
+			context.client.invalidateQueries({ queryKey: ["recordings"] });
 		},
 	});
 }

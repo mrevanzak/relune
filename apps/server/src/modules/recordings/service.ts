@@ -4,7 +4,19 @@ import type { Recording } from "@relune/db/schema";
 import { keywords, recordingKeywords, recordings } from "@relune/db/schema";
 import { env } from "@relune/env";
 import { generateText } from "ai";
-import { count, desc, eq, inArray, isNull } from "drizzle-orm";
+import {
+	and,
+	count,
+	desc,
+	eq,
+	exists,
+	ilike,
+	inArray,
+	isNull,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import { convertToM4a, needsConversion } from "@/shared/audio-converter";
 import {
 	deleteAudioFromStorage,
@@ -35,11 +47,38 @@ export type RecordingWithKeywords = Recording & {
 export async function listRecordings({
 	limit,
 	offset,
-}: Required<ListRecordingsParam>): Promise<RecordingWithKeywords[]> {
-	// 1. Fetch recordings with pagination
+	search,
+}: Required<Omit<ListRecordingsParam, "search">> & {
+	search?: string;
+}): Promise<RecordingWithKeywords[]> {
+	// Build search condition if search term provided
+	const whereCondition: SQL[] = [];
+
+	if (search?.trim()) {
+		const searchTerm = `%${search.trim()}%`;
+
+		// Subquery for keyword matches - uses EXISTS for efficiency
+		const keywordMatch = db
+			.select({ id: sql`1` })
+			.from(recordingKeywords)
+			.innerJoin(keywords, eq(recordingKeywords.keywordId, keywords.id))
+			.where(
+				and(
+					eq(recordingKeywords.recordingId, recordings.id),
+					ilike(keywords.name, searchTerm),
+				),
+			);
+
+		whereCondition.push(ilike(recordings.transcript, searchTerm));
+		whereCondition.push(ilike(recordings.originalFilename, searchTerm));
+		whereCondition.push(exists(keywordMatch));
+	}
+
+	// 1. Fetch recordings with pagination and optional search filter
 	const recordingResults = await db
 		.select()
 		.from(recordings)
+		.where(or(...whereCondition))
 		.orderBy(desc(recordings.recordedAt))
 		.limit(limit)
 		.offset(offset);
@@ -77,7 +116,6 @@ export async function listRecordings({
 
 export type GetRecordingOptions = {
 	id: string;
-	userId: string;
 };
 
 export type GetRecordingResult =
@@ -186,9 +224,9 @@ ${transcript}`,
 }
 
 /**
- * Save keywords to database
+ * Save keywords to database (exported for use in updateRecording)
  */
-async function saveKeywords(
+export async function saveKeywords(
 	recordingId: string,
 	keywordNames: string[],
 ): Promise<void> {
@@ -427,5 +465,69 @@ export async function deleteRecording({
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Unknown error";
 		return { success: false, error: message };
+	}
+}
+
+/**
+ * Update a recording's metadata
+ */
+export type UpdateRecordingOptions = {
+	id: string;
+	recordedAt?: Date;
+	newKeywords?: string[];
+};
+
+export type UpdateRecordingResult =
+	| { recording: RecordingWithKeywords; error: null }
+	| { recording: null; error: "not_found" | "forbidden" | string };
+
+export async function updateRecording({
+	id,
+	recordedAt,
+	newKeywords,
+}: UpdateRecordingOptions): Promise<UpdateRecordingResult> {
+	try {
+		// 1. Fetch and verify recording exists
+		const existing = await db
+			.select()
+			.from(recordings)
+			.where(eq(recordings.id, id))
+			.limit(1);
+
+		if (!existing[0]) {
+			return { recording: null, error: "not_found" };
+		}
+
+		// 3. Update recordedAt if provided
+		if (recordedAt) {
+			await db
+				.update(recordings)
+				.set({ recordedAt, updatedAt: new Date() })
+				.where(eq(recordings.id, id));
+		}
+
+		// 4. Replace keywords if provided (delete existing, add new)
+		if (newKeywords !== undefined) {
+			// Delete all existing keywords for this recording
+			await db
+				.delete(recordingKeywords)
+				.where(eq(recordingKeywords.recordingId, id));
+
+			// Save new keywords
+			if (newKeywords.length > 0) {
+				await saveKeywords(id, newKeywords);
+			}
+		}
+
+		// 5. Return updated recording with keywords
+		const result = await getRecording({ id });
+		if (result.error) {
+			return { recording: null, error: result.error };
+		}
+
+		return { recording: result.recording, error: null };
+	} catch (error) {
+		const message = error instanceof Error ? error.message : "Unknown error";
+		return { recording: null, error: message };
 	}
 }

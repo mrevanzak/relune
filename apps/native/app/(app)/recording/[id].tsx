@@ -1,7 +1,9 @@
 import { HeaderButton } from "@react-navigation/elements";
 import { useQuery } from "@tanstack/react-query";
 import { router, Stack, useLocalSearchParams } from "expo-router";
+import { useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
+import { EditRecordingModal } from "@/components/EditRecordingModal";
 import { RecordingDetail } from "@/components/RecordingDetail";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useDeleteRecordingMutation } from "@/features/recordings";
@@ -39,6 +41,7 @@ export default function RecordingDetailScreen() {
 	const recordingId = Array.isArray(id) ? id[0] : (id ?? "");
 
 	const deleteMutation = useDeleteRecordingMutation();
+	const [showEditModal, setShowEditModal] = useState(false);
 
 	const {
 		data: recording,
@@ -89,19 +92,34 @@ export default function RecordingDetailScreen() {
 			<Stack.Screen
 				options={{
 					headerRight: () => (
-						<HeaderButton
-							onPress={() => {
-								if (deleteMutation.isPending) return;
-								handleDelete();
-							}}
-						>
-							<IconSymbol name="trash" size={24} color={tint} />
-						</HeaderButton>
+						<View style={styles.headerButtons}>
+							<HeaderButton
+								onPress={() => {
+									setShowEditModal(true);
+								}}
+							>
+								<IconSymbol name="pencil" size={24} color={tint} />
+							</HeaderButton>
+							<HeaderButton
+								onPress={() => {
+									if (deleteMutation.isPending) return;
+									handleDelete();
+								}}
+							>
+								<IconSymbol name="trash" size={24} color={tint} />
+							</HeaderButton>
+						</View>
 					),
 				}}
 			/>
 
 			<RecordingDetail recording={recording} />
+
+			<EditRecordingModal
+				recording={recording}
+				visible={showEditModal}
+				onClose={() => setShowEditModal(false)}
+			/>
 		</>
 	);
 }
@@ -109,6 +127,11 @@ export default function RecordingDetailScreen() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
+	},
+	headerButtons: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 8,
 	},
 	stateContainer: {
 		flex: 1,

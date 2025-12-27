@@ -10,6 +10,7 @@ import {
 	listQuerySchema,
 	processPendingQuerySchema,
 	recordingIdParamSchema,
+	updateRecordingBodySchema,
 } from "./model";
 import * as RecordingsService from "./service";
 
@@ -28,10 +29,12 @@ export const recordings = new Elysia({
 		async ({ query }) => {
 			const limit = query.limit || 20;
 			const offset = query.offset || 0;
+			const search = query.search;
 
 			return await RecordingsService.listRecordings({
 				limit,
 				offset,
+				search,
 			});
 		},
 		{
@@ -114,5 +117,34 @@ export const recordings = new Elysia({
 		},
 		{
 			params: recordingIdParamSchema,
+		},
+	)
+	.patch(
+		"/:id",
+		async ({ user, params, body }) => {
+			const result = await RecordingsService.updateRecording({
+				id: params.id,
+				userId: user.id,
+				recordedAt: body.recordedAt ? new Date(body.recordedAt) : undefined,
+				newKeywords: body.keywords,
+			});
+
+			if (result.error === "not_found") {
+				throw new NotFoundError("Recording not found", "RECORDING_NOT_FOUND");
+			}
+
+			if (result.error === "forbidden") {
+				throw new ForbiddenError("Not authorized", "RECORDING_FORBIDDEN");
+			}
+
+			if (result.error) {
+				throw new BadRequestError(result.error, "UPDATE_FAILED");
+			}
+
+			return { recording: result.recording };
+		},
+		{
+			params: recordingIdParamSchema,
+			body: updateRecordingBodySchema,
 		},
 	);

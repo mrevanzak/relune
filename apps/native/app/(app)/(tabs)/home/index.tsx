@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { HeaderButton } from "@react-navigation/elements";
 import { Link, router, Stack } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	ActivityIndicator,
 	Alert,
@@ -34,12 +34,25 @@ export default function HomeScreen() {
 	const { isRecording } = useAudioRecorder();
 	const deleteMutation = useDeleteRecordingMutation();
 
-	// Fetch recordings from server (with smart polling)
+	// Search state with debounce for server-side search
+	const [activeFilter, setActiveFilter] = useState("All Time");
+	const [searchQuery, setSearchQuery] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
+
+	// Debounce search query for server-side search
+	useEffect(() => {
+		const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+		return () => clearTimeout(timer);
+	}, [searchQuery]);
+
+	// Fetch recordings from server (with smart polling and server-side search)
 	const {
 		data: recordings = [],
 		isLoading,
 		error,
-	} = useRecordingsWithPolling();
+	} = useRecordingsWithPolling({
+		search: debouncedSearch || undefined,
+	});
 
 	// Currently playing recording
 	const [currentlyPlayingId, setCurrentlyPlayingId] = useState<string | null>(
@@ -58,13 +71,10 @@ export default function HomeScreen() {
 	const surface = useThemeColor({}, "surface");
 	const lilac = useThemeColor({}, "lilac");
 
-	const [activeFilter, setActiveFilter] = useState("All Time");
-	const [searchQuery, setSearchQuery] = useState("");
-
-	// Filter recordings based on search query and time filter
+	// Filter recordings based on time filter only (search is server-side)
 	const filteredRecordings = useMemo(() => {
 		return recordings.filter((recording) => {
-			// Time filter
+			// Time filter only - search is handled by server
 			if (activeFilter === "Today" && !isDateToday(recording.recordedAt)) {
 				return false;
 			}
@@ -74,25 +84,9 @@ export default function HomeScreen() {
 			) {
 				return false;
 			}
-
-			// Search filter
-			if (searchQuery) {
-				const query = searchQuery.toLowerCase();
-				const titleMatch = generateRecordingTitle(recording.recordedAt)
-					.toLowerCase()
-					.includes(query);
-				const transcriptMatch = recording.transcript
-					?.toLowerCase()
-					.includes(query);
-				const keywordMatch = recording.keywords.some((kw) =>
-					kw.name.toLowerCase().includes(query),
-				);
-				return titleMatch || transcriptMatch || keywordMatch;
-			}
-
 			return true;
 		});
-	}, [recordings, activeFilter, searchQuery]);
+	}, [recordings, activeFilter]);
 
 	// Handle play button press
 	const handlePlay = (recordingId: string) => {
