@@ -134,9 +134,7 @@ export function AudioCard({
 }
 
 const styles = StyleSheet.create({
-	container: {
-		marginBottom: 16,
-	},
+	container: {},
 	pressable: {
 		borderRadius: 24,
 	},

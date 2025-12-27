@@ -6,7 +6,11 @@ import { env } from "@relune/env";
 import { generateText } from "ai";
 import { count, desc, eq, inArray, isNull } from "drizzle-orm";
 import { convertToM4a, needsConversion } from "@/shared/audio-converter";
-import { getContentType, uploadAudioToStorage } from "@/shared/storage";
+import {
+	deleteAudioFromStorage,
+	getContentType,
+	uploadAudioToStorage,
+} from "@/shared/storage";
 import type { ListRecordingsParam } from "./model";
 
 /**
@@ -376,5 +380,52 @@ export async function createAppRecording({
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Unknown error";
 		return { recording: null, error: message };
+	}
+}
+
+/**
+ * Delete a recording
+ */
+export type DeleteRecordingOptions = {
+	id: string;
+};
+
+export type DeleteRecordingResult =
+	| { success: true; error: null }
+	| { success: false; error: "not_found" | "forbidden" | string };
+
+export async function deleteRecording({
+	id,
+}: DeleteRecordingOptions): Promise<DeleteRecordingResult> {
+	try {
+		// Fetch recording
+		const result = await db
+			.select()
+			.from(recordings)
+			.where(eq(recordings.id, id))
+			.limit(1);
+
+		const recording = result[0];
+
+		if (!recording) {
+			return { success: false, error: "not_found" };
+		}
+
+		// Delete from storage
+		const storageResult = await deleteAudioFromStorage(recording.audioUrl);
+		if (!storageResult.success) {
+			return {
+				success: false,
+				error: `Storage deletion failed: ${storageResult.error}`,
+			};
+		}
+
+		// Delete from database (cascade will handle recordingKeywords)
+		await db.delete(recordings).where(eq(recordings.id, id));
+
+		return { success: true, error: null };
+	} catch (error) {
+		const message = error instanceof Error ? error.message : "Unknown error";
+		return { success: false, error: message };
 	}
 }

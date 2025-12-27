@@ -92,4 +92,27 @@ export const recordings = new Elysia({
 		{
 			body: createRecordingBodySchema,
 		},
+	)
+	.delete(
+		"/:id",
+		async ({ params }) => {
+			const result = await RecordingsService.deleteRecording({
+				id: params.id,
+			});
+
+			if (!result.success) {
+				if (result.error === "not_found") {
+					throw new NotFoundError("Recording not found", "RECORDING_NOT_FOUND");
+				}
+				if (result.error === "forbidden") {
+					throw new ForbiddenError("Not authorized", "RECORDING_FORBIDDEN");
+				}
+				throw new BadRequestError(result.error, "DELETE_FAILED");
+			}
+
+			return { success: true };
+		},
+		{
+			params: recordingIdParamSchema,
+		},
 	);

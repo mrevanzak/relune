@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { HeaderButton } from "@react-navigation/elements";
-import { router, Stack } from "expo-router";
+import { Link, router, Stack } from "expo-router";
 import { useMemo, useState } from "react";
 import {
 	ActivityIndicator,
+	Alert,
 	FlatList,
 	ScrollView,
 	StyleSheet,
@@ -14,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AudioCard } from "@/components/ui/AudioCard";
 import { FilterPill } from "@/components/ui/FilterPill";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useDeleteRecordingMutation } from "@/features/recordings";
 import { useRecordingPlayer } from "@/hooks/use-audio-player";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { useRecordingsWithPolling } from "@/hooks/use-recordings-with-polling";
@@ -30,6 +32,7 @@ const FILTERS = ["Today", "This Week", "All Time"];
 
 export default function HomeScreen() {
 	const { isRecording } = useAudioRecorder();
+	const deleteMutation = useDeleteRecordingMutation();
 
 	// Fetch recordings from server (with smart polling)
 	const {
@@ -101,6 +104,27 @@ export default function HomeScreen() {
 		}
 	};
 
+	// Handle delete with confirmation
+	const handleDelete = (recordingId: string, recordingTitle: string) => {
+		Alert.alert(
+			"Delete Recording",
+			`Are you sure you want to delete "${recordingTitle}"? This action cannot be undone.`,
+			[
+				{
+					text: "Cancel",
+					style: "cancel",
+				},
+				{
+					text: "Delete",
+					style: "destructive",
+					onPress: () => {
+						deleteMutation.mutate(recordingId);
+					},
+				},
+			],
+		);
+	};
+
 	return (
 		<SafeAreaView
 			edges={["top"]}
@@ -164,21 +188,43 @@ export default function HomeScreen() {
 					<FlatList
 						data={filteredRecordings}
 						keyExtractor={(item) => item.id}
-						renderItem={({ item }) => (
-							<AudioCard
-								title={generateRecordingTitle(item.recordedAt)}
-								date={formatRelativeDate(item.recordedAt)}
-								description={item.transcript ?? undefined}
-								tags={item.keywords.map((kw) => kw.name)}
-								duration={formatDuration(item.durationSeconds) ?? undefined}
-								isPlaying={currentlyPlayingId === item.id && player.isPlaying}
-								onPlay={() => handlePlay(item.id)}
-								onPress={() => router.push(`/recording/${item.id}`)}
-								isTranscribing={
-									item.transcript === null || item.transcript === undefined
-								}
-							/>
-						)}
+						renderItem={({ item }) => {
+							const title = generateRecordingTitle(item.recordedAt);
+							return (
+								<Link href={`/recording/${item.id}`}>
+									<Link.Trigger>
+										<View style={{ width: "100%" }}>
+											<AudioCard
+												title={title}
+												date={formatRelativeDate(item.recordedAt)}
+												description={item.transcript ?? undefined}
+												tags={item.keywords.map((kw) => kw.name)}
+												duration={
+													formatDuration(item.durationSeconds) ?? undefined
+												}
+												isPlaying={
+													currentlyPlayingId === item.id && player.isPlaying
+												}
+												onPlay={() => handlePlay(item.id)}
+												isTranscribing={
+													item.transcript === null ||
+													item.transcript === undefined
+												}
+											/>
+										</View>
+									</Link.Trigger>
+									<Link.Menu>
+										<Link.MenuAction
+											title="Delete"
+											icon="trash"
+											destructive
+											onPress={() => handleDelete(item.id, title)}
+										/>
+									</Link.Menu>
+								</Link>
+							);
+						}}
+						ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
 						contentContainerStyle={styles.listContent}
 						showsVerticalScrollIndicator={false}
 						ListEmptyComponent={
@@ -237,7 +283,7 @@ const styles = StyleSheet.create({
 		marginTop: 8,
 	},
 	listContent: {
-		paddingBottom: 120,
+		paddingBottom: 96,
 	},
 	loadingState: {
 		alignItems: "center",

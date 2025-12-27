@@ -48,3 +48,44 @@ export async function uploadAudioToStorage(
 
 	return { url: data.publicUrl, error: null };
 }
+
+/**
+ * Delete audio file from Supabase Storage by parsing the public URL
+ * to extract the storage path (e.g. "recordings/<uuid>-<filename>")
+ */
+export async function deleteAudioFromStorage(
+	audioUrl: string,
+): Promise<{ success: boolean; error: string | null }> {
+	try {
+		// Parse the public URL to extract the storage path
+		// Expected format: https://<project>.supabase.co/storage/v1/object/public/audio/<path>
+		const url = new URL(audioUrl);
+		const pathParts = url.pathname.split("/");
+
+		// Find "audio" bucket index and get everything after it
+		const audioBucketIndex = pathParts.indexOf("audio");
+		if (audioBucketIndex === -1 || audioBucketIndex === pathParts.length - 1) {
+			return {
+				success: false,
+				error: "Invalid audio URL: could not extract storage path",
+			};
+		}
+
+		// Join remaining parts to get full storage path
+		const storagePath = pathParts.slice(audioBucketIndex + 1).join("/");
+
+		// Delete from storage
+		const { error } = await supabase.storage
+			.from("audio")
+			.remove([storagePath]);
+
+		if (error) {
+			return { success: false, error: error.message };
+		}
+
+		return { success: true, error: null };
+	} catch (error) {
+		const message = error instanceof Error ? error.message : "Unknown error";
+		return { success: false, error: `Failed to parse audio URL: ${message}` };
+	}
+}

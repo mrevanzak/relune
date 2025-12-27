@@ -1,7 +1,10 @@
+import { HeaderButton } from "@react-navigation/elements";
 import { useQuery } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { router, Stack, useLocalSearchParams } from "expo-router";
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import { RecordingDetail } from "@/components/RecordingDetail";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useDeleteRecordingMutation } from "@/features/recordings";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { recordingQueryOptions } from "@/queries/recordings";
 
@@ -30,8 +33,12 @@ function ErrorState({ message }: { message: string }) {
 }
 
 export default function RecordingDetailScreen() {
+	const tint = useThemeColor({}, "tint");
+
 	const { id } = useLocalSearchParams<{ id?: string | string[] }>();
 	const recordingId = Array.isArray(id) ? id[0] : (id ?? "");
+
+	const deleteMutation = useDeleteRecordingMutation();
 
 	const {
 		data: recording,
@@ -53,7 +60,50 @@ export default function RecordingDetailScreen() {
 		return <ErrorState message={message} />;
 	}
 
-	return <RecordingDetail recording={recording} />;
+	const handleDelete = () => {
+		Alert.alert("Delete Recording", "This action cannot be undone.", [
+			{ text: "Cancel", style: "cancel" },
+			{
+				text: "Delete",
+				style: "destructive",
+				onPress: () => {
+					deleteMutation.mutate(recording.id, {
+						onSuccess: () => {
+							router.back();
+						},
+						onError: (err) => {
+							const message =
+								err instanceof Error
+									? err.message
+									: "Failed to delete recording";
+							Alert.alert("Delete failed", message);
+						},
+					});
+				},
+			},
+		]);
+	};
+
+	return (
+		<>
+			<Stack.Screen
+				options={{
+					headerRight: () => (
+						<HeaderButton
+							onPress={() => {
+								if (deleteMutation.isPending) return;
+								handleDelete();
+							}}
+						>
+							<IconSymbol name="trash" size={24} color={tint} />
+						</HeaderButton>
+					),
+				}}
+			/>
+
+			<RecordingDetail recording={recording} />
+		</>
+	);
 }
 
 const styles = StyleSheet.create({
