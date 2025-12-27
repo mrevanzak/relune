@@ -82,7 +82,6 @@ export type GetRecordingResult =
 
 export async function getRecording({
 	id,
-	userId,
 }: GetRecordingOptions): Promise<GetRecordingResult> {
 	const result = await db
 		.select()
@@ -94,10 +93,6 @@ export async function getRecording({
 
 	if (!recording) {
 		return { recording: null, error: "not_found" };
-	}
-
-	if (recording.userId !== userId) {
-		return { recording: null, error: "forbidden" };
 	}
 
 	// Fetch keywords for this recording

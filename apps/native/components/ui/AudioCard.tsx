@@ -15,6 +15,7 @@ export interface AudioCardProps {
 	duration?: string;
 	isPlaying?: boolean;
 	onPlay?: () => void;
+	onPress?: () => void;
 	isTranscribing?: boolean;
 }
 
@@ -33,6 +34,7 @@ export function AudioCard({
 	duration,
 	isPlaying,
 	onPlay,
+	onPress,
 	isTranscribing = false,
 }: AudioCardProps) {
 	const text = useThemeColor({}, "text");
@@ -45,7 +47,7 @@ export function AudioCard({
 	// Memoize waveform to prevent re-renders
 	const waveformBars = useMemo(() => WAVEFORM_BARS, []);
 
-	return (
+	const card = (
 		<SoftCard style={styles.container}>
 			<View style={styles.header}>
 				<Text style={[styles.title, { color: text }]}>{title}</Text>
@@ -119,11 +121,24 @@ export function AudioCard({
 			</View>
 		</SoftCard>
 	);
+
+	if (onPress) {
+		return (
+			<PressableScale onPress={onPress} style={styles.pressable}>
+				{card}
+			</PressableScale>
+		);
+	}
+
+	return card;
 }
 
 const styles = StyleSheet.create({
 	container: {
 		marginBottom: 16,
+	},
+	pressable: {
+		borderRadius: 24,
 	},
 	header: {
 		flexDirection: "row",

@@ -23,7 +23,10 @@ export default function AppLayout() {
 	return (
 		<BiometricLock>
 			<Stack initialRouteName="(tabs)">
-				<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+				<Stack.Screen
+					name="(tabs)"
+					options={{ headerShown: false, title: "Home" }}
+				/>
 				<Stack.Screen
 					name="import"
 					options={{
@@ -31,9 +34,16 @@ export default function AppLayout() {
 						headerShown: false,
 						sheetGrabberVisible: true,
 						sheetAllowedDetents: [0.4],
-						contentStyle: {
-							backgroundColor: "transparent",
-						},
+					}}
+				/>
+				<Stack.Screen
+					name="recording/[id]"
+					options={{
+						title: "",
+						headerBackTitle: "",
+						headerBackButtonDisplayMode: "minimal",
+						headerBackButtonMenuEnabled: false,
+						headerTransparent: true,
 					}}
 				/>
 				<Stack.Screen name="index" redirect />

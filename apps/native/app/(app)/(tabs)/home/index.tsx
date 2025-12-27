@@ -219,6 +219,7 @@ export default function HomeScreen() {
 								duration={formatDuration(item.durationSeconds)}
 								isPlaying={currentlyPlayingId === item.id && player.isPlaying}
 								onPlay={() => handlePlay(item.id)}
+								onPress={() => router.push(`/recording/${item.id}`)}
 								isTranscribing={
 									item.transcript === null || item.transcript === undefined
 								}
