@@ -16,7 +16,7 @@ COPY packages/db/package.json packages/db/package.json
 COPY packages/env/package.json packages/env/package.json
 COPY packages/config/package.json packages/config/package.json
 
-RUN bun install --frozen-lockfile
+RUN bun install --frozen-lockfile=false
 
 # ---- build ----
 FROM deps AS build
@@ -47,7 +47,7 @@ COPY packages/db/package.json packages/db/package.json
 COPY packages/env/package.json packages/env/package.json
 COPY packages/config/package.json packages/config/package.json
 
-RUN bun install --production --frozen-lockfile
+RUN bun install --production --frozen-lockfile=false
 
 # ---- runtime ----
 FROM base AS runner
