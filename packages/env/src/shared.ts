@@ -5,7 +5,7 @@ import * as z from "zod";
  */
 
 export const serverSchema = {
-  DATABASE_URL: z.url(),
+  DATABASE_URL: z.string(),
   SUPABASE_URL: z.url(),
   SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
   // Server-only: use for privileged operations that must bypass RLS (eg. Storage uploads).
