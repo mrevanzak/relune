@@ -1,0 +1,37 @@
+{
+  "name": "@relune/api",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    },
+    "./services/*": {
+      "default": "./src/services/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@orpc/server": "catalog:",
+    "@orpc/client": "catalog:",
+    "@orpc/openapi": "catalog:",
+    "@orpc/zod": "catalog:",
+    "elysia": "catalog:",
+    "drizzle-orm": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:",
+    "@relune/env": "workspace:*",
+    "@relune/db": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
+    "node-av": "catalog:",
+    "ai": "catalog:",
+    "@ai-sdk/openai": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@relune/config": "workspace:*",
+    "@types/pg": "catalog:"
+  }
+}
