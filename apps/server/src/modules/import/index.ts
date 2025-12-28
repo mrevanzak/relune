@@ -6,6 +6,7 @@ import { errorResponseSchema } from "../../shared/errors";
 import { getContentType, uploadAudioToStorage } from "../../shared/storage";
 import { authMiddleware } from "../auth";
 import * as RecordingsService from "../recordings/service";
+import { whatsappImportBodySchema } from "./model";
 import * as ImportService from "./service";
 
 /**
@@ -190,9 +191,7 @@ export const importRoutes = new Elysia({
 			};
 		},
 		{
-			body: t.Object({
-				file: t.String(),
-			}),
+			body: whatsappImportBodySchema,
 			parse: "json",
 			response: {
 				200: importResultSchema,
