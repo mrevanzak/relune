@@ -5,11 +5,23 @@
     ".": {
       "default": "./src/index.ts"
     },
-    "./*": {
-      "default": "./src/*.ts"
+    "./context": {
+      "default": "./src/context.ts"
+    },
+    "./routers": {
+      "default": "./src/routers/index.ts"
+    },
+    "./routers/*": {
+      "default": "./src/routers/*.ts"
+    },
+    "./models/*": {
+      "default": "./src/models/*.ts"
     },
     "./services/*": {
       "default": "./src/services/*.ts"
+    },
+    "./middleware/*": {
+      "default": "./src/middleware/*.ts"
     }
   },
   "scripts": {},
