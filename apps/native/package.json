@@ -12,7 +12,6 @@
 		"web": "expo start --web",
 		"xcode": "xed -b ios",
 		"doctor": "npx expo-doctor@latest",
-		"prepare": "husky",
 		"type-check": "tsc  --noemit"
 	},
 	"dependencies": {
