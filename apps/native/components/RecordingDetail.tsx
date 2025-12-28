@@ -6,17 +6,17 @@ import { GradientBackground } from "@/components/ui/GradientBackground";
 import { SoftCard } from "@/components/ui/SoftCard";
 import { Shadows } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import type { Outputs } from "@/lib/api";
 import {
   formatDateTime,
   formatDuration,
   generateRecordingTitle,
 } from "@/lib/date";
-import type { RecordingWithKeywords } from "@/queries/recordings";
 
 export function RecordingDetail({
   recording,
 }: {
-  recording: RecordingWithKeywords;
+  recording: Outputs["recordings"]["get"];
 }) {
   const text = useThemeColor({}, "text");
   const textSecondary = useThemeColor({}, "textSecondary");

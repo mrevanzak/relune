@@ -44,12 +44,12 @@ function RootLayoutNav() {
 
     const subscription = AppState.addEventListener("change", (nextAppState) => {
       if (nextAppState === "active") {
-        void processQueue();
+        processQueue();
       }
     });
 
     // Also process on initial mount
-    void processQueue();
+    processQueue();
 
     return () => {
       subscription.remove();

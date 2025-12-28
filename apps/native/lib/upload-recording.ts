@@ -5,7 +5,7 @@ import { client } from "@/lib/api";
 export interface UploadRecordingParams {
   uri: string;
   durationSeconds: number;
-  recordedAt: string; // ISO 8601
+  recordedAt: Date;
 }
 
 /**
@@ -20,7 +20,7 @@ export async function uploadRecording(params: UploadRecordingParams) {
   const file = new File(params.uri);
   const base64 = file.base64Sync();
 
-  return client.recordings.create({
+  return await client.recordings.create({
     file: base64,
     filename: file.name,
     durationSeconds: params.durationSeconds,

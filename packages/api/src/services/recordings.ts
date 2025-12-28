@@ -18,6 +18,10 @@ import {
   type SQL,
   sql,
 } from "drizzle-orm";
+import type {
+  CreateRecordingInput,
+  ListRecordingsInput,
+} from "../models/recordings";
 import { convertToM4a, needsConversion } from "./audio-converter";
 import {
   deleteAudioFromStorage,
@@ -52,20 +56,6 @@ export type RecordingWithKeywords = Recording & {
   keywords: RecordingKeywordItem[];
 };
 
-export type ListRecordingsInput = {
-  limit?: number;
-  offset?: number;
-  search?: string;
-};
-
-export type CreateRecordingInput = {
-  userId: string;
-  file: string; // base64-encoded audio data
-  filename: string;
-  durationSeconds?: number;
-  recordedAt?: Date;
-};
-
 export type UpdateRecordingInput = {
   id: string;
   recordedAt?: Date;
@@ -90,7 +80,7 @@ export async function listRecordings({
   limit = 20,
   offset = 0,
   search,
-}: ListRecordingsInput): Promise<RecordingWithKeywords[]> {
+}: NonNullable<ListRecordingsInput>): Promise<RecordingWithKeywords[]> {
   const whereCondition: SQL[] = [];
 
   if (search?.trim()) {
@@ -209,7 +199,9 @@ export async function createRecording({
   filename,
   durationSeconds,
   recordedAt,
-}: CreateRecordingInput): Promise<Recording> {
+}: CreateRecordingInput & {
+  userId: string;
+}): Promise<Recording> {
   // Decode base64 file content
   const fileBuffer = Buffer.from(file, "base64");
   const fileContent = new Uint8Array(fileBuffer);

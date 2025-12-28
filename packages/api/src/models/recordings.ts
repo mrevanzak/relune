@@ -9,11 +9,13 @@ import { z } from "zod";
 // Input Schemas
 // ============================================================================
 
-export const listRecordingsInput = z.object({
-  limit: z.number().int().min(1).max(100).optional().default(20),
-  offset: z.number().int().min(0).optional().default(0),
-  search: z.string().optional(),
-});
+export const listRecordingsInput = z
+  .object({
+    limit: z.number().optional(),
+    offset: z.number().optional(),
+    search: z.string().optional(),
+  })
+  .optional();
 
 export const getRecordingInput = z.object({
   id: z.string().uuid(),
@@ -23,7 +25,7 @@ export const createRecordingInput = z.object({
   file: z.string().min(1, "File is required"), // base64-encoded audio data
   filename: z.string().min(1, "Filename is required"),
   durationSeconds: z.number().positive().optional(),
-  recordedAt: z.string().datetime().optional(), // ISO 8601 string
+  recordedAt: z.date().optional(),
 });
 
 export const updateRecordingInput = z.object({

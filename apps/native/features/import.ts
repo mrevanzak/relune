@@ -1,8 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
 import { File as ExpoFile } from "expo-file-system";
-
-import { client, orpc } from "@/lib/api";
+import { orpc, safeClient } from "@/lib/api";
 
 /**
  * Mutation hook for importing WhatsApp chat exports.
@@ -22,8 +21,6 @@ import { client, orpc } from "@/lib/api";
  * ```
  */
 export function useImportWhatsAppMutation() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async () => {
       // 1. Open file picker for ZIP files
@@ -42,12 +39,14 @@ export function useImportWhatsAppMutation() {
       const file = new ExpoFile(asset.uri).base64Sync();
 
       // 3. Upload to server via oRPC
-      return client.import.whatsapp({ file });
+      const [error, data] = await safeClient.import.whatsapp({ file });
+      if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, _variables, _onMutateResult, context) => {
       // Refresh recordings list after successful import
-      queryClient.invalidateQueries({
-        queryKey: orpc.recordings.list.getQueryKey(),
+      context.client.invalidateQueries({
+        queryKey: orpc.recordings.list.queryKey(),
       });
     },
   });

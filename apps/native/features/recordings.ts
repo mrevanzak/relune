@@ -1,6 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
-import { client, orpc } from "@/lib/api";
+import type { ListRecordingsInput } from "@relune/api/models/recordings";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
+import { orpc } from "@/lib/api";
 
 /**
  * Recordings feature: mutations for recordings management.
@@ -18,30 +19,17 @@ import { client, orpc } from "@/lib/api";
  * ```
  */
 export function useDeleteRecordingMutation() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      return client.recordings.delete({ id });
-    },
-    onSuccess: (_, id) => {
-      // Invalidate recordings list
-      queryClient.invalidateQueries({
-        queryKey: orpc.recordings.list.getQueryKey(),
-      });
-      // Also invalidate specific recording query
-      queryClient.invalidateQueries({
-        queryKey: orpc.recordings.get.getQueryKey({ input: { id } }),
-      });
-    },
-  });
+  return useMutation(
+    orpc.recordings.delete.mutationOptions({
+      onSuccess: (_, _variables, _onMutateResult, context) => {
+        // Invalidate recordings list
+        context.client.invalidateQueries({
+          queryKey: orpc.recordings.get.key(),
+        });
+      },
+    })
+  );
 }
-
-export type UpdateRecordingParams = {
-  id: string;
-  recordedAt?: string;
-  keywords?: string[];
-};
 
 /**
  * Mutation hook for updating a recording's metadata.
@@ -54,21 +42,66 @@ export type UpdateRecordingParams = {
  * ```
  */
 export function useUpdateRecordingMutation() {
-  const queryClient = useQueryClient();
+  return useMutation(
+    orpc.recordings.update.mutationOptions({
+      onSuccess: (_, _variables, _onMutateResult, context) => {
+        // Invalidate recordings list
+        context.client.invalidateQueries({
+          queryKey: orpc.recordings.get.key(),
+        });
+      },
+    })
+  );
+}
 
-  return useMutation({
-    mutationFn: async ({ id, recordedAt, keywords }: UpdateRecordingParams) => {
-      return client.recordings.update({ id, recordedAt, keywords });
-    },
-    onSuccess: (_, { id }) => {
-      // Invalidate recordings list
-      queryClient.invalidateQueries({
-        queryKey: orpc.recordings.list.getQueryKey(),
-      });
-      // Also invalidate specific recording
-      queryClient.invalidateQueries({
-        queryKey: orpc.recordings.get.getQueryKey({ input: { id } }),
-      });
-    },
-  });
+const POLLING_INTERVAL_MS = 3000;
+const POLLING_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
+
+/**
+ * Hook that fetches recordings and automatically polls when there are
+ * pending transcriptions. Stops polling after timeout to handle failed transcriptions.
+ */
+export function useRecordingsWithPolling(
+  params?: Partial<ListRecordingsInput>
+) {
+  const query = useQuery(orpc.recordings.list.queryOptions({ input: params }));
+
+  // Track when we started polling
+  const pollingStartRef = useRef<number | null>(null);
+
+  // Check if any recordings are pending transcription
+  const hasPendingTranscriptions =
+    query.data?.some(
+      (r) => r.transcript === null || r.transcript === undefined
+    ) ?? false;
+
+  // Determine if we should still be polling (not timed out)
+  const now = Date.now();
+  if (hasPendingTranscriptions && pollingStartRef.current === null) {
+    pollingStartRef.current = now;
+  }
+  if (!hasPendingTranscriptions) {
+    pollingStartRef.current = null;
+  }
+
+  const pollingTimedOut =
+    pollingStartRef.current !== null &&
+    now - pollingStartRef.current > POLLING_TIMEOUT_MS;
+
+  const shouldPoll = hasPendingTranscriptions && !pollingTimedOut;
+
+  // Use a separate query for polling to avoid re-creating the main query
+  useQuery(
+    orpc.recordings.list.queryOptions({
+      input: params,
+      refetchInterval: shouldPoll ? POLLING_INTERVAL_MS : false,
+      refetchIntervalInBackground: false,
+    })
+  );
+
+  return {
+    ...query,
+    hasPendingTranscriptions,
+    isPolling: shouldPoll,
+  };
 }

@@ -11,7 +11,7 @@ export interface QueuedUpload {
   id: string;
   uri: string;
   durationSeconds: number;
-  recordedAt: string; // ISO 8601
+  recordedAt: Date;
   status: "pending" | "uploading" | "failed";
   retryCount: number;
   lastError?: string;

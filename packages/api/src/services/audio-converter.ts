@@ -39,10 +39,10 @@ export function getM4aFilename(originalFilename: string): string {
   return `${baseName}${OUTPUT_EXTENSION}`;
 }
 
-export type ConversionResult = {
+export interface ConversionResult {
   data: Uint8Array;
   filename: string;
-};
+}
 
 /**
  * Convert audio file to m4a format using node-av (native FFmpeg bindings)

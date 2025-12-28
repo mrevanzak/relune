@@ -30,7 +30,8 @@
       },
       "style": {
         "useBlockStatements": "off",
-        "useFilenamingConvention": "off"
+        "useFilenamingConvention": "off",
+        "useConsistentTypeDefinitions": "off"
       }
     }
   }

@@ -31,15 +31,13 @@ export const recordingsRouter = {
    * const recordings = await client.recordings.list({ limit: 20, search: "meeting" });
    * ```
    */
-  list: protectedProcedure
-    .input(listRecordingsInput)
-    .handler(async ({ input }) => {
-      return RecordingsService.listRecordings({
-        limit: input.limit,
-        offset: input.offset,
-        search: input.search,
-      });
-    }),
+  list: protectedProcedure.input(listRecordingsInput).handler(({ input }) =>
+    RecordingsService.listRecordings({
+      limit: input?.limit,
+      offset: input?.offset,
+      search: input?.search,
+    })
+  ),
 
   /**
    * Get a single recording by ID.
@@ -53,9 +51,7 @@ export const recordingsRouter = {
    */
   get: protectedProcedure
     .input(getRecordingInput)
-    .handler(async ({ input }) => {
-      return RecordingsService.getRecording(input.id);
-    }),
+    .handler(async ({ input }) => RecordingsService.getRecording(input.id)),
 
   /**
    * Create a new recording from uploaded audio.
@@ -76,15 +72,15 @@ export const recordingsRouter = {
    */
   create: protectedProcedure
     .input(createRecordingInput)
-    .handler(async ({ input, context }) => {
-      return RecordingsService.createRecording({
+    .handler(({ input, context }) =>
+      RecordingsService.createRecording({
         userId: context.user.id,
         file: input.file,
         filename: input.filename,
         durationSeconds: input.durationSeconds,
-        recordedAt: input.recordedAt ? new Date(input.recordedAt) : undefined,
-      });
-    }),
+        recordedAt: input.recordedAt,
+      })
+    ),
 
   /**
    * Update recording metadata.
@@ -100,15 +96,13 @@ export const recordingsRouter = {
    * });
    * ```
    */
-  update: protectedProcedure
-    .input(updateRecordingInput)
-    .handler(async ({ input }) => {
-      return RecordingsService.updateRecording({
-        id: input.id,
-        recordedAt: input.recordedAt ? new Date(input.recordedAt) : undefined,
-        keywords: input.keywords,
-      });
-    }),
+  update: protectedProcedure.input(updateRecordingInput).handler(({ input }) =>
+    RecordingsService.updateRecording({
+      id: input.id,
+      recordedAt: input.recordedAt ? new Date(input.recordedAt) : undefined,
+      keywords: input.keywords,
+    })
+  ),
 
   /**
    * Delete a recording and its audio file.
@@ -123,9 +117,7 @@ export const recordingsRouter = {
    */
   delete: protectedProcedure
     .input(deleteRecordingInput)
-    .handler(async ({ input }) => {
-      return RecordingsService.deleteRecording(input.id);
-    }),
+    .handler(({ input }) => RecordingsService.deleteRecording(input.id)),
 
   /**
    * Process pending recordings (transcription + keyword generation).
@@ -139,7 +131,7 @@ export const recordingsRouter = {
    */
   processPending: protectedProcedure
     .input(processPendingInput)
-    .handler(async ({ input }) => {
-      return RecordingsService.processPendingRecordings(input.limit ?? 10);
-    }),
+    .handler(({ input }) =>
+      RecordingsService.processPendingRecordings(input.limit ?? 10)
+    ),
 };

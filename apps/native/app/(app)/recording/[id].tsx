@@ -6,7 +6,7 @@ import { RecordingDetail } from "@/components/RecordingDetail";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useDeleteRecordingMutation } from "@/features/recordings";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { recordingQueryOptions } from "@/queries/recordings";
+import { orpc } from "@/lib/api";
 
 function LoadingState() {
   const tint = useThemeColor({}, "tint");
@@ -44,7 +44,9 @@ export default function RecordingDetailScreen() {
     data: recording,
     isLoading,
     error,
-  } = useQuery(recordingQueryOptions(recordingId));
+  } = useQuery(
+    orpc.recordings.get.queryOptions({ input: { id: recordingId } })
+  );
 
   if (!recordingId) {
     return <ErrorState message="Missing recording id." />;
@@ -67,18 +69,21 @@ export default function RecordingDetailScreen() {
         text: "Delete",
         style: "destructive",
         onPress: () => {
-          deleteMutation.mutate(recording.id, {
-            onSuccess: () => {
-              router.back();
-            },
-            onError: (err) => {
-              const message =
-                err instanceof Error
-                  ? err.message
-                  : "Failed to delete recording";
-              Alert.alert("Delete failed", message);
-            },
-          });
+          deleteMutation.mutate(
+            { id: recording.id },
+            {
+              onSuccess: () => {
+                router.back();
+              },
+              onError: (err) => {
+                const message =
+                  err instanceof Error
+                    ? err.message
+                    : "Failed to delete recording";
+                Alert.alert("Delete failed", message);
+              },
+            }
+          );
         },
       },
     ]);

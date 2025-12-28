@@ -77,7 +77,7 @@ export default function TabLayout() {
               addToQueue({
                 uri: params.uri,
                 durationSeconds: params.durationSeconds,
-                recordedAt: params.recordedAt.toISOString(),
+                recordedAt: params.recordedAt,
               });
             }
           },

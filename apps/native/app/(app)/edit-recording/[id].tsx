@@ -20,7 +20,7 @@ import { SoftInput } from "@/components/ui/SoftInput";
 import { Shadows } from "@/constants/theme";
 import { useUpdateRecordingMutation } from "@/features/recordings";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { recordingQueryOptions } from "@/queries/recordings";
+import { orpc } from "@/lib/api";
 
 export default function EditRecordingScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
@@ -30,7 +30,9 @@ export default function EditRecordingScreen() {
     data: recording,
     isLoading,
     error,
-  } = useQuery(recordingQueryOptions(recordingId));
+  } = useQuery(
+    orpc.recordings.get.queryOptions({ input: { id: recordingId } })
+  );
 
   const updateMutation = useUpdateRecordingMutation();
 

@@ -15,10 +15,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AudioCard } from "@/components/ui/AudioCard";
 import { FilterPill } from "@/components/ui/FilterPill";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { useDeleteRecordingMutation } from "@/features/recordings";
+import {
+  useDeleteRecordingMutation,
+  useRecordingsWithPolling,
+} from "@/features/recordings";
 import { useRecordingPlayer } from "@/hooks/use-audio-player";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
-import { useRecordingsWithPolling } from "@/hooks/use-recordings-with-polling";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import {
   formatDuration,
@@ -112,7 +114,7 @@ export default function HomeScreen() {
           text: "Delete",
           style: "destructive",
           onPress: () => {
-            deleteMutation.mutate(recordingId);
+            deleteMutation.mutate({ id: recordingId });
           },
         },
       ]

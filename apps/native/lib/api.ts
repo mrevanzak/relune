@@ -1,4 +1,8 @@
-import { createORPCClient } from "@orpc/client";
+import {
+  createORPCClient,
+  createSafeClient,
+  type InferClientOutputs,
+} from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import type { AppRouterClient } from "@relune/api/routers/index";
@@ -57,6 +61,10 @@ export const link = new RPCLink({
  * ```
  */
 export const client: AppRouterClient = createORPCClient(link);
+
+export type Outputs = InferClientOutputs<typeof client>;
+
+export const safeClient = createSafeClient(client);
 
 /**
  * TanStack Query utilities for oRPC.

@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useRef } from "react";
 
-import { isNetworkError, queryClient } from "@/lib/api";
+import { isNetworkError, orpc, queryClient } from "@/lib/api";
 import { uploadRecording } from "@/lib/upload-recording";
 import { uploadQueueStore } from "@/stores/upload-queue";
 
@@ -39,16 +39,15 @@ const MAX_RETRIES = 3;
  */
 export function useUploadRecordingMutation() {
   return useMutation({
-    mutationFn: async (params: UploadRecordingParams) => {
-      return uploadRecording({
+    mutationFn: (params: UploadRecordingParams) =>
+      uploadRecording({
         uri: params.uri,
         durationSeconds: params.durationSeconds,
-        recordedAt: (params.recordedAt ?? new Date()).toISOString(),
-      });
-    },
+        recordedAt: params.recordedAt ?? new Date(),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: orpc.recordings.list.getQueryKey(),
+        queryKey: orpc.recordings.list.queryKey(),
       });
     },
   });
@@ -99,7 +98,7 @@ export function useProcessUploadQueue() {
         // Success - remove from queue and invalidate recordings cache
         uploadQueueStore.getState().removeFromQueue(item.id);
         queryClient.invalidateQueries({
-          queryKey: orpc.recordings.list.getQueryKey(),
+          queryKey: orpc.recordings.list.queryKey(),
         });
       } catch (error) {
         const message =

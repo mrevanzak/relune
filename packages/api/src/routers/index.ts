@@ -3,7 +3,6 @@ import type { RouterClient } from "@orpc/server";
 import { publicProcedure } from "../index";
 import { importRouter } from "./import";
 import { recordingsRouter } from "./recordings";
-import { todoRouter } from "./todo";
 
 /**
  * Root application router.
@@ -30,11 +29,6 @@ export const appRouter = {
   healthCheck: publicProcedure.handler(() => {
     return "OK";
   }),
-
-  /**
-   * Todo endpoints (example/demo).
-   */
-  todo: todoRouter,
 
   /**
    * Recordings endpoints.
