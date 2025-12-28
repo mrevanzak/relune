@@ -15,7 +15,7 @@ COPY packages/db/package.json packages/db/package.json
 COPY packages/env/package.json packages/env/package.json
 COPY packages/config/package.json packages/config/package.json
 
-RUN bun install --frozen-lockfile
+RUN bun install 
 
 # ---- build ----
 FROM deps AS build
