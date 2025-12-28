@@ -1,4 +1,4 @@
-FROM oven/bun:1.2.10 AS base
+FROM oven/bun:latest AS base
 WORKDIR /app
 
 # ---- deps (workspace-aware, but only the server + required packages) ----
