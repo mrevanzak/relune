@@ -1,5 +1,6 @@
 import { File } from "expo-file-system";
-import { api, getErrorMessage } from "@/lib/api";
+
+import { client } from "@/lib/api";
 
 export interface UploadRecordingParams {
   uri: string;
@@ -9,30 +10,20 @@ export interface UploadRecordingParams {
 
 /**
  * Shared upload function used by both the mutation hook and the queue worker.
- * Converts a React Native file URI to a File object and uploads via the API.
+ * Converts a React Native file URI to base64 and uploads via oRPC.
+ *
+ * @param params - Upload parameters
+ * @returns The created recording
+ * @throws Error if upload fails
  */
 export async function uploadRecording(params: UploadRecordingParams) {
-  // Convert URI to File
   const file = new File(params.uri);
+  const base64 = file.base64Sync();
 
-  const filename = file.name;
-
-  // Upload via API
-  const { data, error } = await api.recordings.post({
-    file: file.base64Sync(),
-    filename,
+  return client.recordings.create({
+    file: base64,
+    filename: file.name,
     durationSeconds: params.durationSeconds,
     recordedAt: params.recordedAt,
   });
-
-  if (error) {
-    throw new Error(getErrorMessage(error.value, "Upload failed"));
-  }
-
-  // Narrow the union type - error response vs success response
-  if ("error" in data) {
-    throw new Error(getErrorMessage(data, "Upload failed"));
-  }
-
-  return data.recording;
 }

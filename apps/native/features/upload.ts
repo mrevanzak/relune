@@ -1,9 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useRef } from "react";
-import { isNetworkError } from "@/lib/api";
-import { queryClient } from "@/lib/query-client";
+
+import { isNetworkError, queryClient } from "@/lib/api";
 import { uploadRecording } from "@/lib/upload-recording";
-import { recordingsQueryOptions } from "@/queries/recordings";
 import { uploadQueueStore } from "@/stores/upload-queue";
 
 export interface UploadRecordingParams {
@@ -49,7 +48,7 @@ export function useUploadRecordingMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: recordingsQueryOptions().queryKey,
+        queryKey: orpc.recordings.list.getQueryKey(),
       });
     },
   });
@@ -100,7 +99,7 @@ export function useProcessUploadQueue() {
         // Success - remove from queue and invalidate recordings cache
         uploadQueueStore.getState().removeFromQueue(item.id);
         queryClient.invalidateQueries({
-          queryKey: recordingsQueryOptions().queryKey,
+          queryKey: orpc.recordings.list.getQueryKey(),
         });
       } catch (error) {
         const message =
