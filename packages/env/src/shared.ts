@@ -26,6 +26,7 @@ export const serverSchema = {
     .string()
     .default("false")
     .transform((val) => val === "true"),
+  PORT: z.coerce.number().default(3000),
 };
 
 export const clientSchema = {

@@ -66,7 +66,7 @@ const app = new Elysia()
     return response ?? new Response("Not Found", { status: 404 });
   })
   .get("/", () => "OK")
-  .listen(3000, () => {
+  .listen(env.PORT, () => {
     console.log("Server is running on http://localhost:3000");
     console.log("  - RPC endpoint: http://localhost:3000/rpc");
     console.log("  - API docs: http://localhost:3000/api");

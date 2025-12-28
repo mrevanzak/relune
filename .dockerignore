@@ -1,0 +1,29 @@
+# General
+.git
+.github
+.DS_Store
+**/.DS_Store
+
+# Dependencies / caches
+**/node_modules
+**/.turbo
+**/.next
+**/.expo
+**/.cache
+**/.parcel-cache
+
+# Builds / artifacts
+**/dist
+**/build
+**/coverage
+
+# Mobile native build outputs (very large)
+apps/native
+**/ios
+**/android
+
+# Misc docs/local notes
+docs
+session-*.md
+
+
