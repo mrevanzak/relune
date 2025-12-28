@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import type { ListRecordingsParam } from "server/src/modules/recordings/model";
+
 import { recordingsQueryOptions } from "@/queries/recordings";
 
 const POLLING_INTERVAL_MS = 3000;
@@ -10,7 +10,11 @@ const POLLING_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
  * Hook that fetches recordings and automatically polls when there are
  * pending transcriptions. Stops polling after timeout to handle failed transcriptions.
  */
-export function useRecordingsWithPolling(params?: ListRecordingsParam) {
+export function useRecordingsWithPolling(params?: {
+  limit?: number;
+  offset?: number;
+  search?: string;
+}) {
   const query = useQuery(recordingsQueryOptions(params));
 
   // Track when we started polling

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import type { RecordingWithKeywords } from "server/src/modules/recordings/service";
+
 import { AudioPlayer } from "@/components/ui/AudioPlayer";
 import { GradientBackground } from "@/components/ui/GradientBackground";
 import { SoftCard } from "@/components/ui/SoftCard";
@@ -11,6 +11,7 @@ import {
   formatDuration,
   generateRecordingTitle,
 } from "@/lib/date";
+import type { RecordingWithKeywords } from "@/queries/recordings";
 
 export function RecordingDetail({
   recording,
