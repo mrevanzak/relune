@@ -15,6 +15,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 		ios: {
 			supportsTablet: true,
 			bundleIdentifier: "com.mrevanzak.relune",
+			infoPlist: {
+				ITSAppUsesNonExemptEncryption: false,
+			},
 		},
 		android: {
 			adaptiveIcon: {
@@ -53,6 +56,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 		extra: {
 			...config?.extra,
 			...clientEnv,
+			eas: {
+				projectId: "80ccff1a-9f8c-4fbc-bae0-1b8838666cde",
+			},
 		},
 	} as ExpoConfig;
 };
