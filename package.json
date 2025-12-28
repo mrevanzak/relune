@@ -12,10 +12,9 @@
 		"server:dev": "bun turbo dev --filter=server",
 		"db:push": "bun turbo db:push"
 	},
-	"dependencies": {},
 	"devDependencies": {
-		"turbo": "^2.6.3",
-		"@biomejs/biome": "^2.2.0"
+		"@biomejs/biome": "^2.2.0",
+		"turbo": "^2.6.3"
 	},
 	"packageManager": "bun@1.2.10"
 }

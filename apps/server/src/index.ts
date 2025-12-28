@@ -6,7 +6,7 @@ import { auth } from "./modules/auth";
 import { importRoutes } from "./modules/import";
 import { recordings } from "./modules/recordings";
 
-const app = new Elysia()
+export const app = new Elysia()
 	.use(
 		cors({
 			origin: env.CORS_ORIGIN,
@@ -34,5 +34,3 @@ const app = new Elysia()
 	});
 
 export type App = typeof app;
-
-export default app;
