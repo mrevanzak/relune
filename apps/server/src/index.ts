@@ -9,13 +9,20 @@ import { appRouter } from "@relune/api/routers/index";
 import { env } from "@relune/env";
 import { Elysia } from "elysia";
 
+/**
+ * oRPC handlers for RPC and OpenAPI endpoints.
+ *
+ * RPCHandler: Handles type-safe RPC calls at /rpc/*
+ * OpenAPIHandler: Provides OpenAPI documentation at /api/*
+ */
 const rpcHandler = new RPCHandler(appRouter, {
   interceptors: [
     onError((error) => {
-      console.error(error);
+      console.error("[oRPC Error]", error);
     }),
   ],
 });
+
 const apiHandler = new OpenAPIHandler(appRouter, {
   plugins: [
     new OpenAPIReferencePlugin({
@@ -24,33 +31,45 @@ const apiHandler = new OpenAPIHandler(appRouter, {
   ],
   interceptors: [
     onError((error) => {
-      console.error(error);
+      console.error("[OpenAPI Error]", error);
     }),
   ],
 });
 
+/**
+ * Elysia server - thin wrapper that mounts oRPC handlers.
+ *
+ * Routes:
+ * - GET /         : Health check
+ * - ALL /rpc/*    : oRPC RPC handler (type-safe client calls)
+ * - ALL /api/*    : OpenAPI handler (docs + REST-style calls)
+ */
 const app = new Elysia()
   .use(
     cors({
       origin: env.CORS_ORIGIN,
-      methods: ["GET", "POST", "OPTIONS"],
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     })
   )
-  .all("/rpc*", async (context) => {
+  .all("/rpc/*", async (context) => {
     const { response } = await rpcHandler.handle(context.request, {
       prefix: "/rpc",
-      context: await createContext({ context }),
+      context: createContext(context.request.headers),
     });
     return response ?? new Response("Not Found", { status: 404 });
   })
-  .all("/api*", async (context) => {
+  .all("/api/*", async (context) => {
     const { response } = await apiHandler.handle(context.request, {
-      prefix: "/api-reference",
-      context: await createContext({ context }),
+      prefix: "/api",
+      context: createContext(context.request.headers),
     });
     return response ?? new Response("Not Found", { status: 404 });
   })
   .get("/", () => "OK")
   .listen(3000, () => {
     console.log("Server is running on http://localhost:3000");
+    console.log("  - RPC endpoint: http://localhost:3000/rpc");
+    console.log("  - API docs: http://localhost:3000/api");
   });
+
+export type App = typeof app;
