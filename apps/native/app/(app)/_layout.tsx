@@ -34,6 +34,9 @@ export default function AppLayout() {
 						headerShown: false,
 						sheetGrabberVisible: true,
 						sheetAllowedDetents: [0.4],
+						contentStyle: {
+							backgroundColor: "transparent",
+						},
 					}}
 				/>
 				<Stack.Screen
@@ -44,6 +47,14 @@ export default function AppLayout() {
 						headerBackButtonDisplayMode: "minimal",
 						headerBackButtonMenuEnabled: false,
 						headerTransparent: true,
+					}}
+				/>
+				<Stack.Screen
+					name="edit-recording/[id]"
+					options={{
+						presentation: "formSheet",
+						sheetGrabberVisible: true,
+						sheetAllowedDetents: "fitToContents",
 					}}
 				/>
 				<Stack.Screen name="index" redirect />

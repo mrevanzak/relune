@@ -1,9 +1,7 @@
 import { HeaderButton } from "@react-navigation/elements";
 import { useQuery } from "@tanstack/react-query";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
-import { EditRecordingModal } from "@/components/EditRecordingModal";
 import { RecordingDetail } from "@/components/RecordingDetail";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useDeleteRecordingMutation } from "@/features/recordings";
@@ -41,7 +39,6 @@ export default function RecordingDetailScreen() {
 	const recordingId = Array.isArray(id) ? id[0] : (id ?? "");
 
 	const deleteMutation = useDeleteRecordingMutation();
-	const [showEditModal, setShowEditModal] = useState(false);
 
 	const {
 		data: recording,
@@ -95,7 +92,7 @@ export default function RecordingDetailScreen() {
 						<View style={styles.headerButtons}>
 							<HeaderButton
 								onPress={() => {
-									setShowEditModal(true);
+									router.push(`/edit-recording/${recording.id}`);
 								}}
 							>
 								<IconSymbol name="pencil" size={24} color={tint} />
@@ -114,12 +111,6 @@ export default function RecordingDetailScreen() {
 			/>
 
 			<RecordingDetail recording={recording} />
-
-			<EditRecordingModal
-				recording={recording}
-				visible={showEditModal}
-				onClose={() => setShowEditModal(false)}
-			/>
 		</>
 	);
 }

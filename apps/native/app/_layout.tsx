@@ -8,6 +8,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect } from "react";
 import { AppState, View } from "react-native";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-reanimated";
 
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -80,11 +81,13 @@ function RootLayoutNav() {
 export default function RootLayout() {
 	return (
 		<GestureHandlerRootView>
-			<QueryProvider>
-				<SessionProvider>
-					<RootLayoutNav />
-				</SessionProvider>
-			</QueryProvider>
+			<KeyboardProvider>
+				<QueryProvider>
+					<SessionProvider>
+						<RootLayoutNav />
+					</SessionProvider>
+				</QueryProvider>
+			</KeyboardProvider>
 		</GestureHandlerRootView>
 	);
 }
