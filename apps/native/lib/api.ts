@@ -41,6 +41,14 @@ export function getErrorMessage(errorValue: unknown, fallback: string): string {
 		return fallback;
 	}
 
+	// Application error shape: { error: { message, code, status } }
+	if ("error" in errorValue) {
+		const appError = errorValue as { error?: { message?: string } };
+		if (appError.error?.message) {
+			return appError.error.message;
+		}
+	}
+
 	// Validation error shape: { message, type, on }
 	if ("message" in errorValue) {
 		const validationError = errorValue as { message?: string };
