@@ -9,7 +9,6 @@ COPY package.json bun.lock bunfig.toml turbo.json tsconfig.json ./
 COPY apps/server/package.json apps/server/package.json
 COPY apps/server/tsconfig.json apps/server/tsconfig.json
 COPY apps/server/tsdown.config.ts apps/server/tsdown.config.ts
-COPY apps/native/package.json apps/native/package.json
 
 COPY packages/api/package.json packages/api/package.json
 COPY packages/db/package.json packages/db/package.json
@@ -40,7 +39,6 @@ COPY package.json bun.lock bunfig.toml turbo.json tsconfig.json ./
 COPY apps/server/package.json apps/server/package.json
 COPY apps/server/tsconfig.json apps/server/tsconfig.json
 COPY apps/server/tsdown.config.ts apps/server/tsdown.config.ts
-COPY apps/native/package.json apps/native/package.json
 
 COPY packages/api/package.json packages/api/package.json
 COPY packages/db/package.json packages/db/package.json
