@@ -45,7 +45,7 @@ COPY packages/db/package.json packages/db/package.json
 COPY packages/env/package.json packages/env/package.json
 COPY packages/config/package.json packages/config/package.json
 
-RUN bun install --frozen-lockfile --production
+RUN bun install --production
 
 # ---- runtime ----
 FROM base AS runner
