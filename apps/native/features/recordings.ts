@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import type { UpdateRecordingBody } from "server/src/modules/recordings/model";
 import type { RecordingWithKeywords } from "server/src/modules/recordings/service";
-import { api } from "@/lib/api";
+import { api, getErrorMessage } from "@/lib/api";
 
 /**
  * Recordings feature: mutations and workflows for recordings management
@@ -14,12 +14,13 @@ export function useDeleteRecordingMutation() {
 			const { data, error } = await api.recordings({ id }).delete();
 
 			if (error) {
-				throw new Error(error.value?.message ?? "Failed to delete recording");
+				throw new Error(
+					getErrorMessage(error.value, "Failed to delete recording"),
+				);
 			}
 
 			if ("error" in data) {
-				const errorData = data.error;
-				throw new Error(errorData.message ?? "Failed to delete recording");
+				throw new Error(getErrorMessage(data, "Failed to delete recording"));
 			}
 
 			return data;
@@ -55,11 +56,13 @@ export function useUpdateRecordingMutation() {
 			});
 
 			if (error) {
-				throw new Error(error.value?.message ?? "Failed to update recording");
+				throw new Error(
+					getErrorMessage(error.value, "Failed to update recording"),
+				);
 			}
 
 			if ("error" in data) {
-				throw new Error(data.error.message ?? "Failed to update recording");
+				throw new Error(getErrorMessage(data, "Failed to update recording"));
 			}
 
 			return data;

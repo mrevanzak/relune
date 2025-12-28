@@ -31,3 +31,23 @@ export function isNetworkError(error: unknown): boolean {
 	}
 	return false;
 }
+
+/**
+ * Extract error message from Eden error response.
+ * Handles both application errors ({ error: { message } }) and validation errors ({ message }).
+ */
+export function getErrorMessage(errorValue: unknown, fallback: string): string {
+	if (!errorValue || typeof errorValue !== "object") {
+		return fallback;
+	}
+
+	// Validation error shape: { message, type, on }
+	if ("message" in errorValue) {
+		const validationError = errorValue as { message?: string };
+		if (validationError.message) {
+			return validationError.message;
+		}
+	}
+
+	return fallback;
+}

@@ -1,9 +1,5 @@
 import { Elysia } from "elysia";
-import {
-	BadRequestError,
-	ForbiddenError,
-	NotFoundError,
-} from "../../shared/errors";
+import { errorResponseSchema } from "../../shared/errors";
 import { authMiddleware } from "../auth";
 import {
 	createRecordingBodySchema,
@@ -43,24 +39,36 @@ export const recordings = new Elysia({
 	)
 	.get(
 		"/:id",
-		async ({ user, params }) => {
+		async ({ params, status }) => {
 			const result = await RecordingsService.getRecording({
 				id: params.id,
-				userId: user.id,
 			});
 
 			if (result.error === "not_found") {
-				throw new NotFoundError("Recording not found", "RECORDING_NOT_FOUND");
+				return status(404, {
+					message: "Recording not found",
+					code: "RECORDING_NOT_FOUND",
+					status: 404,
+				});
 			}
 
 			if (result.error === "forbidden") {
-				throw new ForbiddenError("Not authorized", "RECORDING_FORBIDDEN");
+				return status(403, {
+					message: "Not authorized",
+					code: "RECORDING_FORBIDDEN",
+					status: 403,
+				});
 			}
 
+			// After error checks, recording is guaranteed to be non-null
 			return { recording: result.recording };
 		},
 		{
 			params: recordingIdParamSchema,
+			response: {
+				403: errorResponseSchema,
+				404: errorResponseSchema,
+			},
 		},
 	)
 	.post(
@@ -75,7 +83,7 @@ export const recordings = new Elysia({
 	)
 	.post(
 		"/",
-		async ({ user, body }) => {
+		async ({ user, body, status }) => {
 			const { file, filename, durationSeconds, recordedAt } = body;
 
 			const result = await RecordingsService.createAppRecording({
@@ -87,64 +95,106 @@ export const recordings = new Elysia({
 			});
 
 			if (result.error) {
-				throw new BadRequestError(result.error, "UPLOAD_FAILED");
+				return status(400, {
+					message: result.error,
+					code: "UPLOAD_FAILED",
+					status: 400,
+				});
 			}
 
+			// After error check, recording is guaranteed to be non-null
 			return { recording: result.recording };
 		},
 		{
 			body: createRecordingBodySchema,
+			response: {
+				400: errorResponseSchema,
+			},
 		},
 	)
 	.delete(
 		"/:id",
-		async ({ params }) => {
+		async ({ params, status }) => {
 			const result = await RecordingsService.deleteRecording({
 				id: params.id,
 			});
 
 			if (!result.success) {
 				if (result.error === "not_found") {
-					throw new NotFoundError("Recording not found", "RECORDING_NOT_FOUND");
+					return status(404, {
+						message: "Recording not found",
+						code: "RECORDING_NOT_FOUND",
+						status: 404,
+					});
 				}
 				if (result.error === "forbidden") {
-					throw new ForbiddenError("Not authorized", "RECORDING_FORBIDDEN");
+					return status(403, {
+						message: "Not authorized",
+						code: "RECORDING_FORBIDDEN",
+						status: 403,
+					});
 				}
-				throw new BadRequestError(result.error, "DELETE_FAILED");
+				return status(400, {
+					message: result.error,
+					code: "DELETE_FAILED",
+					status: 400,
+				});
 			}
 
 			return { success: true };
 		},
 		{
 			params: recordingIdParamSchema,
+			response: {
+				400: errorResponseSchema,
+				403: errorResponseSchema,
+				404: errorResponseSchema,
+			},
 		},
 	)
 	.patch(
 		"/:id",
-		async ({ user, params, body }) => {
+		async ({ params, body, status }) => {
 			const result = await RecordingsService.updateRecording({
 				id: params.id,
-				userId: user.id,
 				recordedAt: body.recordedAt ? new Date(body.recordedAt) : undefined,
 				newKeywords: body.keywords,
 			});
 
 			if (result.error === "not_found") {
-				throw new NotFoundError("Recording not found", "RECORDING_NOT_FOUND");
+				return status(404, {
+					message: "Recording not found",
+					code: "RECORDING_NOT_FOUND",
+					status: 404,
+				});
 			}
 
 			if (result.error === "forbidden") {
-				throw new ForbiddenError("Not authorized", "RECORDING_FORBIDDEN");
+				return status(403, {
+					message: "Not authorized",
+					code: "RECORDING_FORBIDDEN",
+					status: 403,
+				});
 			}
 
 			if (result.error) {
-				throw new BadRequestError(result.error, "UPDATE_FAILED");
+				return status(400, {
+					message: result.error,
+					code: "UPDATE_FAILED",
+					status: 400,
+				});
 			}
 
+			// After error checks, recording is guaranteed to be non-null
 			return { recording: result.recording };
 		},
 		{
 			params: recordingIdParamSchema,
 			body: updateRecordingBodySchema,
+			response: {
+				400: errorResponseSchema,
+				403: errorResponseSchema,
+				404: errorResponseSchema,
+			},
 		},
 	);

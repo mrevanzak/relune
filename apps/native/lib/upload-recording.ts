@@ -1,5 +1,5 @@
 import { File } from "expo-file-system";
-import { api } from "@/lib/api";
+import { api, getErrorMessage } from "@/lib/api";
 
 export interface UploadRecordingParams {
 	uri: string;
@@ -25,12 +25,13 @@ export async function uploadRecording(params: UploadRecordingParams) {
 		recordedAt: params.recordedAt,
 	});
 
-	if (error) throw new Error(error.value.message ?? "Upload failed");
+	if (error) {
+		throw new Error(getErrorMessage(error.value, "Upload failed"));
+	}
 
 	// Narrow the union type - error response vs success response
 	if ("error" in data) {
-		const errorData = data.error as { message?: string };
-		throw new Error(errorData.message ?? "Upload failed");
+		throw new Error(getErrorMessage(data, "Upload failed"));
 	}
 
 	return data.recording;

@@ -19,6 +19,12 @@ export type GetUserFn = (token: string) => Promise<GetUserResult>;
 export type CreateAuthPluginOptions = {
 	getUser: GetUserFn;
 	allowedEmails?: string[];
+	/**
+	 * Called after successful authentication to perform side effects like user provisioning.
+	 * Defaults to ensureUserExists which creates the user in public.users if needed.
+	 * Can be set to a no-op for testing.
+	 */
+	onUserAuthenticated?: (user: AuthUser) => Promise<void>;
 };
 
 function normalizeEmail(email: string | null | undefined): string | null {
@@ -68,6 +74,7 @@ function extractBearerToken(authHeader: string | null): string | null {
 export function createAuthPlugin({
 	getUser,
 	allowedEmails = [],
+	onUserAuthenticated = ensureUserExists,
 }: CreateAuthPluginOptions) {
 	const whitelist = allowedEmails
 		.map((email) => normalizeEmail(email))
@@ -118,7 +125,7 @@ export function createAuthPlugin({
 				}
 
 				// Ensure user exists in public.users table
-				await ensureUserExists(existingUser);
+				await onUserAuthenticated(existingUser);
 
 				return { user: existingUser };
 			}
@@ -150,7 +157,7 @@ export function createAuthPlugin({
 				}
 
 				// Ensure user exists in public.users table (just-in-time provisioning)
-				await ensureUserExists(user);
+				await onUserAuthenticated(user);
 
 				return { user };
 			} catch (error) {

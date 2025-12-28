@@ -5,10 +5,8 @@ import { Elysia } from "elysia";
 import { auth } from "./modules/auth";
 import { importRoutes } from "./modules/import";
 import { recordings } from "./modules/recordings";
-import { errorHandler } from "./shared/error-handler";
 
 const app = new Elysia()
-	.use(errorHandler)
 	.use(
 		cors({
 			origin: env.CORS_ORIGIN,

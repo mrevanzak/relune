@@ -2,11 +2,32 @@ import { Elysia, t } from "elysia";
 import { fileTypeFromBuffer } from "file-type";
 import JSZip from "jszip";
 import { convertToM4a, needsConversion } from "@/shared/audio-converter";
-import { BadRequestError } from "../../shared/errors";
+import { errorResponseSchema } from "../../shared/errors";
 import { getContentType, uploadAudioToStorage } from "../../shared/storage";
 import { authMiddleware } from "../auth";
 import * as RecordingsService from "../recordings/service";
 import * as ImportService from "./service";
+
+/**
+ * Response schema for import result
+ */
+const importResultSchema = t.Object({
+	imported: t.Number(),
+	skipped: t.Number(),
+	failed: t.Array(
+		t.Object({
+			filename: t.String(),
+			error: t.String(),
+		}),
+	),
+	parseErrors: t.Array(t.String()),
+	recordings: t.Array(
+		t.Object({
+			id: t.String(),
+			filename: t.String(),
+		}),
+	),
+});
 
 /**
  * Import controller (Elysia instance)
@@ -20,7 +41,7 @@ export const importRoutes = new Elysia({
 	.use(authMiddleware)
 	.post(
 		"/whatsapp",
-		async ({ body }) => {
+		async ({ body, status }) => {
 			const { file } = body;
 
 			// Convert base64 string to buffer
@@ -29,10 +50,11 @@ export const importRoutes = new Elysia({
 			// Validate it's a zip file
 			const fileType = await fileTypeFromBuffer(fileBuffer);
 			if (fileType?.mime !== "application/zip") {
-				throw new BadRequestError(
-					"File must be a ZIP archive",
-					"INVALID_FILE_TYPE",
-				);
+				return status(400, {
+					message: "File must be a ZIP archive",
+					code: "INVALID_FILE_TYPE",
+					status: 400,
+				});
 			}
 
 			// Use JSZip to extract contents
@@ -60,10 +82,11 @@ export const importRoutes = new Elysia({
 			}
 
 			if (!chatTxtContent) {
-				throw new BadRequestError(
-					"No _chat.txt found in ZIP archive",
-					"MISSING_CHAT_TXT",
-				);
+				return status(400, {
+					message: "No _chat.txt found in ZIP archive",
+					code: "MISSING_CHAT_TXT",
+					status: 400,
+				});
 			}
 
 			// Parse chat.txt
@@ -171,5 +194,9 @@ export const importRoutes = new Elysia({
 				file: t.String(),
 			}),
 			parse: "json",
+			response: {
+				200: importResultSchema,
+				400: errorResponseSchema,
+			},
 		},
 	);

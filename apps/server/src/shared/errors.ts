@@ -1,3 +1,5 @@
+import { t } from "elysia";
+
 /**
  * Custom error types for consistent HTTP error handling
  */
@@ -47,3 +49,15 @@ export class InternalServerError extends HttpError {
 		this.name = "InternalServerError";
 	}
 }
+
+/**
+ * Shared error response schema for Eden type inference
+ * This matches the shape returned by the errorHandler
+ */
+export const errorResponseSchema = t.Object({
+	message: t.String(),
+	code: t.Optional(t.String()),
+	status: t.Number(),
+});
+
+export type ErrorResponse = typeof errorResponseSchema.static;

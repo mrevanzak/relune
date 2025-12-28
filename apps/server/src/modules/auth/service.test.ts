@@ -1,12 +1,16 @@
 import { describe, expect, it } from "bun:test";
 import { Elysia } from "elysia";
-import { errorHandler } from "../../shared/error-handler";
 import { createAuthPlugin } from "./service";
 
 function createTestApp(options: Parameters<typeof createAuthPlugin>[0]) {
 	return new Elysia()
-		.use(errorHandler)
-		.use(createAuthPlugin(options))
+		.use(
+			createAuthPlugin({
+				...options,
+				// Skip DB provisioning in tests
+				onUserAuthenticated: async () => {},
+			}),
+		)
 		.get("/me", ({ user }) => ({ id: user.id, email: user.email ?? null }));
 }
 

@@ -44,3 +44,36 @@ export type RecordingIdParam = typeof recordingIdParamSchema.static;
 export type ProcessPendingQuery = typeof processPendingQuerySchema.static;
 export type CreateRecordingBody = typeof createRecordingBodySchema.static;
 export type UpdateRecordingBody = typeof updateRecordingBodySchema.static;
+
+/**
+ * Response schemas for Eden type inference
+ */
+export const keywordItemSchema = t.Object({
+	id: t.String(),
+	name: t.String(),
+});
+
+export const recordingSchema = t.Object({
+	id: t.String(),
+	userId: t.String(),
+	audioUrl: t.String(),
+	transcript: t.Nullable(t.String()),
+	durationSeconds: t.Nullable(t.Number()),
+	fileSizeBytes: t.Nullable(t.Number()),
+	recordedAt: t.Date(),
+	language: t.Nullable(
+		t.Union([t.Literal("en"), t.Literal("fr"), t.Literal("mixed")]),
+	),
+	importSource: t.Union([t.Literal("app"), t.Literal("whatsapp")]),
+	originalFilename: t.Nullable(t.String()),
+	notes: t.Nullable(t.String()),
+	createdAt: t.Date(),
+	updatedAt: t.Date(),
+});
+
+export const recordingWithKeywordsSchema = t.Intersect([
+	recordingSchema,
+	t.Object({
+		keywords: t.Array(keywordItemSchema),
+	}),
+]);

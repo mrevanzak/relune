@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { ListRecordingsParam } from "server/src/modules/recordings/model";
 import type { RecordingWithKeywords } from "server/src/modules/recordings/service";
-import { api } from "@/lib/api";
+import { api, getErrorMessage } from "@/lib/api";
 
 export const recordingsQueryOptions = (params?: ListRecordingsParam) =>
 	queryOptions({
@@ -9,12 +9,13 @@ export const recordingsQueryOptions = (params?: ListRecordingsParam) =>
 		queryFn: async () => {
 			const { data, error } = await api.recordings.get({ query: params });
 			if (error) {
-				throw new Error(error.value?.message ?? "Failed to fetch recordings");
+				throw new Error(
+					getErrorMessage(error.value, "Failed to fetch recordings"),
+				);
 			}
 
 			if ("error" in data) {
-				const errorData = data.error as { message?: string };
-				throw new Error(errorData.message ?? "Failed to fetch recordings");
+				throw new Error(getErrorMessage(data, "Failed to fetch recordings"));
 			}
 
 			return data;
@@ -28,12 +29,13 @@ export const recordingQueryOptions = (id: string) =>
 			const { data, error } = await api.recordings({ id }).get();
 
 			if (error) {
-				throw new Error(error.value?.message ?? "Failed to fetch recording");
+				throw new Error(
+					getErrorMessage(error.value, "Failed to fetch recording"),
+				);
 			}
 
 			if ("error" in data) {
-				const errorData = data.error as { message?: string };
-				throw new Error(errorData.message ?? "Failed to fetch recording");
+				throw new Error(getErrorMessage(data, "Failed to fetch recording"));
 			}
 
 			if (!data.recording) {

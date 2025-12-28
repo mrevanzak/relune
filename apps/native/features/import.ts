@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
 import { File as ExpoFile } from "expo-file-system";
-import { api } from "@/lib/api";
+import { api, getErrorMessage } from "@/lib/api";
 import { recordingsQueryOptions } from "@/queries/recordings";
 
 /**
@@ -28,9 +28,8 @@ export function useImportWhatsAppMutation() {
 
 			// 3. Upload to server
 			const { data, error } = await api.import.whatsapp.post({ file });
-			if (error) throw new Error(error.value?.message ?? "Import failed");
-			if (!data || "error" in data) {
-				throw new Error("Import failed");
+			if (error) {
+				throw new Error(getErrorMessage(error.value, "Import failed"));
 			}
 			return data;
 		},
