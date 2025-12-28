@@ -1,7 +1,11 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { db } from "@relune/db";
-import type { Recording } from "@relune/db/schema";
-import { keywords, recordingKeywords, recordings } from "@relune/db/schema";
+import {
+	keywords,
+	type Recording,
+	recordingKeywords,
+	recordings,
+} from "@relune/db/schema";
 import { env } from "@relune/env";
 import { generateText } from "ai";
 import {
