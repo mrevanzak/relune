@@ -1,6 +1,7 @@
 import type { RouterClient } from "@orpc/server";
 
 import { publicProcedure } from "../index";
+import { importRouter } from "./import";
 import { recordingsRouter } from "./recordings";
 import { todoRouter } from "./todo";
 
