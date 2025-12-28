@@ -37,6 +37,7 @@ export function useImportWhatsAppMutation() {
 			// Refresh recordings list after successful import
 			context.client.invalidateQueries({
 				queryKey: recordingsQueryOptions().queryKey,
+				exact: false,
 			});
 		},
 	});

@@ -4,6 +4,7 @@ import {
 	ActivityIndicator,
 	StyleSheet,
 	Text,
+	View,
 	type ViewStyle,
 } from "react-native";
 import { Gradients, Shadows } from "@/constants/theme";
@@ -56,13 +57,12 @@ export function SoftButton({
 					start={{ x: 0, y: 0 }}
 					end={{ x: 1, y: 1 }}
 				>
-					{loading ? (
-						<ActivityIndicator color={surface} size="small" />
-					) : (
+					<View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
 						<Text style={[styles.primaryText, { color: surface }]}>
 							{title}
 						</Text>
-					)}
+						{loading && <ActivityIndicator color={surface} size="small" />}
+					</View>
 				</LinearGradient>
 			</PressableScale>
 		);

@@ -5,7 +5,7 @@ import { api, getErrorMessage } from "@/lib/api";
 
 export const recordingsQueryOptions = (params?: ListRecordingsParam) =>
 	queryOptions({
-		queryKey: ["recordings", params],
+		queryKey: ["recordings", { ...params }],
 		queryFn: async () => {
 			const { data, error } = await api.recordings.get({ query: params });
 			if (error) {

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { ThemedText } from "@/components/themed-text";
 import { SoftButton } from "@/components/ui/SoftButton";
@@ -29,59 +29,68 @@ export default function ImportScreen() {
 	};
 
 	const renderContent = () => {
-		if (importMutation.isPending) {
+		if (result) {
+			const hasErrors = result.failed.length > 0;
+			const hasImports = result.imported > 0;
+			const hasSkips = result.skipped > 0;
+
+			// Decide main icon and color
+			let iconName: keyof typeof Ionicons.glyphMap = "checkmark-circle";
+			let iconColor = success;
+			let titleText = "Import Complete";
+
+			if (!hasImports && !hasSkips && hasErrors) {
+				iconName = "alert-circle";
+				iconColor = errorColor;
+				titleText = "Import Failed";
+			} else if (!hasImports && hasSkips && !hasErrors) {
+				iconName = "information-circle";
+				iconColor = tint;
+				titleText = "No New Recordings";
+			} else if (!hasImports && !hasSkips && !hasErrors) {
+				iconName = "alert-circle";
+				iconColor = textSecondary;
+				titleText = "No Files Found";
+			}
+
 			return (
 				<Animated.View
 					entering={FadeIn}
 					exiting={FadeOut}
 					style={styles.contentContainer}
 				>
-					<ActivityIndicator size="large" color={tint} />
-					<ThemedText style={{ color: textSecondary }}>Importing...</ThemedText>
-				</Animated.View>
-			);
-		}
+					<View style={styles.iconContainer}>
+						<Ionicons name={iconName} size={64} color={iconColor} />
+					</View>
 
-		if (result) {
-			return (
-				<Animated.View
-					entering={FadeIn}
-					exiting={FadeOut}
-					style={styles.resultsContainer}
-				>
-					{result.imported > 0 && (
-						<View style={styles.resultRow}>
-							<Ionicons name="checkmark-circle" size={24} color={success} />
-							<ThemedText>
+					<ThemedText type="subtitle" style={styles.title}>
+						{titleText}
+					</ThemedText>
+
+					<View style={{ alignItems: "center", gap: 4 }}>
+						{hasImports && (
+							<ThemedText style={{ textAlign: "center", fontSize: 16 }}>
 								{result.imported} recording{result.imported !== 1 ? "s" : ""}{" "}
 								imported
 							</ThemedText>
-						</View>
-					)}
-					{result.skipped > 0 && (
-						<View style={styles.resultRow}>
-							<Ionicons name="remove-circle" size={24} color={textSecondary} />
-							<ThemedText style={{ color: textSecondary }}>
+						)}
+						{hasSkips && (
+							<ThemedText style={{ color: textSecondary, textAlign: "center" }}>
 								{result.skipped} duplicate{result.skipped !== 1 ? "s" : ""}{" "}
 								skipped
 							</ThemedText>
-						</View>
-					)}
-					{result.failed.length > 0 && (
-						<View style={styles.resultRow}>
-							<Ionicons name="close-circle" size={24} color={errorColor} />
-							<ThemedText style={{ color: errorColor }}>
+						)}
+						{hasErrors && (
+							<ThemedText style={{ color: errorColor, textAlign: "center" }}>
 								{result.failed.length} failed
 							</ThemedText>
-						</View>
-					)}
-					{result.imported === 0 &&
-						result.skipped === 0 &&
-						result.failed.length === 0 && (
+						)}
+						{!hasImports && !hasSkips && !hasErrors && (
 							<ThemedText style={{ color: textSecondary, textAlign: "center" }}>
 								No audio files found in export
 							</ThemedText>
 						)}
+					</View>
 				</Animated.View>
 			);
 		}
@@ -131,7 +140,9 @@ export default function ImportScreen() {
 					<SoftButton title="Done" onPress={handleDone} />
 				) : (
 					<SoftButton
-						title="Select Export File"
+						title={
+							importMutation.isPending ? "Importing..." : "Select Export File"
+						}
 						onPress={handleImport}
 						loading={importMutation.isPending}
 						disabled={importMutation.isPending}
@@ -154,15 +165,6 @@ const styles = StyleSheet.create({
 	contentContainer: {
 		alignItems: "center",
 		gap: 16,
-	},
-	resultsContainer: {
-		gap: 16,
-		paddingVertical: 12,
-	},
-	resultRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 12,
 	},
 	iconContainer: {
 		marginBottom: 8,
