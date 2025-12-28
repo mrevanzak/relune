@@ -1,7 +1,7 @@
 // packages/api/src/middleware/auth.ts
 import { ORPCError, os } from "@orpc/server";
 
-import type { AuthUser, BaseContext } from "../context";
+import type { BaseContext } from "../context";
 import { ensureUserExists } from "../context";
 import { validateToken } from "../services/supabase";
 
@@ -103,8 +103,6 @@ export function authMiddleware(config: AuthMiddlewareConfig = {}) {
     // Ensure user exists in public.users table (just-in-time provisioning)
     await ensureUserExists(user);
 
-    return next({
-      context: { user } as { user: AuthUser },
-    });
+    return next({ context: { user } });
   });
 }

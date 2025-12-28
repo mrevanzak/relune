@@ -6,48 +6,48 @@ import { buildClientEnvInput } from "./expo.cjs";
 import { clientSchema, serverSchema } from "./shared";
 
 function findNearestDotenvFile(startDir: string): string | null {
-	let dir = startDir;
+  let dir = startDir;
 
-	for (let i = 0; i < 25; i++) {
-		const candidate = path.join(dir, ".env");
-		if (fs.existsSync(candidate)) {
-			return candidate;
-		}
+  for (let i = 0; i < 25; i++) {
+    const candidate = path.join(dir, ".env");
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
 
-		const parent = path.dirname(dir);
-		if (parent === dir) {
-			return null;
-		}
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      return null;
+    }
 
-		dir = parent;
-	}
+    dir = parent;
+  }
 
-	return null;
+  return null;
 }
 
 function loadDotenvOnce(): void {
-	// Avoid loading `.env` multiple times across packages.
-	if (process.env.RELUNE_DOTENV_LOADED === "true") {
-		return;
-	}
+  // Avoid loading `.env` multiple times across packages.
+  if (process.env.RELUNE_DOTENV_LOADED === "true") {
+    return;
+  }
 
-	// Allow overriding the resolved path for debugging/CI.
-	const explicitPath = process.env.RELUNE_DOTENV_PATH;
-	const dotenvPath =
-		explicitPath && explicitPath.length > 0
-			? explicitPath
-			: findNearestDotenvFile(process.cwd());
+  // Allow overriding the resolved path for debugging/CI.
+  const explicitPath = process.env.RELUNE_DOTENV_PATH;
+  const dotenvPath =
+    explicitPath && explicitPath.length > 0
+      ? explicitPath
+      : findNearestDotenvFile(process.cwd());
 
-	if (dotenvPath) {
-		const result = dotenv.config({ path: dotenvPath });
-		if (result.error) {
-			throw new Error(
-				`Failed to load .env from ${dotenvPath}: ${result.error.message}`,
-			);
-		}
-	}
+  if (dotenvPath) {
+    const result = dotenv.config({ path: dotenvPath });
+    if (result.error) {
+      throw new Error(
+        `Failed to load .env from ${dotenvPath}: ${result.error.message}`
+      );
+    }
+  }
 
-	process.env.RELUNE_DOTENV_LOADED = "true";
+  process.env.RELUNE_DOTENV_LOADED = "true";
 }
 
 /**
@@ -55,18 +55,18 @@ function loadDotenvOnce(): void {
  * Use this when you need to control when validation happens (e.g., after dotenv.config).
  */
 export function createReluneEnv(runtimeEnv = process.env) {
-	const clientEnvInput = buildClientEnvInput(runtimeEnv);
+  const clientEnvInput = buildClientEnvInput(runtimeEnv);
 
-	return createEnv({
-		server: serverSchema,
-		clientPrefix: "EXPO_PUBLIC_",
-		client: clientSchema,
-		runtimeEnv: {
-			...runtimeEnv,
-			...clientEnvInput,
-		},
-		emptyStringAsUndefined: true,
-	});
+  return createEnv({
+    server: serverSchema,
+    clientPrefix: "EXPO_PUBLIC_",
+    client: clientSchema,
+    runtimeEnv: {
+      ...runtimeEnv,
+      ...clientEnvInput,
+    },
+    emptyStringAsUndefined: true,
+  });
 }
 
 /**

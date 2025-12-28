@@ -6,10 +6,10 @@ import { QueryClient } from "@tanstack/react-query";
  * even when it's not running inside a React component tree.
  */
 export const queryClient = new QueryClient({
-	defaultOptions: {
-		queries: {
-			staleTime: 60 * 1000, // 1 minute
-			retry: 1,
-		},
-	},
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000, // 1 minute
+      retry: 1,
+    },
+  },
 });

@@ -1,21 +1,25 @@
 {
-	"name": "@relune/env",
-	"version": "0.0.0",
-	"private": true,
-	"type": "module",
-	"exports": {
-		".": {
-			"react-native": "./src/native.ts",
-			"default": "./src/node.ts"
-		},
-		"./expo": "./src/expo.cjs"
-	},
-	"dependencies": {
-		"@t3-oss/env-core": "^0.13.10",
-		"dotenv": "^16.5.0",
-		"zod": "^4.2.1"
-	},
-	"peerDependencies": {
-		"expo-constants": "*"
-	}
+  "name": "@relune/env",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "react-native": "./src/native.ts",
+      "default": "./src/node.ts"
+    },
+    "./expo": "./src/expo.cjs"
+  },
+  "dependencies": {
+    "zod": "catalog:",
+    "dotenv": "catalog:",
+    "@t3-oss/env-core": "^0.13.10"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@relune/config": "workspace:*"
+  },
+  "peerDependencies": {
+    "expo-constants": "*"
+  }
 }

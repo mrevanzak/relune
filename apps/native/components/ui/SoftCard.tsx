@@ -3,31 +3,31 @@ import { Shadows } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface SoftCardProps extends ViewProps {
-	variant?: "surface" | "highlight";
+  variant?: "surface" | "highlight";
 }
 
 export function SoftCard({
-	style,
-	variant = "surface",
-	children,
-	...props
+  style,
+  variant = "surface",
+  children,
+  ...props
 }: SoftCardProps) {
-	const surface = useThemeColor({}, "surface");
-	const surfaceHighlight = useThemeColor({}, "surfaceHighlight");
+  const surface = useThemeColor({}, "surface");
+  const surfaceHighlight = useThemeColor({}, "surfaceHighlight");
 
-	const backgroundColor = variant === "surface" ? surface : surfaceHighlight;
+  const backgroundColor = variant === "surface" ? surface : surfaceHighlight;
 
-	return (
-		<View style={[styles.card, { backgroundColor }, style]} {...props}>
-			{children}
-		</View>
-	);
+  return (
+    <View style={[styles.card, { backgroundColor }, style]} {...props}>
+      {children}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-	card: {
-		borderRadius: 24,
-		padding: 16,
-		...Shadows.soft,
-	},
+  card: {
+    borderRadius: 24,
+    padding: 16,
+    ...Shadows.soft,
+  },
 });

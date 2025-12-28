@@ -8,7 +8,7 @@ import { createPlatformStorage } from "./platform-storage";
  * Tolerant of MMKV not being initialized during early app boot.
  */
 const platformStorage = createPlatformStorage({
-	onNativeUnavailable: "tolerant",
+  onNativeUnavailable: "tolerant",
 });
 
 export const zustandStorage: StateStorage = platformStorage;

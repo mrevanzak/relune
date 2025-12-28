@@ -1,9 +1,9 @@
 import "react-native-url-polyfill/auto";
 import { env } from "@relune/env";
 import {
-	createClient,
-	processLock,
-	type SupabaseClient,
+  createClient,
+  processLock,
+  type SupabaseClient,
 } from "@supabase/supabase-js";
 import { supabaseStorage } from "./supabase-storage";
 
@@ -18,19 +18,19 @@ let supabaseInstance: SupabaseClient | null = null;
  * On web, can be called immediately.
  */
 export function getSupabaseClient(): SupabaseClient {
-	if (supabaseInstance) {
-		return supabaseInstance;
-	}
+  if (supabaseInstance) {
+    return supabaseInstance;
+  }
 
-	supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
-		auth: {
-			storage: supabaseStorage,
-			autoRefreshToken: true,
-			persistSession: true,
-			detectSessionInUrl: false,
-			lock: processLock,
-		},
-	});
+  supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      storage: supabaseStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+      lock: processLock,
+    },
+  });
 
-	return supabaseInstance;
+  return supabaseInstance;
 }

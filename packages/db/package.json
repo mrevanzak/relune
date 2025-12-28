@@ -1,31 +1,31 @@
 {
-	"name": "@relune/db",
-	"type": "module",
-	"exports": {
-		".": {
-			"default": "./src/index.ts"
-		},
-		"./*": {
-			"default": "./src/*.ts"
-		},
-		"./schema": {
-			"default": "./src/schema/index.ts"
-		}
-	},
-	"scripts": {
-		"db:generate": "drizzle-kit generate",
-		"db:migrate": "drizzle-kit migrate",
-		"db:studio": "drizzle-kit studio",
-		"db:push": "drizzle-kit push"
-	},
-	"devDependencies": {
-		"drizzle-kit": "^0.31.8",
-		"@types/pg": "^8.15.6"
-	},
-	"dependencies": {
-		"@relune/config": "workspace:*",
-		"@relune/env": "workspace:*",
-		"drizzle-orm": "^0.45.1",
-		"pg": "^8.16.3"
-	}
+  "name": "@relune/db",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    },
+    "./schema": {
+      "default": "./src/schema/index.ts"
+    }
+  },
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:push": "drizzle-kit push"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.8",
+    "@types/pg": "^8.15.6"
+  },
+  "dependencies": {
+    "@relune/config": "workspace:*",
+    "@relune/env": "workspace:*",
+    "drizzle-orm": "^0.45.1",
+    "pg": "^8.16.3"
+  }
 }

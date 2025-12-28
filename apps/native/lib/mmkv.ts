@@ -11,33 +11,33 @@ let initPromise: Promise<MMKV> | null = null;
  * Subsequent calls return the same instance.
  */
 export async function initMmkv(): Promise<MMKV | null> {
-	if (Platform.OS === "web") {
-		return null;
-	}
+  if (Platform.OS === "web") {
+    return null;
+  }
 
-	if (mmkvInstance) {
-		return mmkvInstance;
-	}
+  if (mmkvInstance) {
+    return mmkvInstance;
+  }
 
-	if (initPromise) {
-		return initPromise;
-	}
+  if (initPromise) {
+    return initPromise;
+  }
 
-	initPromise = (async () => {
-		const encryptionKey = await getOrCreateMmkvKey();
-		if (!encryptionKey) {
-			throw new Error("Failed to get MMKV encryption key");
-		}
+  initPromise = (async () => {
+    const encryptionKey = await getOrCreateMmkvKey();
+    if (!encryptionKey) {
+      throw new Error("Failed to get MMKV encryption key");
+    }
 
-		mmkvInstance = createMMKV({
-			id: "relune",
-			encryptionKey,
-		});
+    mmkvInstance = createMMKV({
+      id: "relune",
+      encryptionKey,
+    });
 
-		return mmkvInstance;
-	})();
+    return mmkvInstance;
+  })();
 
-	return initPromise;
+  return initPromise;
 }
 
 /**
@@ -45,5 +45,5 @@ export async function initMmkv(): Promise<MMKV | null> {
  * Returns null if not initialized or on web.
  */
 export function getMmkv(): MMKV | null {
-	return mmkvInstance;
+  return mmkvInstance;
 }

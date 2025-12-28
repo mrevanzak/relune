@@ -4,10 +4,10 @@ import { StyleSheet, type ViewStyle } from "react-native";
 import { Gradients } from "@/constants/theme";
 
 interface GradientBackgroundProps {
-	children: ReactNode;
-	style?: ViewStyle;
-	/** Use a custom gradient or default to background gradient */
-	colors?: readonly [string, string, ...string[]];
+  children: ReactNode;
+  style?: ViewStyle;
+  /** Use a custom gradient or default to background gradient */
+  colors?: readonly [string, string, ...string[]];
 }
 
 /**
@@ -15,24 +15,24 @@ interface GradientBackgroundProps {
  * Provides consistent brand gradient across all screens.
  */
 export function GradientBackground({
-	children,
-	style,
-	colors = Gradients.background,
+  children,
+  style,
+  colors = Gradients.background,
 }: GradientBackgroundProps) {
-	return (
-		<LinearGradient
-			colors={colors}
-			style={[styles.container, style]}
-			start={{ x: 0.5, y: 0 }}
-			end={{ x: 0.5, y: 1 }}
-		>
-			{children}
-		</LinearGradient>
-	);
+  return (
+    <LinearGradient
+      colors={colors}
+      end={{ x: 0.5, y: 1 }}
+      start={{ x: 0.5, y: 0 }}
+      style={[styles.container, style]}
+    >
+      {children}
+    </LinearGradient>
+  );
 }
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-	},
+  container: {
+    flex: 1,
+  },
 });
