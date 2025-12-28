@@ -40,6 +40,12 @@ export const appRouter = {
    * Requires authentication.
    */
   recordings: recordingsRouter,
+
+  /**
+   * Import endpoints.
+   * Requires authentication.
+   */
+  import: importRouter,
 };
 
 export type AppRouter = typeof appRouter;
