@@ -34,3 +34,5 @@ const app = new Elysia()
 	});
 
 export type App = typeof app;
+
+export default app;
