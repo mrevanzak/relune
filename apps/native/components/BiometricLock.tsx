@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import * as LocalAuthentication from "expo-local-authentication";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -18,8 +19,15 @@ interface BiometricLockProps {
   children: ReactNode;
 }
 
+// Grace period in milliseconds (60 seconds)
+const GRACE_PERIOD_MS = 5000;
+// Initial authentication delay on cold start (allow UI to settle)
+const INITIAL_AUTH_DELAY_MS = 400;
+
 /**
- * BiometricLock prompts for FaceID/TouchID when the app resumes from background.
+ * BiometricLock prompts for FaceID/TouchID on initial app entry and when returning from background.
+ * - Grace period: if user returns within 60s, no re-prompt
+ * - Privacy shield: renders blur overlay on inactive/background to hide app switcher preview
  * On web, it's a no-op and just renders children.
  */
 export function BiometricLock({ children }: BiometricLockProps) {
@@ -30,13 +38,22 @@ export function BiometricLock({ children }: BiometricLockProps) {
   const text = useThemeColor({}, "text");
   const textSecondary = useThemeColor({}, "textSecondary");
 
-  const [isLocked, setIsLocked] = useState(false);
+  // Lock state: true = user needs to authenticate before seeing children
+  const [isLocked, setIsLocked] = useState(Platform.OS !== "web");
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [biometricType, setBiometricType] = useState<string>("Biometric");
+  // Privacy shield: true = show blur overlay (even if not locked)
+  const [showPrivacyShield, setShowPrivacyShield] = useState(false);
+  // Current app state
+  const [appState, setAppState] = useState(AppState.currentState);
 
   const isLockedRef = useRef(isLocked);
   const isAuthenticatingRef = useRef(isAuthenticating);
   const autoAuthPendingRef = useRef(false);
+  // Track when the app last went inactive/background for grace period calculation
+  const lastInactiveAtMsRef = useRef<number | null>(null);
+  // Track whether we've done initial auth on cold start
+  const hasInitialAuthRef = useRef(false);
 
   useEffect(() => {
     isLockedRef.current = isLocked;
@@ -64,21 +81,63 @@ export function BiometricLock({ children }: BiometricLockProps) {
         autoAuthPendingRef.current = false;
         isLockedRef.current = false;
         setIsLocked(false);
+        setShowPrivacyShield(false);
+        hasInitialAuthRef.current = true;
       }
     } catch (error) {
       // Silently handle authentication errors
-      void error;
+      console.error(error);
     } finally {
       isAuthenticatingRef.current = false;
       setIsAuthenticating(false);
     }
   }, []);
 
+  // Initial mount: prompt biometric after a short delay (cold start)
   useEffect(() => {
     if (Platform.OS === "web") return;
 
-    // Check available biometric types
+    const timer = setTimeout(() => {
+      // Only auto-authenticate on initial mount if:
+      // 1. We haven't already authenticated
+      // 2. We're not currently authenticating
+      // 3. We're still locked
+      if (
+        !(
+          hasInitialAuthRef.current ||
+          isAuthenticatingRef.current ||
+          autoAuthPendingRef.current
+        ) &&
+        isLockedRef.current
+      ) {
+        autoAuthPendingRef.current = true;
+        authenticate();
+      }
+    }, INITIAL_AUTH_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [authenticate]);
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+
+    // Check if biometrics are available and enrolled
     (async () => {
+      const compatible = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+
+      // If biometrics not available or not enrolled, unlock immediately
+      if (!(compatible && enrolled)) {
+        console.warn(
+          "Biometrics not available or not enrolled - unlocking app"
+        );
+        hasInitialAuthRef.current = true;
+        isLockedRef.current = false;
+        setIsLocked(false);
+        return;
+      }
+
+      // Determine biometric type for display
       const types =
         await LocalAuthentication.supportedAuthenticationTypesAsync();
       if (
@@ -96,24 +155,52 @@ export function BiometricLock({ children }: BiometricLockProps) {
 
     // Listen for app state changes
     const handleAppStateChange = (nextState: AppStateStatus) => {
-      // Lock when going to background
-      if (nextState === "background") {
-        autoAuthPendingRef.current = true;
-        isLockedRef.current = true;
-        setIsLocked(true);
+      setAppState(nextState);
+
+      // When going inactive or to background: show privacy shield + record timestamp
+      if (nextState === "inactive" || nextState === "background") {
+        setShowPrivacyShield(true);
+        if (!lastInactiveAtMsRef.current) {
+          lastInactiveAtMsRef.current = Date.now();
+        }
         return;
       }
-      // Authenticate when coming back to foreground
-      if (
-        nextState === "active" &&
-        isLockedRef.current &&
-        autoAuthPendingRef.current &&
-        !isAuthenticatingRef.current
-      ) {
-        // Only auto-auth once per "lock session" to avoid infinite reprompt loops
-        // (biometric prompts can themselves trigger `inactive -> active`).
-        autoAuthPendingRef.current = false;
-        void authenticate();
+
+      // When coming back to active: check grace period
+      if (nextState === "active") {
+        const now = Date.now();
+        const lastInactiveAt = lastInactiveAtMsRef.current;
+        const timeAwayMs = lastInactiveAt ? now - lastInactiveAt : 0;
+
+        // Reset the timestamp
+        lastInactiveAtMsRef.current = null;
+
+        // Grace period: if user returned quickly AND already authenticated initially, skip lock
+        if (
+          timeAwayMs > 0 &&
+          timeAwayMs < GRACE_PERIOD_MS &&
+          hasInitialAuthRef.current
+        ) {
+          setShowPrivacyShield(false);
+          return;
+        }
+
+        // Past grace period or not yet authenticated: need to lock and authenticate
+        if (!isLockedRef.current) {
+          isLockedRef.current = true;
+          setIsLocked(true);
+        }
+
+        // Auto-authenticate if locked and not already authenticating
+        // Guard against multiple simultaneous auth attempts (eg. biometric prompt causes inactive->active)
+        if (
+          isLockedRef.current &&
+          !autoAuthPendingRef.current &&
+          !isAuthenticatingRef.current
+        ) {
+          autoAuthPendingRef.current = true;
+          authenticate();
+        }
       }
     };
 
@@ -132,6 +219,7 @@ export function BiometricLock({ children }: BiometricLockProps) {
     return <>{children}</>;
   }
 
+  // Render lock screen if locked
   if (isLocked) {
     return (
       <View style={styles.container}>
@@ -167,7 +255,31 @@ export function BiometricLock({ children }: BiometricLockProps) {
     );
   }
 
-  return <>{children}</>;
+  // Render children with optional privacy shield overlay
+  return (
+    <View style={{ flex: 1 }}>
+      {children}
+
+      {/* Privacy shield: show blur overlay when app is inactive/background */}
+      {showPrivacyShield && appState !== "active" && (
+        <View pointerEvents="box-only" style={StyleSheet.absoluteFill}>
+          <BlurView
+            intensity={100}
+            style={StyleSheet.absoluteFill}
+            tint="dark"
+          />
+
+          {/* Semi-opaque overlay to further obscure content */}
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: "rgba(0, 0, 0, 0.3)" },
+            ]}
+          />
+        </View>
+      )}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
