@@ -1,4 +1,2 @@
 [install]
 linker = "isolated"
-# Hoist @seydx platform packages so node-av can find them
-publicHoistPattern = ["@seydx/*"]

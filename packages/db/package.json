@@ -19,13 +19,12 @@
     "db:push": "drizzle-kit push"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.8",
-    "@types/pg": "^8.15.6"
+    "drizzle-kit": "^0.31.8"
   },
   "dependencies": {
     "@relune/config": "workspace:*",
     "@relune/env": "workspace:*",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "catalog:",
     "pg": "^8.16.3"
   }
 }
