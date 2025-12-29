@@ -4,7 +4,7 @@
 #
 
 app = 'relune'
-primary_region = 'iad'
+primary_region = 'sin'
 
 [build]
 
