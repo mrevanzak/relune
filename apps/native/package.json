@@ -1,5 +1,5 @@
 {
-  "name": "relune",
+  "name": "native",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -17,7 +17,7 @@
   "dependencies": {
     "@bottom-tabs/react-navigation": "^1.1.0",
     "@expo/vector-icons": "^15.0.3",
-    "@orpc/client": "catalog:",
+    "@orpc/client": "^1.12.2",
     "@orpc/tanstack-query": "^1.13.1",
     "@react-native-community/datetimepicker": "^8.5.1",
     "@react-navigation/bottom-tabs": "^7.4.0",
@@ -28,7 +28,7 @@
     "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.62.11",
     "dayjs": "^1.11.19",
-    "dotenv": "catalog:",
+    "dotenv": "^17.2.2",
     "expo": "~54.0.30",
     "expo-audio": "~1.1.1",
     "expo-blur": "~15.0.8",
@@ -65,13 +65,13 @@
     "react-native-url-polyfill": "^3.0.0",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.5.1",
-    "zod": "catalog:",
+    "zod": "^4.1.13",
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@relune/config": "workspace:*",
     "@types/react": "~19.1.0",
-    "typescript": "catalog:",
-    "@relune/config": "workspace:*"
+    "typescript": "^5"
   },
   "private": true
 }

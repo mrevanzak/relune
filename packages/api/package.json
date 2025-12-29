@@ -24,28 +24,27 @@
       "default": "./src/middleware/*.ts"
     }
   },
-  "scripts": {},
   "dependencies": {
     "@ai-sdk/openai": "^3.0.1",
-    "@orpc/client": "catalog:",
-    "@orpc/openapi": "catalog:",
-    "@orpc/server": "catalog:",
-    "@orpc/zod": "catalog:",
+    "@orpc/client": "^1.12.2",
+    "@orpc/openapi": "^1.12.2",
+    "@orpc/server": "^1.12.2",
+    "@orpc/zod": "^1.12.2",
     "@relune/db": "workspace:*",
     "@relune/env": "workspace:*",
-    "@supabase/supabase-js": "catalog:",
+    "@supabase/supabase-js": "^2.49.8",
     "ai": "^6.0.3",
-    "dotenv": "catalog:",
-    "drizzle-orm": "catalog:",
+    "dotenv": "^17.2.2",
+    "drizzle-orm": "^0.45.1",
     "file-type": "^21.2.0",
     "jszip": "^3.10.1",
-    "node-av": "catalog:",
-    "zod": "catalog:"
+    "node-av": "^5.0.3",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
-    "typescript": "catalog:",
     "@relune/config": "workspace:*",
-    "@types/pg": "catalog:"
+    "@types/pg": "^8.15.6",
+    "typescript": "^5"
   },
   "trustedDependencies": [
     "node-av"

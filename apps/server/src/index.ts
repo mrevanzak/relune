@@ -1,4 +1,5 @@
 import { cors } from "@elysiajs/cors";
+import { node } from "@elysiajs/node";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { onError } from "@orpc/server";
@@ -44,7 +45,7 @@ const apiHandler = new OpenAPIHandler(appRouter, {
  * - ALL /rpc/*    : oRPC RPC handler (type-safe client calls)
  * - ALL /api/*    : OpenAPI handler (docs + REST-style calls)
  */
-const app = new Elysia()
+const app = new Elysia({ adapter: node() })
   .use(
     cors({
       origin: env.CORS_ORIGIN,

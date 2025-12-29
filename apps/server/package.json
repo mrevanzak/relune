@@ -5,28 +5,29 @@
   "scripts": {
     "build": "tsdown",
     "check-types": "tsc -b",
-    "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
-    "dev": "bun run --hot src/index.ts",
-    "start": "bun run dist/index.mjs"
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.mjs"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.3.3",
-    "@orpc/openapi": "catalog:",
-    "@orpc/server": "catalog:",
-    "@orpc/zod": "catalog:",
+    "@elysiajs/node": "^1.0.16",
+    "@orpc/openapi": "^1.12.2",
+    "@orpc/server": "^1.12.2",
+    "@orpc/zod": "^1.12.2",
     "@relune/api": "workspace:*",
     "@relune/db": "workspace:*",
     "@relune/env": "workspace:*",
     "@sinclair/typebox": "^0.34.45",
-    "dotenv": "catalog:",
+    "dotenv": "^17.2.2",
     "elysia": "^1.3.21",
-    "zod": "catalog:",
-    "node-av": "catalog:"
+    "node-av": "^5.0.3",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
-    "typescript": "catalog:",
+    "@relune/config": "workspace:*",
     "tsdown": "^0.16.5",
-    "@relune/config": "workspace:*"
+    "tsx": "^4.19.2",
+    "typescript": "^5"
   },
   "trustedDependencies": [
     "supabase"

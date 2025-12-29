@@ -3,10 +3,10 @@
  * Manual test script for audio converter (no hardcoded paths).
  *
  * Usage:
- *   bun apps/server/scripts/test-audio-converter.ts <inputPath> [outputPath]
+ *   yarn tsx apps/server/scripts/test-audio-converter.ts <inputPath> [outputPath]
  *
  * Example:
- *   bun apps/server/scripts/test-audio-converter.ts "/path/to/input.opus" "/tmp/out.m4a"
+ *   yarn tsx apps/server/scripts/test-audio-converter.ts "/path/to/input.opus" "/tmp/out.m4a"
  */
 
 import { readFile, writeFile } from "node:fs/promises";
@@ -15,7 +15,7 @@ import { convertToM4a, needsConversion } from "../src/shared/audio-converter";
 
 function usage(): never {
   console.error(
-    "Usage: bun apps/server/scripts/test-audio-converter.ts <inputPath> [outputPath]"
+    "Usage: yarn tsx apps/server/scripts/test-audio-converter.ts <inputPath> [outputPath]"
   );
   process.exit(1);
 }
@@ -52,8 +52,14 @@ async function main() {
 
   // Verify with `file` if available
   try {
-    const proc = Bun.spawn(["file", outputPath], { stdout: "pipe" });
-    const output = await new Response(proc.stdout).text();
+    const proc = spawn("file", [outputPath]);
+    let output = "";
+    for await (const chunk of proc.stdout) {
+      output += chunk.toString();
+    }
+    await new Promise((resolve, reject) => {
+      proc.on("close", (code) => (code === 0 ? resolve(code) : reject(code)));
+    });
     console.log("\nVerifying output format...");
     console.log(output.trim());
   } catch (error) {
