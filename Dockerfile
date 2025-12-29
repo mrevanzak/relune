@@ -34,6 +34,7 @@ ENV NODE_ENV=production
 ENV PORT=8080
 
 COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/apps/server/node_modules ./apps/server/node_modules
 COPY --from=build /app/apps/server/dist ./apps/server/dist
 
 EXPOSE 8080
