@@ -15,7 +15,7 @@ COPY packages/db/package.json packages/db/package.json
 COPY packages/env/package.json packages/env/package.json
 COPY packages/config/package.json packages/config/package.json
 
-RUN bun install --frozen-lockfile=false
+RUN bun install
 
 # ---- build ----
 FROM deps AS build
@@ -29,7 +29,7 @@ COPY packages/env/src packages/env/src
 # Some packages rely on shared TS config during bundling/type resolution.
 COPY packages/config/tsconfig.base.json packages/config/tsconfig.base.json
 
-RUN bun --cwd apps/server run build
+RUN bun run --cwd apps/server build
 
 # ---- production deps ----
 FROM base AS prod-deps
@@ -45,7 +45,7 @@ COPY packages/db/package.json packages/db/package.json
 COPY packages/env/package.json packages/env/package.json
 COPY packages/config/package.json packages/config/package.json
 
-RUN bun install --production --frozen-lockfile=false
+RUN bun install --production
 
 # ---- runtime ----
 FROM base AS runner
