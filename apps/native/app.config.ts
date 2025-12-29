@@ -48,6 +48,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       "expo-audio",
       "react-native-bottom-tabs",
       "expo-document-picker",
+      "@react-native-community/datetimepicker",
     ],
     experiments: {
       typedRoutes: true,

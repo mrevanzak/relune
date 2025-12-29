@@ -3353,9 +3353,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-native-community/datetimepicker@npm:^8.5.1":
-  version: 8.5.1
-  resolution: "@react-native-community/datetimepicker@npm:8.5.1"
+"@react-native-community/datetimepicker@npm:8.4.4":
+  version: 8.4.4
+  resolution: "@react-native-community/datetimepicker@npm:8.4.4"
   dependencies:
     invariant: "npm:^2.2.4"
   peerDependencies:
@@ -3368,7 +3368,7 @@ __metadata:
       optional: true
     react-native-windows:
       optional: true
-  checksum: 10c0/3c9e5889b7616c4b611d280cdceaa9cca7b03fce44e1a9bdd34c5f710882ec5c5c1b085df7c4ed9d315678d3e6d2094cd8e1ce5876e82491db80421f62867d5d
+  checksum: 10c0/05794d2746584be85bd74f86593951714407da2bebf49e63e676d58d40a5c85923ae87342a930fde59b60bd5f18e6c878fe747a92f67271d339ed4b1fde6479e
   languageName: node
   linkType: hard
 
@@ -8444,7 +8444,7 @@ __metadata:
     "@expo/vector-icons": "npm:^15.0.3"
     "@orpc/client": "npm:^1.12.2"
     "@orpc/tanstack-query": "npm:^1.13.1"
-    "@react-native-community/datetimepicker": "npm:^8.5.1"
+    "@react-native-community/datetimepicker": "npm:8.4.4"
     "@react-navigation/bottom-tabs": "npm:^7.4.0"
     "@react-navigation/elements": "npm:^2.6.3"
     "@react-navigation/native": "npm:^7.1.8"
@@ -8486,6 +8486,7 @@ __metadata:
     react-native-keyboard-controller: "npm:1.18.5"
     react-native-keychain: "npm:^10.0.0"
     react-native-mmkv: "npm:^4.1.0"
+    react-native-nitro-modules: "npm:^0.32.0"
     react-native-reanimated: "npm:~4.1.1"
     react-native-safe-area-context: "npm:~5.6.0"
     react-native-screens: "npm:~4.16.0"
@@ -9422,6 +9423,16 @@ __metadata:
     react-native: "*"
     react-native-nitro-modules: "*"
   checksum: 10c0/af69e58df6d78366b93cbd055ab810201f2e7403a09b448f218014eba6695af10569eb64e6ed81c21b9dbb976c9d7c5fb76650a4de2304731956f42717d80804
+  languageName: node
+  linkType: hard
+
+"react-native-nitro-modules@npm:^0.32.0":
+  version: 0.32.0
+  resolution: "react-native-nitro-modules@npm:0.32.0"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: 10c0/4074d93391a5691175d9df335549c3719e2c549e9639d1c092a591c22196e596a1654a77496e9b6c56708605d6074d3a25199ace091db1682d69fbc0d100af04
   languageName: node
   linkType: hard
 
