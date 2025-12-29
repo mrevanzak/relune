@@ -44,7 +44,7 @@ const apiHandler = new OpenAPIHandler(appRouter, {
  * - ALL /rpc/*    : oRPC RPC handler (type-safe client calls)
  * - ALL /api/*    : OpenAPI handler (docs + REST-style calls)
  */
-const app = new Elysia()
+export const app = new Elysia()
   .use(
     cors({
       origin: env.CORS_ORIGIN,
@@ -67,11 +67,9 @@ const app = new Elysia()
   })
   .get("/", () => "OK")
   .listen(env.PORT, () => {
-    console.log("Server is running on http://localhost:3000");
-    console.log("  - RPC endpoint: http://localhost:3000/rpc");
-    console.log("  - API docs: http://localhost:3000/api");
+    console.log(`Server is running on http://localhost:${env.PORT}`);
+    console.log(`  - RPC endpoint: http://localhost:${env.PORT}/rpc`);
+    console.log(`  - API docs: http://localhost:${env.PORT}/api`);
   });
 
 export type App = typeof app;
-
-export default app;
