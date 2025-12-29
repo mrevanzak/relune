@@ -48,6 +48,14 @@ export const Gradients = {
   cardHighlight: ["#FFFFFF", "#f5e3df"] as const,
 };
 
+export const GradientsDark = {
+  primary: ["#C18ED8", "#d4aecd"] as const,
+  // Darker background gradient for dark mode
+  background: ["#151718", "#251C25"] as const,
+  recording: ["#FF6B6B", "#EE5A5A"] as const,
+  cardHighlight: ["#1E1E1E", "#2C2C2E"] as const,
+};
+
 export const Shadows = {
   soft: {
     shadowColor: "#d4aecd",
@@ -71,6 +79,29 @@ export const Shadows = {
   },
 };
 
+export const ShadowsDark = {
+  soft: {
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  small: {
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+};
+
 export const Colors = {
   light: {
     ...ReluneColors,
@@ -81,8 +112,12 @@ export const Colors = {
   },
   dark: {
     ...ReluneColors,
-    text: "#ECEDEE", // Override for dark mode
-    background: "#151718", // Override for dark mode
+    text: "#ECEDEE",
+    background: "#151718",
+    surface: "#1E1E1E",
+    surfaceHighlight: "#2C2C2E",
+    textSecondary: "#A1A1A1",
+    border: "#333333",
     tint: tintColorDark,
     icon: "#9BA1A6",
     tabIconDefault: "#9BA1A6",

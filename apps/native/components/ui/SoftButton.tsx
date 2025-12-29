@@ -7,7 +7,8 @@ import {
   View,
   type ViewStyle,
 } from "react-native";
-import { Gradients, Shadows } from "@/constants/theme";
+import { Gradients, GradientsDark, Shadows, ShadowsDark } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface SoftButtonProps {
@@ -36,6 +37,11 @@ export function SoftButton({
   const surface = useThemeColor({}, "surface");
   const tint = useThemeColor({}, "tint");
   const lilac = useThemeColor({}, "lilac");
+  const colorScheme = useColorScheme();
+  const primaryGradient =
+    colorScheme === "dark" ? GradientsDark.primary : Gradients.primary;
+  
+  const shadowStyle = colorScheme === "dark" ? ShadowsDark.small : Shadows.small;
 
   const isDisabled = disabled || loading;
 
@@ -49,10 +55,10 @@ export function SoftButton({
     return (
       <PressableScale
         onPress={handlePress}
-        style={[styles.container, isDisabled && styles.disabled, style]}
+        style={[styles.container, shadowStyle, isDisabled && styles.disabled, style]}
       >
         <LinearGradient
-          colors={Gradients.primary}
+          colors={primaryGradient}
           end={{ x: 1, y: 1 }}
           start={{ x: 0, y: 0 }}
           style={styles.gradient}
@@ -73,6 +79,7 @@ export function SoftButton({
       onPress={handlePress}
       style={[
         styles.container,
+        shadowStyle,
         variant === "secondary"
           ? [styles.secondary, { backgroundColor: surface, borderColor: lilac }]
           : styles.ghost,
@@ -100,14 +107,15 @@ export function SoftButton({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
-    overflow: "hidden",
-    ...Shadows.small,
+    backgroundColor: "transparent", // Ensure shadow is visible
   },
   gradient: {
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: 16, // Moved borderRadius here for clipping if needed, but LinearGradient handles it usually
+    overflow: "hidden", // Clip content to border radius
   },
   secondary: {
     paddingVertical: 16,
@@ -115,6 +123,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
+    borderRadius: 16,
+    overflow: "hidden",
   },
   ghost: {
     backgroundColor: "transparent",
@@ -124,6 +134,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     shadowOpacity: 0,
     elevation: 0,
+    borderRadius: 16,
   },
   disabled: {
     opacity: 0.5,

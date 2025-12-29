@@ -1,7 +1,8 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { PressableScale } from "pressto";
 import { StyleSheet, Text } from "react-native";
-import { Gradients, Shadows } from "@/constants/theme";
+import { Gradients, GradientsDark, Shadows, ShadowsDark } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface FilterPillProps {
@@ -17,12 +18,17 @@ export function FilterPill({
 }: FilterPillProps) {
   const surface = useThemeColor({}, "surface");
   const textSecondary = useThemeColor({}, "textSecondary");
+  const colorScheme = useColorScheme();
+  const primaryGradient =
+    colorScheme === "dark" ? GradientsDark.primary : Gradients.primary;
+  
+  const shadowStyle = colorScheme === "dark" ? ShadowsDark.small : Shadows.small;
 
   if (isActive) {
     return (
-      <PressableScale onPress={onPress} style={styles.container}>
+      <PressableScale onPress={onPress} style={[styles.container, shadowStyle]}>
         <LinearGradient
-          colors={Gradients.primary}
+          colors={primaryGradient}
           end={{ x: 1, y: 1 }}
           start={{ x: 0, y: 0 }}
           style={styles.gradientContainer}
@@ -38,6 +44,7 @@ export function FilterPill({
       onPress={onPress}
       style={[
         styles.container,
+        shadowStyle,
         styles.inactiveContainer,
         { backgroundColor: surface },
       ]}
@@ -52,16 +59,19 @@ export function FilterPill({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 20,
-    overflow: "hidden",
-    ...Shadows.small,
+    backgroundColor: "transparent",
   },
   gradientContainer: {
     paddingHorizontal: 20,
     paddingVertical: 10,
+    borderRadius: 20,
+    overflow: "hidden",
   },
   inactiveContainer: {
     paddingHorizontal: 20,
     paddingVertical: 10,
+    borderRadius: 20,
+    overflow: "hidden",
   },
   activeText: {
     fontSize: 14,

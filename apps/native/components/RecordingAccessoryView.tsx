@@ -22,8 +22,9 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ReluneColors } from "@/constants/theme";
 import type { UploadRecordingParams } from "@/features/upload";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { formatDurationMs } from "@/lib/date";
 import { recordingUIStore } from "@/stores/recording-ui";
 
@@ -66,6 +67,7 @@ const exitingAnimation = (_values: ExitAnimationsValues) => {
  * Pulsing red dot indicator for recording state
  */
 function RecordingDot() {
+  const error = useThemeColor({}, "error");
   const opacity = useSharedValue(1);
 
   useEffect(() => {
@@ -83,7 +85,11 @@ function RecordingDot() {
     opacity: opacity.value,
   }));
 
-  return <Animated.View style={[styles.recordingDot, animatedStyle]} />;
+  return (
+    <Animated.View
+      style={[styles.recordingDot, { backgroundColor: error }, animatedStyle]}
+    />
+  );
 }
 
 /**
@@ -96,13 +102,20 @@ function RecordingIndicator({
   durationMs: number;
   onDiscard: () => void;
 }) {
+  const text = useThemeColor({}, "text");
+  const textSecondary = useThemeColor({}, "textSecondary");
+
   return (
     <View style={styles.content}>
       <RecordingDot />
-      <Text style={styles.statusText}>Recording</Text>
-      <Text style={styles.duration}>{formatDurationMs(durationMs)}</Text>
+      <Text style={[styles.statusText, { color: text }]}>Recording</Text>
+      <Text style={[styles.duration, { color: textSecondary }]}>
+        {formatDurationMs(durationMs)}
+      </Text>
       <TouchableOpacity onPress={onDiscard} style={styles.actionButton}>
-        <Text style={styles.discardText}>Discard</Text>
+        <Text style={[styles.discardText, { color: textSecondary }]}>
+          Discard
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -112,11 +125,14 @@ function RecordingIndicator({
  * Uploading spinner with duration display
  */
 function UploadingIndicator({ durationSeconds }: { durationSeconds: number }) {
+  const text = useThemeColor({}, "text");
+  const textSecondary = useThemeColor({}, "textSecondary");
+
   return (
     <View style={styles.content}>
-      <ActivityIndicator color={ReluneColors.textSecondary} size="small" />
-      <Text style={styles.statusText}>Saving...</Text>
-      <Text style={styles.duration}>
+      <ActivityIndicator color={textSecondary} size="small" />
+      <Text style={[styles.statusText, { color: text }]}>Saving...</Text>
+      <Text style={[styles.duration, { color: textSecondary }]}>
         {formatDurationMs(durationSeconds * 1000)}
       </Text>
     </View>
@@ -127,10 +143,12 @@ function UploadingIndicator({ durationSeconds }: { durationSeconds: number }) {
  * Success checkmark indicator (auto-dismisses)
  */
 function SuccessIndicator() {
+  const success = useThemeColor({}, "success");
+
   return (
     <View style={styles.content}>
-      <Text style={styles.successIcon}>✓</Text>
-      <Text style={styles.successText}>Saved</Text>
+      <Text style={[styles.successIcon, { color: success }]}>✓</Text>
+      <Text style={[styles.successText, { color: success }]}>Saved</Text>
     </View>
   );
 }
@@ -147,16 +165,25 @@ function ErrorIndicator({
   onRetry: () => void;
   onDiscard: () => void;
 }) {
+  const error = useThemeColor({}, "error");
+  const textSecondary = useThemeColor({}, "textSecondary");
+  const primaryPurple = useThemeColor({}, "tint"); // Using tint as primaryPurple
+
   return (
     <View style={styles.content}>
-      <Text style={styles.errorIcon}>✗</Text>
-      <Text numberOfLines={1} style={styles.errorText}>
+      <Text style={[styles.errorIcon, { color: error }]}>✗</Text>
+      <Text numberOfLines={1} style={[styles.errorText, { color: error }]}>
         {message || "Failed to save"}
       </Text>
       <TouchableOpacity onPress={onDiscard} style={styles.actionButton}>
-        <Text style={styles.discardText}>Discard</Text>
+        <Text style={[styles.discardText, { color: textSecondary }]}>
+          Discard
+        </Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={onRetry} style={styles.retryButton}>
+      <TouchableOpacity
+        onPress={onRetry}
+        style={[styles.retryButton, { backgroundColor: primaryPurple }]}
+      >
         <Text style={styles.retryText}>Retry</Text>
       </TouchableOpacity>
     </View>
@@ -196,6 +223,7 @@ export function RecordingAccessoryView({
   const insets = useSafeAreaInsets();
   const useLiquidGlass = isLiquidGlassAvailable();
   const resetUI = recordingUIStore.use.reset();
+  const colorScheme = useColorScheme();
 
   // Derive status from props
   const status: AccessoryStatus | null = useMemo(() => {
@@ -236,6 +264,8 @@ export function RecordingAccessoryView({
           await Haptics.notificationAsync(
             Haptics.NotificationFeedbackType.Error
           );
+          break;
+        default:
           break;
       }
     };
@@ -340,7 +370,11 @@ export function RecordingAccessoryView({
       {useLiquidGlass ? (
         <GlassView style={StyleSheet.absoluteFill} />
       ) : (
-        <BlurView intensity={80} style={StyleSheet.absoluteFill} tint="light" />
+        <BlurView
+          intensity={80}
+          style={StyleSheet.absoluteFill}
+          tint={colorScheme === "dark" ? "dark" : "light"}
+        />
       )}
 
       {/* Content */}
@@ -368,17 +402,14 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#E85A5A",
   },
   statusText: {
     fontSize: 14,
-    color: ReluneColors.text,
     flex: 1,
   },
   duration: {
     fontSize: 14,
     fontVariant: ["tabular-nums"],
-    color: ReluneColors.textSecondary,
   },
   actionButton: {
     paddingVertical: 6,
@@ -386,12 +417,10 @@ const styles = StyleSheet.create({
   },
   discardText: {
     fontSize: 14,
-    color: ReluneColors.textSecondary,
   },
   retryButton: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: ReluneColors.primaryPurple,
     borderRadius: 8,
   },
   retryText: {
@@ -401,21 +430,17 @@ const styles = StyleSheet.create({
   },
   successIcon: {
     fontSize: 16,
-    color: ReluneColors.success,
     fontWeight: "bold",
   },
   successText: {
     fontSize: 14,
-    color: ReluneColors.success,
   },
   errorIcon: {
     fontSize: 16,
-    color: ReluneColors.error,
     fontWeight: "bold",
   },
   errorText: {
     fontSize: 14,
-    color: ReluneColors.error,
     flex: 1,
   },
 });

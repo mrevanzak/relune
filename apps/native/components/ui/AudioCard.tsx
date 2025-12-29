@@ -3,8 +3,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { PressableScale } from "pressto";
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Gradients } from "@/constants/theme";
+import { Gradients, GradientsDark } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SoftCard } from "./SoftCard";
 
 export interface AudioCardProps {
@@ -43,6 +44,9 @@ export function AudioCard({
   const lilac = useThemeColor({}, "lilac");
   const tint = useThemeColor({}, "tint");
   const dustyPink = useThemeColor({}, "dustyPink");
+  const colorScheme = useColorScheme();
+  const primaryGradient =
+    colorScheme === "dark" ? GradientsDark.primary : Gradients.primary;
 
   // Memoize waveform to prevent re-renders
   const waveformBars = useMemo(() => WAVEFORM_BARS, []);
@@ -104,7 +108,7 @@ export function AudioCard({
 
           <PressableScale onPress={onPlay}>
             <LinearGradient
-              colors={Gradients.primary}
+              colors={primaryGradient}
               end={{ x: 1, y: 1 }}
               start={{ x: 0, y: 0 }}
               style={[styles.playButton, { shadowColor: tint }]}

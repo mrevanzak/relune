@@ -182,6 +182,7 @@ export default function HomeScreen() {
           </View>
         ) : (
           <FlatList
+            clipToPadding={false}
             contentContainerStyle={styles.listContent}
             data={filteredRecordings}
             ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
@@ -270,25 +271,29 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    paddingHorizontal: 24,
+    // Removed paddingHorizontal to prevent shadow clipping
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 16,
     marginTop: 8,
+    paddingHorizontal: 24, // Added padding here
   },
   listContent: {
     paddingBottom: 96,
+    paddingHorizontal: 24, // Added padding here for FlatList content
   },
   loadingState: {
     alignItems: "center",
     paddingTop: 60,
+    paddingHorizontal: 24,
   },
   emptyState: {
     alignItems: "center",
     paddingTop: 60,
     gap: 12,
+    paddingHorizontal: 24,
   },
   emptyText: {
     fontSize: 16,

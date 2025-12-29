@@ -6,8 +6,9 @@ import {
   View,
   type ViewStyle,
 } from "react-native";
-import { Shadows } from "@/constants/theme";
+import { Shadows, ShadowsDark } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 interface SoftInputProps extends TextInputProps {
   icon?: keyof typeof Ionicons.glyphMap;
@@ -23,10 +24,18 @@ export function SoftInput({
   const surface = useThemeColor({}, "surface");
   const text = useThemeColor({}, "text");
   const textSecondary = useThemeColor({}, "textSecondary");
+  const colorScheme = useColorScheme();
+  
+  const shadowStyle = colorScheme === "dark" ? ShadowsDark.small : Shadows.small;
 
   return (
     <View
-      style={[styles.container, { backgroundColor: surface }, containerStyle]}
+      style={[
+        styles.container,
+        { backgroundColor: surface },
+        shadowStyle,
+        containerStyle,
+      ]}
     >
       {icon && (
         <Ionicons
@@ -52,7 +61,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     minHeight: 48,
-    ...Shadows.small,
   },
   icon: {
     marginRight: 8,

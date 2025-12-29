@@ -2,7 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { PressableScale } from "pressto";
 import { StyleSheet, View } from "react-native";
-import { Gradients, Shadows } from "@/constants/theme";
+import { Gradients, GradientsDark, Shadows } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface RecordButtonProps {
@@ -14,6 +15,9 @@ export function RecordButton({ onPress, isRecording }: RecordButtonProps) {
   const surface = useThemeColor({}, "surface");
   const tint = useThemeColor({}, "tint");
   const lilac = useThemeColor({}, "lilac");
+  const colorScheme = useColorScheme();
+  const recordingGradient =
+    colorScheme === "dark" ? GradientsDark.recording : Gradients.recording;
 
   return (
     <PressableScale
@@ -30,7 +34,7 @@ export function RecordButton({ onPress, isRecording }: RecordButtonProps) {
         ]}
       >
         <LinearGradient
-          colors={isRecording ? Gradients.recording : [tint, lilac]}
+          colors={isRecording ? recordingGradient : [tint, lilac]}
           end={{ x: 1, y: 1 }}
           start={{ x: 0, y: 0 }}
           style={styles.innerCircle}

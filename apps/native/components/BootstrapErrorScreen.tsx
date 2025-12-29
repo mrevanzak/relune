@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface BootstrapErrorScreenProps {
   error: Error;
@@ -9,11 +10,21 @@ export function BootstrapErrorScreen({
   error,
   onRetry,
 }: BootstrapErrorScreenProps) {
+  const background = useThemeColor({}, "background");
+  const text = useThemeColor({}, "text");
+  const textSecondary = useThemeColor({}, "textSecondary");
+  const tint = useThemeColor({}, "tint");
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Something went wrong</Text>
-      <Text style={styles.message}>{error.message}</Text>
-      <Pressable onPress={onRetry} style={styles.button}>
+    <View style={[styles.container, { backgroundColor: background }]}>
+      <Text style={[styles.title, { color: text }]}>Something went wrong</Text>
+      <Text style={[styles.message, { color: textSecondary }]}>
+        {error.message}
+      </Text>
+      <Pressable
+        onPress={onRetry}
+        style={[styles.button, { backgroundColor: tint }]}
+      >
         <Text style={styles.buttonText}>Try Again</Text>
       </Pressable>
     </View>
@@ -26,23 +37,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#fff",
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 12,
-    color: "#333",
   },
   message: {
     fontSize: 16,
-    color: "#666",
     textAlign: "center",
     marginBottom: 24,
     paddingHorizontal: 20,
   },
   button: {
-    backgroundColor: "#007AFF",
     borderRadius: 8,
     paddingVertical: 14,
     paddingHorizontal: 32,
