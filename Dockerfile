@@ -8,9 +8,9 @@ ENV PORT=8080
 COPY . .
 
 # Avoid Bun failing in CI-style "frozen lockfile" mode.
-# We intentionally do NOT rely on bun.lock for this deploy.
+# Delete bun.lock first, then let Bun generate a fresh one that respects bunfig.toml hoisting.
 # Skip lifecycle scripts (like husky) that aren't needed in Docker.
-RUN rm -f bun.lock && bun install --no-save --ignore-scripts
+RUN rm -f bun.lock && bun install --ignore-scripts
 
 RUN bun run --cwd apps/server build
 
