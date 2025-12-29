@@ -4,6 +4,10 @@
 .DS_Store
 **/.DS_Store
 
+# Secrets / local env
+.env
+.env.*
+
 # Dependencies / caches
 **/node_modules
 **/.turbo
