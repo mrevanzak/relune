@@ -11,13 +11,13 @@
     "./expo": "./src/expo.cjs"
   },
   "dependencies": {
-    "@t3-oss/env-core": "^0.13.10",
-    "dotenv": "^17.2.2",
-    "zod": "^4.1.13"
+    "zod": "catalog:",
+    "dotenv": "catalog:",
+    "@t3-oss/env-core": "^0.13.10"
   },
   "devDependencies": {
-    "@relune/config": "workspace:*",
-    "typescript": "^5"
+    "typescript": "catalog:",
+    "@relune/config": "workspace:*"
   },
   "peerDependencies": {
     "expo-constants": "*"

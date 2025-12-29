@@ -17,7 +17,7 @@
   "dependencies": {
     "@bottom-tabs/react-navigation": "^1.1.0",
     "@expo/vector-icons": "^15.0.3",
-    "@orpc/client": "^1.12.2",
+    "@orpc/client": "catalog:",
     "@orpc/tanstack-query": "^1.13.1",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-navigation/bottom-tabs": "^7.4.0",
@@ -28,7 +28,7 @@
     "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.62.11",
     "dayjs": "^1.11.19",
-    "dotenv": "^17.2.2",
+    "dotenv": "catalog:",
     "expo": "~54.0.30",
     "expo-audio": "~1.1.1",
     "expo-blur": "~15.0.8",
@@ -66,13 +66,13 @@
     "react-native-url-polyfill": "^3.0.0",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.5.1",
-    "zod": "^4.1.13",
+    "zod": "catalog:",
     "zustand": "^5.0.9"
   },
   "devDependencies": {
-    "@relune/config": "workspace:*",
     "@types/react": "~19.1.0",
-    "typescript": "^5"
+    "typescript": "catalog:",
+    "@relune/config": "workspace:*"
   },
   "private": true
 }

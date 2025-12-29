@@ -2,11 +2,11 @@
 
 ## Commands
 
-- **Lint/Format**: `yarn check` (runs biome with auto-fix)
-- **Build all**: `yarn build` (or `yarn turbo build`)
-- **Dev server**: `yarn dev` (or `yarn turbo dev`)
-- **Type check**: `yarn check-types` (or `yarn turbo check-types`)
-- **Native app**: `cd apps/native && yarn start` (Expo)
+- **Lint/Format**: `bun check` (runs biome with auto-fix)
+- **Build all**: `bun turbo build`
+- **Dev server**: `bun turbo dev`
+- **Type check**: `bun turbo check-types`
+- **Native app**: `cd apps/native && bun start` (Expo)
 
 ## Code Style (Biome + Ultracite)
 
@@ -96,12 +96,12 @@ apps/server/src
 
 ### Layer Responsibilities
 
-| Layer        | Location    | Purpose                                            | Can Import From               |
-| ------------ | ----------- | -------------------------------------------------- | ----------------------------- |
-| **Queries**  | `queries/`  | React Query `queryOptions` definitions only        | `lib/`                        |
-| **Stores**   | `stores/`   | Zustand state containers (state + basic actions)   | `lib/`                        |
+| Layer | Location | Purpose | Can Import From |
+|-------|----------|---------|-----------------|
+| **Queries** | `queries/` | React Query `queryOptions` definitions only | `lib/` |
+| **Stores** | `stores/` | Zustand state containers (state + basic actions) | `lib/` |
 | **Features** | `features/` | Orchestration (mutations, workflows, side effects) | `queries/`, `stores/`, `lib/` |
-| **Lib**      | `lib/`      | Pure utilities, API client, shared functions       | Nothing from above            |
+| **Lib** | `lib/` | Pure utilities, API client, shared functions | Nothing from above |
 
 ### Rules
 
@@ -113,13 +113,11 @@ apps/server/src
 ### Why This Pattern?
 
 Prevents circular dependencies. Without this pattern:
-
 - `queries/recordings.ts` might import from `stores/upload-queue.ts` (to queue failed uploads)
 - `stores/upload-queue.ts` might import from `queries/recordings.ts` (to invalidate cache)
 - Result: require cycle warning, potential runtime issues with uninitialized values
 
 With the orchestration layer:
-
 - Both `queries/` and `stores/` remain leaf nodes with no cross-dependencies
 - `features/` imports from both and handles all coordination logic
 
@@ -134,14 +132,14 @@ features/upload.ts              # useUploadRecordingMutation(), processUploadQue
 
 ### When to Use Each Layer
 
-| I need to...                     | Use                     |
-| -------------------------------- | ----------------------- |
-| Define a query for fetching data | `queries/<feature>.ts`  |
-| Store client-side state          | `stores/<feature>.ts`   |
-| Create a mutation hook           | `features/<feature>.ts` |
-| Coordinate queries + stores      | `features/<feature>.ts` |
-| Process a background queue       | `features/<feature>.ts` |
-| Write a pure utility function    | `lib/<name>.ts`         |
+| I need to... | Use |
+|--------------|-----|
+| Define a query for fetching data | `queries/<feature>.ts` |
+| Store client-side state | `stores/<feature>.ts` |
+| Create a mutation hook | `features/<feature>.ts` |
+| Coordinate queries + stores | `features/<feature>.ts` |
+| Process a background queue | `features/<feature>.ts` |
+| Write a pure utility function | `lib/<name>.ts` |
 
 ## Cursor Rules
 

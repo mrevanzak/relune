@@ -1,41 +1,21 @@
-FROM node:20-slim AS build
-
-WORKDIR /app
-
-# Fly's remote builder runs in CI mode, and Yarn will default to immutable installs.
-# Your `.dockerignore` excludes `apps/native`, which makes the workspace set differ from
-# what `yarn.lock` was generated with, so immutable installs fail. We explicitly disable
-# immutable installs in Docker and focus-install only the server workspace.
-ENV YARN_ENABLE_IMMUTABLE_INSTALLS=false
-ENV HUSKY=0
-
-# Enable Corepack for Yarn 4 (as pinned by `packageManager` in package.json)
-RUN corepack enable
-
-# Native dependencies (e.g. `node-av`) may require node-gyp toolchain during install.
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends python3 build-essential pkg-config \
-  && rm -rf /var/lib/apt/lists/*
-
-COPY . .
-
-# Install only what the server workspace needs (and its dependent workspaces),
-# avoiding pulling in Expo / React Native deps.
-RUN yarn workspaces focus server
-
-# Build the server bundle
-RUN yarn --cwd apps/server build
-
-FROM node:20-slim AS runner
+FROM oven/bun:1.3.5
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=8080
 
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/apps/server/node_modules ./apps/server/node_modules
-COPY --from=build /app/apps/server/dist ./apps/server/dist
+COPY . .
+
+# Avoid Bun failing in CI-style "frozen lockfile" mode.
+# Delete bun.lock first, then let Bun generate a fresh one that respects bunfig.toml hoisting.
+# Skip lifecycle scripts (like husky) that aren't needed in Docker.
+#
+# IMPORTANT: Use hoisted linker in Docker so native platform packages (e.g. @seydx/node-av-linux-x64)
+# resolve correctly at runtime. This overrides bunfig.toml's isolated linker for the container only.
+RUN rm -f bun.lock && bun install --ignore-scripts --linker=hoisted
+
+RUN bun run --cwd apps/server build
 
 EXPOSE 8080
-CMD ["node", "apps/server/dist/index.mjs"]
+CMD ["bun", "apps/server/dist/index.mjs"]
