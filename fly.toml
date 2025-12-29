@@ -1,10 +1,10 @@
-# fly.toml app configuration file generated for relune on 2025-12-29T05:22:12Z
+# fly.toml app configuration file generated for relune on 2025-12-29T09:23:02Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
 app = 'relune'
-primary_region = 'iad'
+primary_region = 'sin'
 
 [build]
 
