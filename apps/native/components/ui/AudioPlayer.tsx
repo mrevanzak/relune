@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { PressableScale } from "pressto";
-import { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useRecordingPlayer } from "@/hooks/use-audio-player";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { formatDuration } from "@/lib/date";
@@ -15,11 +15,23 @@ export function AudioPlayer({
   durationSeconds: number | null | undefined;
 }) {
   const player = useRecordingPlayer(audioUrl);
+  // Track when user requested play but audio isn't playing yet
+  const [isPendingPlay, setIsPendingPlay] = useState(false);
 
   const text = useThemeColor({}, "text");
   const textSecondary = useThemeColor({}, "textSecondary");
   const tint = useThemeColor({}, "tint");
   const surface = useThemeColor({}, "surface");
+
+  // Clear pending state once audio starts playing
+  useEffect(() => {
+    if (player.isPlaying) {
+      setIsPendingPlay(false);
+    }
+  }, [player.isPlaying]);
+
+  // Unified loading state: initial load, buffering, or waiting for play to start
+  const isLoading = !player.isLoaded || player.isBuffering || isPendingPlay;
 
   const durationLabel = useMemo(
     () => formatDuration(durationSeconds),
@@ -28,32 +40,51 @@ export function AudioPlayer({
 
   const timeLabel = useMemo(() => {
     const current = formatDuration(player.currentTime);
-    if (!durationLabel) return current ?? "—";
+    if (!durationLabel) return current ?? "\u2014";
     return `${current ?? "0:00"} / ${durationLabel}`;
   }, [durationLabel, player.currentTime]);
 
-  const handleToggle = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    player.togglePlayPause();
+  const statusLabel = useMemo(() => {
+    if (isLoading) return "Loading...";
+    if (player.isPlaying) return "Playing";
+    return "Ready to play";
+  }, [isLoading, player.isPlaying]);
+
+  const handleToggle = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!player.isPlaying) {
+      // Set pending state immediately for instant feedback
+      setIsPendingPlay(true);
+      // Defer play to next tick so React can re-render with spinner first
+      setTimeout(() => {
+        player.play();
+      }, 0);
+    } else {
+      player.pause();
+    }
   };
 
   return (
     <View style={styles.container}>
       <PressableScale onPress={handleToggle} style={styles.playButton}>
         <View style={[styles.playButtonInner, { backgroundColor: tint }]}>
-          <Ionicons
-            color={surface}
-            name={player.isPlaying ? "pause" : "play"}
-            size={24}
-            style={player.isPlaying ? undefined : styles.playIconOffset}
-          />
+          {isLoading ? (
+            <ActivityIndicator color={surface} size="small" />
+          ) : (
+            <Ionicons
+              color={surface}
+              name={player.isPlaying ? "pause" : "play"}
+              size={24}
+              style={player.isPlaying ? undefined : styles.playIconOffset}
+            />
+          )}
         </View>
       </PressableScale>
 
       <View style={styles.meta}>
         <Text style={[styles.time, { color: text }]}>{timeLabel}</Text>
         <Text style={[styles.status, { color: textSecondary }]}>
-          {player.isPlaying ? "Playing" : "Ready to play"}
+          {statusLabel}
         </Text>
       </View>
     </View>

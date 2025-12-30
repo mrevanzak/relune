@@ -1,21 +1,31 @@
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { useCallback, useEffect, useRef } from "react";
 
+interface UseRecordingPlayerOptions {
+  /** If true, auto-play when the URL changes to a new non-null value. Defaults to false. */
+  autoPlay?: boolean;
+}
+
 /**
  * Hook for playing a single audio recording.
  * Uses expo-audio under the hood.
  *
  * @param audioUrl - URL of the audio to play (or null if none selected)
+ * @param options - Configuration options
  * @returns Playback controls and state
  */
-export function useRecordingPlayer(audioUrl: string | null) {
+export function useRecordingPlayer(
+  audioUrl: string | null,
+  options?: UseRecordingPlayerOptions
+) {
+  const { autoPlay = false } = options ?? {};
   const player = useAudioPlayer(audioUrl ?? "");
   const status = useAudioPlayerStatus(player);
   const previousUrlRef = useRef<string | null>(null);
 
-  // Auto-play when URL changes to a new non-null value
+  // Auto-play when URL changes to a new non-null value (only if autoPlay is enabled)
   useEffect(() => {
-    if (audioUrl && audioUrl !== previousUrlRef.current) {
+    if (autoPlay && audioUrl && audioUrl !== previousUrlRef.current) {
       // Small delay to ensure player is ready
       const timer = setTimeout(() => {
         player.play();
@@ -23,7 +33,7 @@ export function useRecordingPlayer(audioUrl: string | null) {
       return () => clearTimeout(timer);
     }
     previousUrlRef.current = audioUrl;
-  }, [audioUrl, player]);
+  }, [autoPlay, audioUrl, player]);
 
   const play = useCallback(() => {
     player.play();
@@ -62,8 +72,10 @@ export function useRecordingPlayer(audioUrl: string | null) {
     seekTo,
     // State
     isPlaying: status.playing,
+    isLoaded: status.isLoaded,
+    isBuffering: status.isBuffering,
+    reasonForWaitingToPlay: status.reasonForWaitingToPlay,
     currentTime: status.currentTime,
     duration: status.duration,
-    isLoaded: audioUrl !== null && status.duration > 0,
   };
 }
