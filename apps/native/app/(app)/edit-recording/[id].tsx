@@ -19,8 +19,8 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { SoftInput } from "@/components/ui/SoftInput";
 import { Shadows, ShadowsDark } from "@/constants/theme";
 import { useUpdateRecordingMutation } from "@/features/recordings";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { orpc } from "@/lib/api";
 
 export default function EditRecordingScreen() {
@@ -44,8 +44,9 @@ export default function EditRecordingScreen() {
   const textSecondary = useThemeColor({}, "textSecondary");
   const tint = useThemeColor({}, "tint");
   const colorScheme = useColorScheme();
-  
-  const shadowSmall = colorScheme === "dark" ? ShadowsDark.small : Shadows.small;
+
+  const shadowSmall =
+    colorScheme === "dark" ? ShadowsDark.small : Shadows.small;
 
   // Form state - initialized when recording loads
   const [recordedAt, setRecordedAt] = useState<Date | null>(null);
@@ -171,10 +172,16 @@ export default function EditRecordingScreen() {
               </Text>
             </HeaderButton>
           ),
+          contentStyle: {
+            backgroundColor: "transparent",
+          },
         }}
       />
 
-      <KeyboardAwareScrollView contentInsetAdjustmentBehavior="always">
+      <KeyboardAwareScrollView
+        contentContainerStyle={{ gap: 16 }}
+        contentInsetAdjustmentBehavior="always"
+      >
         {/* Date Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: textSecondary }]}>
@@ -184,7 +191,13 @@ export default function EditRecordingScreen() {
             activeOpacity={0.7}
             onPress={() => setShowDatePicker(true)}
           >
-            <View style={[styles.dateInput, { backgroundColor: surface }, shadowSmall]}>
+            <View
+              style={[
+                styles.dateInput,
+                { backgroundColor: surface },
+                shadowSmall,
+              ]}
+            >
               <Ionicons
                 color={textSecondary}
                 name="calendar-outline"
