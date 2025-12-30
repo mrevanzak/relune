@@ -64,7 +64,7 @@ export default function HomeScreen() {
     () => recordings.find((r) => r.id === currentlyPlayingId)?.audioUrl ?? null,
     [recordings, currentlyPlayingId]
   );
-  const player = useRecordingPlayer(currentAudioUrl);
+  const player = useRecordingPlayer(currentAudioUrl, { autoPlay: true });
 
   // Theme colors
   const tint = useThemeColor({}, "tint");
@@ -206,6 +206,9 @@ export default function HomeScreen() {
                         description={item.transcript ?? undefined}
                         duration={
                           formatDuration(item.durationSeconds) ?? undefined
+                        }
+                        isBuffering={
+                          currentlyPlayingId === item.id && player.isBuffering
                         }
                         isPlaying={
                           currentlyPlayingId === item.id && player.isPlaying

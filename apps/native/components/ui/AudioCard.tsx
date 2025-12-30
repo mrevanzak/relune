@@ -2,10 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { PressableScale } from "pressto";
 import { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { Gradients, GradientsDark } from "@/constants/theme";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { SoftCard } from "./SoftCard";
 
 export interface AudioCardProps {
@@ -15,8 +15,8 @@ export interface AudioCardProps {
   tags: string[];
   duration?: string;
   isPlaying?: boolean;
+  isBuffering?: boolean;
   onPlay?: () => void;
-  onPress?: () => void;
   isTranscribing?: boolean;
 }
 
@@ -34,8 +34,8 @@ export function AudioCard({
   tags,
   duration,
   isPlaying,
+  isBuffering,
   onPlay,
-  onPress,
   isTranscribing = false,
 }: AudioCardProps) {
   const text = useThemeColor({}, "text");
@@ -51,7 +51,7 @@ export function AudioCard({
   // Memoize waveform to prevent re-renders
   const waveformBars = useMemo(() => WAVEFORM_BARS, []);
 
-  const card = (
+  return (
     <SoftCard style={styles.container}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: text }]}>{title}</Text>
@@ -106,35 +106,31 @@ export function AudioCard({
             ))}
           </View>
 
-          <PressableScale onPress={onPlay}>
-            <LinearGradient
-              colors={primaryGradient}
-              end={{ x: 1, y: 1 }}
-              start={{ x: 0, y: 0 }}
-              style={[styles.playButton, { shadowColor: tint }]}
-            >
-              <Ionicons
-                color={surface}
-                name={isPlaying ? "pause" : "play"}
-                size={20}
-                style={styles.playIcon}
-              />
-            </LinearGradient>
-          </PressableScale>
+          <View onStartShouldSetResponder={() => true}>
+            <PressableScale onPress={onPlay}>
+              <LinearGradient
+                colors={primaryGradient}
+                end={{ x: 1, y: 1 }}
+                start={{ x: 0, y: 0 }}
+                style={[styles.playButton, { shadowColor: tint }]}
+              >
+                {isBuffering ? (
+                  <ActivityIndicator color={surface} size="small" />
+                ) : (
+                  <Ionicons
+                    color={surface}
+                    name={isPlaying ? "pause" : "play"}
+                    size={20}
+                    style={styles.playIcon}
+                  />
+                )}
+              </LinearGradient>
+            </PressableScale>
+          </View>
         </View>
       </View>
     </SoftCard>
   );
-
-  if (onPress) {
-    return (
-      <PressableScale onPress={onPress} style={styles.pressable}>
-        {card}
-      </PressableScale>
-    );
-  }
-
-  return card;
 }
 
 const styles = StyleSheet.create({

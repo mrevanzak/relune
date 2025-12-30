@@ -1,7 +1,7 @@
 import { StyleSheet, View, type ViewProps } from "react-native";
 import { Shadows, ShadowsDark } from "@/constants/theme";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface SoftCardProps extends ViewProps {
   variant?: "surface" | "highlight";
@@ -21,7 +21,10 @@ export function SoftCard({
   const shadowStyle = colorScheme === "dark" ? ShadowsDark.soft : Shadows.soft;
 
   return (
-    <View style={[styles.card, { backgroundColor }, shadowStyle, style]} {...props}>
+    <View
+      style={[styles.card, { backgroundColor }, shadowStyle, style]}
+      {...props}
+    >
       {children}
     </View>
   );

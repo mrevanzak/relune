@@ -1,7 +1,12 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { PressableScale } from "pressto";
 import { StyleSheet, Text } from "react-native";
-import { Gradients, GradientsDark, Shadows, ShadowsDark } from "@/constants/theme";
+import {
+  Gradients,
+  GradientsDark,
+  Shadows,
+  ShadowsDark,
+} from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
@@ -21,8 +26,9 @@ export function FilterPill({
   const colorScheme = useColorScheme();
   const primaryGradient =
     colorScheme === "dark" ? GradientsDark.primary : Gradients.primary;
-  
-  const shadowStyle = colorScheme === "dark" ? ShadowsDark.small : Shadows.small;
+
+  const shadowStyle =
+    colorScheme === "dark" ? ShadowsDark.small : Shadows.small;
 
   if (isActive) {
     return (

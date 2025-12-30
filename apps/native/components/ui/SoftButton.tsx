@@ -7,7 +7,12 @@ import {
   View,
   type ViewStyle,
 } from "react-native";
-import { Gradients, GradientsDark, Shadows, ShadowsDark } from "@/constants/theme";
+import {
+  Gradients,
+  GradientsDark,
+  Shadows,
+  ShadowsDark,
+} from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
@@ -40,8 +45,9 @@ export function SoftButton({
   const colorScheme = useColorScheme();
   const primaryGradient =
     colorScheme === "dark" ? GradientsDark.primary : Gradients.primary;
-  
-  const shadowStyle = colorScheme === "dark" ? ShadowsDark.small : Shadows.small;
+
+  const shadowStyle =
+    colorScheme === "dark" ? ShadowsDark.small : Shadows.small;
 
   const isDisabled = disabled || loading;
 
@@ -55,7 +61,12 @@ export function SoftButton({
     return (
       <PressableScale
         onPress={handlePress}
-        style={[styles.container, shadowStyle, isDisabled && styles.disabled, style]}
+        style={[
+          styles.container,
+          shadowStyle,
+          isDisabled && styles.disabled,
+          style,
+        ]}
       >
         <LinearGradient
           colors={primaryGradient}
