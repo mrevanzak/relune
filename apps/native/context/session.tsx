@@ -7,7 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { AppState, Platform } from "react-native";
+import { AppState } from "react-native";
 import { initMmkv } from "@/lib/mmkv";
 import { getSupabaseClient } from "@/lib/supabase";
 import { authStore } from "@/stores/auth";
@@ -44,24 +44,20 @@ export function SessionProvider({ children }: SessionProviderProps) {
     try {
       setError(null);
       // 1. Initialize MMKV storage (on native platforms)
-      if (Platform.OS !== "web") {
-        await initMmkv();
-        // 2. Rehydrate zustand stores after MMKV is ready
-        await authStore.persist.rehydrate();
-        await uploadQueueStore.persist.rehydrate();
-      }
+      await initMmkv();
+      // 2. Rehydrate zustand stores after MMKV is ready
+      await authStore.persist.rehydrate();
+      await uploadQueueStore.persist.rehydrate();
       // 3. Get Supabase client (will use MMKV storage on native, localStorage on web)
       const supabase = getSupabaseClient();
       // 4. Register AppState listener for token refresh (only on native, only once)
-      if (Platform.OS !== "web") {
-        AppState.addEventListener("change", (state) => {
-          if (state === "active") {
-            supabase.auth.startAutoRefresh();
-          } else {
-            supabase.auth.stopAutoRefresh();
-          }
-        });
-      }
+      AppState.addEventListener("change", (state) => {
+        if (state === "active") {
+          supabase.auth.startAutoRefresh();
+        } else {
+          supabase.auth.stopAutoRefresh();
+        }
+      });
       // 5. Get initial session
       const {
         data: { session: initialSession },

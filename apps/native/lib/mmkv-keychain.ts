@@ -1,5 +1,4 @@
 import * as Crypto from "expo-crypto";
-import { Platform } from "react-native";
 import * as Keychain from "react-native-keychain";
 
 const KEYCHAIN_SERVICE = "com.mrevanzak.relune.mmkv-key";
@@ -27,10 +26,6 @@ async function generateEncryptionKey(): Promise<string> {
  * On web, returns null (no Keychain support).
  */
 export async function getOrCreateMmkvKey(): Promise<string | null> {
-  if (Platform.OS === "web") {
-    return null;
-  }
-
   try {
     const credentials = await Keychain.getGenericPassword({
       service: KEYCHAIN_SERVICE,

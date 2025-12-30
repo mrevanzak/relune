@@ -6,7 +6,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AppState,
   type AppStateStatus,
-  Platform,
   StyleSheet,
   Text,
   View,
@@ -39,7 +38,7 @@ export function BiometricLock({ children }: BiometricLockProps) {
   const textSecondary = useThemeColor({}, "textSecondary");
 
   // Lock state: true = user needs to authenticate before seeing children
-  const [isLocked, setIsLocked] = useState(Platform.OS !== "web");
+  const [isLocked, setIsLocked] = useState(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [biometricType, setBiometricType] = useState<string>("Biometric");
   // Privacy shield: true = show blur overlay (even if not locked)
@@ -64,8 +63,6 @@ export function BiometricLock({ children }: BiometricLockProps) {
   }, [isAuthenticating]);
 
   const authenticate = useCallback(async () => {
-    if (Platform.OS === "web") return;
-
     // Update the ref synchronously to avoid race conditions with AppState events
     // (eg. biometric prompt causing `inactive -> active` while state updates flush).
     isAuthenticatingRef.current = true;
@@ -95,8 +92,6 @@ export function BiometricLock({ children }: BiometricLockProps) {
 
   // Initial mount: prompt biometric after a short delay (cold start)
   useEffect(() => {
-    if (Platform.OS === "web") return;
-
     const timer = setTimeout(() => {
       // Only auto-authenticate on initial mount if:
       // 1. We haven't already authenticated
@@ -119,8 +114,6 @@ export function BiometricLock({ children }: BiometricLockProps) {
   }, [authenticate]);
 
   useEffect(() => {
-    if (Platform.OS === "web") return;
-
     // Check if biometrics are available and enrolled
     (async () => {
       const compatible = await LocalAuthentication.hasHardwareAsync();
@@ -213,11 +206,6 @@ export function BiometricLock({ children }: BiometricLockProps) {
       subscription.remove();
     };
   }, [authenticate]);
-
-  // On web, just render children
-  if (Platform.OS === "web") {
-    return <>{children}</>;
-  }
 
   // Render lock screen if locked
   if (isLocked) {

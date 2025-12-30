@@ -1,7 +1,7 @@
 import * as FileSystem from "expo-file-system";
 import { useCallback, useEffect, useRef } from "react";
 import { View } from "react-native";
-import { Tabs } from "@/components/NativeBottomTabs";
+import { Tabs } from "@/components/NativeBottomTabs.native";
 import { RecordingAccessoryView } from "@/components/RecordingAccessoryView";
 import { Colors } from "@/constants/theme";
 import { useUploadRecordingMutation } from "@/features/upload";

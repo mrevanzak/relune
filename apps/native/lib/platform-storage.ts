@@ -1,4 +1,3 @@
-import { Platform } from "react-native";
 import { getMmkv } from "./mmkv";
 
 type OnNativeUnavailable = "throw" | "tolerant";
@@ -29,10 +28,6 @@ export function createPlatformStorage(
 
   return {
     getItem: (key: string): string | null => {
-      if (Platform.OS === "web") {
-        return localStorage.getItem(key);
-      }
-
       const mmkv = getMmkv();
       if (!mmkv) {
         if (onNativeUnavailable === "throw") {
@@ -46,11 +41,6 @@ export function createPlatformStorage(
     },
 
     setItem: (key: string, value: string): void => {
-      if (Platform.OS === "web") {
-        localStorage.setItem(key, value);
-        return;
-      }
-
       const mmkv = getMmkv();
       if (!mmkv) {
         if (onNativeUnavailable === "throw") {
@@ -64,11 +54,6 @@ export function createPlatformStorage(
     },
 
     removeItem: (key: string): void => {
-      if (Platform.OS === "web") {
-        localStorage.removeItem(key);
-        return;
-      }
-
       const mmkv = getMmkv();
       if (!mmkv) {
         if (onNativeUnavailable === "throw") {

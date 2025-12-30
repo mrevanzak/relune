@@ -6,7 +6,7 @@ import {
   useAudioRecorder as useExpoAudioRecorder,
 } from "expo-audio";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Platform } from "react-native";
+import { Alert } from "react-native";
 
 export interface RecordingResult {
   uri: string;
@@ -46,11 +46,6 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 
   // Request permissions on mount
   useEffect(() => {
-    if (Platform.OS === "web") {
-      setHasPermission(true);
-      return;
-    }
-
     (async () => {
       try {
         const status = await AudioModule.requestRecordingPermissionsAsync();
@@ -69,11 +64,6 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   }, []);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
-    if (Platform.OS === "web") {
-      setHasPermission(true);
-      return true;
-    }
-
     try {
       const status = await AudioModule.requestRecordingPermissionsAsync();
       setHasPermission(status.granted);

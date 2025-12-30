@@ -1,4 +1,3 @@
-import { Platform } from "react-native";
 import { createMMKV, type MMKV } from "react-native-mmkv";
 import { getOrCreateMmkvKey } from "./mmkv-keychain";
 
@@ -11,10 +10,6 @@ let initPromise: Promise<MMKV> | null = null;
  * Subsequent calls return the same instance.
  */
 export async function initMmkv(): Promise<MMKV | null> {
-  if (Platform.OS === "web") {
-    return null;
-  }
-
   if (mmkvInstance) {
     return mmkvInstance;
   }
