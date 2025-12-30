@@ -338,7 +338,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { paddingTop: 56 }]}>
+    <SafeAreaView style={[styles.container, { paddingTop: 64 }]}>
       {/* Native header configuration */}
       <Stack.Screen
         options={{
