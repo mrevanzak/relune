@@ -114,12 +114,34 @@ export function AudioCard({
 
   // Different styling for "me" vs "others"
   const senderBadgeColor = isFromMe ? lilac : dustyPink;
-  const senderTextColor = isFromMe ? "#fff" : text;
 
   return (
     <SoftCard style={styles.container}>
       {/* Header: Avatar + Sender Badge + Date */}
       <View style={styles.header}>
+        {/* Middle: Sender name badge + Date */}
+        <View style={styles.senderRow}>
+          <View
+            style={[
+              styles.senderBadge,
+              { backgroundColor: `${senderBadgeColor}30` },
+            ]}
+          >
+            <Text
+              numberOfLines={1}
+              style={[styles.senderText, { color: isFromMe ? lilac : text }]}
+            >
+              {isFromMe ? "Me" : senderName}
+            </Text>
+          </View>
+          <Text style={[styles.dateText, { color: textSecondary }]}>
+            {date}
+          </Text>
+        </View>
+      </View>
+
+      {/* Audio Row: Waveform + Duration + Play Button */}
+      <View style={styles.audioRow}>
         {/* Left: Avatar */}
         <Image
           contentFit="cover"
@@ -128,31 +150,6 @@ export function AudioCard({
           transition={200}
         />
 
-        {/* Middle: Sender name badge + Date */}
-        <View style={styles.infoContainer}>
-          <View style={styles.senderRow}>
-            <View
-              style={[
-                styles.senderBadge,
-                { backgroundColor: `${senderBadgeColor}30` },
-              ]}
-            >
-              <Text
-                numberOfLines={1}
-                style={[styles.senderText, { color: isFromMe ? lilac : text }]}
-              >
-                {isFromMe ? "Me" : senderName}
-              </Text>
-            </View>
-            <Text style={[styles.dateText, { color: textSecondary }]}>
-              {date}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Audio Row: Waveform + Duration + Play Button */}
-      <View style={styles.audioRow}>
         <WaveformBars color={lilac} />
 
         {duration && (
@@ -161,17 +158,19 @@ export function AudioCard({
           </Text>
         )}
 
-        <PressableScale onPress={onPlay} style={styles.playButton}>
-          {isBuffering ? (
-            <ActivityIndicator color={lilac} size="small" />
-          ) : (
-            <Ionicons
-              color={lilac}
-              name={isPlaying ? "pause-circle" : "play-circle"}
-              size={44}
-            />
-          )}
-        </PressableScale>
+        <View onStartShouldSetResponder={() => true}>
+          <PressableScale onPress={onPlay} style={styles.playButton}>
+            {isBuffering ? (
+              <ActivityIndicator color={lilac} size="small" />
+            ) : (
+              <Ionicons
+                color={lilac}
+                name={isPlaying ? "pause-circle" : "play-circle"}
+                size={44}
+              />
+            )}
+          </PressableScale>
+        </View>
       </View>
 
       {/* Body: Transcript or Status */}
@@ -298,18 +297,13 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 4,
+    flexDirection: "column",
+    gap: 12,
+    marginTop: 6,
   },
   tags: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 6,
-    flex: 1,
   },
   tag: {
     paddingHorizontal: 10,
@@ -323,6 +317,7 @@ const styles = StyleSheet.create({
   importBadge: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "flex-end",
     gap: 4,
     paddingVertical: 2,
     opacity: 0.8,

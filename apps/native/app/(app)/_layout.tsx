@@ -81,6 +81,25 @@ export default function AppLayout() {
             ),
           }}
         />
+        <Stack.Screen
+          name="import-mapping"
+          options={{
+            title: "",
+            headerTransparent: true,
+            presentation: "formSheet",
+            sheetAllowedDetents: [0.85],
+            contentStyle: {
+              backgroundColor: "transparent",
+            },
+            headerRight: ({ canGoBack }) => (
+              <HeaderButton
+                onPress={() => (canGoBack ? router.back() : undefined)}
+              >
+                <IconSymbol color={tint} name="xmark" size={24} />
+              </HeaderButton>
+            ),
+          }}
+        />
         <Stack.Screen name="index" redirect />
       </Stack>
     </BiometricLock>

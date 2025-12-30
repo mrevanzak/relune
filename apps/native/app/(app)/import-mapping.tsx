@@ -1,9 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import { router, Stack, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -109,33 +108,14 @@ export default function ImportMappingScreen() {
     });
   }, [mappings, params.fileBase64]);
 
-  const isLoading = usersQuery.isLoading || mappingsQuery.isLoading;
-
-  if (isLoading) {
-    return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <Stack.Screen options={{ title: "Map Senders" }} />
-        <ActivityIndicator color={tint} size="large" />
-        <Text style={[styles.loadingText, { color: textSecondary }]}>
-          Loading users...
-        </Text>
-      </View>
-    );
-  }
-
   const users = usersQuery.data ?? [];
+  const background = useThemeColor({}, "background");
 
   return (
     <View style={styles.container}>
-      <Stack.Screen
-        options={{
-          title: "Map Senders",
-          headerBackTitle: "Cancel",
-        }}
-      />
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
+        contentInset={{ top: 20, bottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
@@ -215,7 +195,7 @@ export default function ImportMappingScreen() {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: background }]}>
         <SoftButton
           disabled={!allMapped}
           onPress={handleContinue}
@@ -311,6 +291,8 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingBottom: 40,
     gap: 8,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0, 0, 0, 0.05)",
   },
   footerHint: {
     textAlign: "center",

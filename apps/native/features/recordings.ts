@@ -24,7 +24,7 @@ export function useDeleteRecordingMutation() {
       onSuccess: (_, _variables, _onMutateResult, context) => {
         // Invalidate recordings list
         context.client.invalidateQueries({
-          queryKey: orpc.recordings.get.key(),
+          queryKey: orpc.recordings.list.key(),
         });
       },
     })
