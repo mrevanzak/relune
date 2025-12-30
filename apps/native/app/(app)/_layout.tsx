@@ -1,10 +1,14 @@
-import { Redirect, Stack } from "expo-router";
+import { HeaderButton } from "@react-navigation/elements";
+import { Redirect, router, Stack } from "expo-router";
 import { Text, View } from "react-native";
 import { BiometricLock } from "@/components/BiometricLock";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useSession } from "@/context/session";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 export default function AppLayout() {
   const { session, isInitialized } = useSession();
+  const tint = useThemeColor({}, "tint");
 
   // Show loading while session is being determined
   if (!isInitialized) {
@@ -55,6 +59,26 @@ export default function AppLayout() {
             presentation: "formSheet",
             sheetGrabberVisible: true,
             sheetAllowedDetents: "fitToContents",
+          }}
+        />
+        <Stack.Screen
+          name="settings"
+          options={{
+            title: "Settings",
+            headerTransparent: true,
+            presentation: "formSheet",
+            sheetGrabberVisible: true,
+            sheetAllowedDetents: "fitToContents",
+            contentStyle: {
+              backgroundColor: "transparent",
+            },
+            headerRight: ({ canGoBack }) => (
+              <HeaderButton
+                onPress={() => (canGoBack ? router.back() : undefined)}
+              >
+                <IconSymbol color={tint} name="xmark" size={24} />
+              </HeaderButton>
+            ),
           }}
         />
         <Stack.Screen name="index" redirect />

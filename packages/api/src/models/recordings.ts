@@ -14,6 +14,7 @@ export const listRecordingsInput = z
     limit: z.number().optional(),
     offset: z.number().optional(),
     search: z.string().optional(),
+    tab: z.enum(["current", "archived"]).optional(),
   })
   .optional();
 
@@ -54,6 +55,7 @@ export const keywordSchema = z.object({
 export const recordingSchema = z.object({
   id: z.string(),
   userId: z.string(),
+  senderId: z.string().uuid().nullable(),
   audioUrl: z.string(),
   transcript: z.string().nullable(),
   durationSeconds: z.number().nullable(),
@@ -63,6 +65,12 @@ export const recordingSchema = z.object({
   importSource: z.enum(["app", "whatsapp"]),
   originalFilename: z.string().nullable(),
   notes: z.string().nullable(),
+  isArchived: z.boolean(),
+  archivedAt: z.date().nullable(),
+  importedAt: z.date().nullable(),
+  importedById: z.string().uuid().nullable(),
+  senderName: z.string().nullable(),
+  importedByName: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

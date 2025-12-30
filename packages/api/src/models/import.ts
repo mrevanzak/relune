@@ -8,8 +8,14 @@ import * as z from "zod";
 // Input Schemas
 // ============================================================================
 
+export const whatsappPreviewInput = z.object({
+  file: z.string().min(1, "File is required"), // base64-encoded ZIP file
+});
+
 export const whatsappImportInput = z.object({
   file: z.string().min(1, "File is required"), // base64-encoded ZIP file
+  senderMappings: z.record(z.string(), z.string()).optional(), // externalName → userId
+  saveMappings: z.boolean().optional().default(false), // Whether to save mappings for future use
 });
 
 // ============================================================================
@@ -38,5 +44,6 @@ export const importResultSchema = z.object({
 // Type Exports
 // ============================================================================
 
+export type WhatsappPreviewInput = z.infer<typeof whatsappPreviewInput>;
 export type WhatsappImportInput = z.infer<typeof whatsappImportInput>;
 export type ImportResult = z.infer<typeof importResultSchema>;

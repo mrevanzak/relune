@@ -2,7 +2,13 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { ORPCError } from "@orpc/server";
 import { db } from "@relune/db";
 import type { Recording } from "@relune/db/schema";
-import { keywords, recordingKeywords, recordings } from "@relune/db/schema";
+import {
+  keywords,
+  recordingKeywords,
+  recordings,
+  userSettings,
+  users,
+} from "@relune/db/schema";
 import { env } from "@relune/env";
 import { generateText } from "ai";
 import {
@@ -14,6 +20,7 @@ import {
   ilike,
   inArray,
   isNull,
+  lt,
   or,
   type SQL,
   sql,
@@ -56,6 +63,13 @@ export type RecordingWithKeywords = Recording & {
   keywords: RecordingKeywordItem[];
 };
 
+export type RecordingWithKeywordsAndUsers = RecordingWithKeywords & {
+  /** Convenience field for UI (resolved from senderId, with app fallback). */
+  senderName: string | null;
+  /** Convenience field for UI (resolved from importedById). */
+  importedByName: string | null;
+};
+
 export type UpdateRecordingInput = {
   id: string;
   recordedAt?: Date;
@@ -69,22 +83,95 @@ export type ProcessPendingResult = {
 };
 
 // ============================================================================
-// List Recordings
+// Helpers
 // ============================================================================
 
-/**
- * List recordings with optional search and pagination.
- * Searches across transcript, filename, and keywords.
- */
-export async function listRecordings({
-  limit = 20,
-  offset = 0,
-  search,
-}: NonNullable<ListRecordingsInput>): Promise<RecordingWithKeywords[]> {
-  const whereCondition: SQL[] = [];
+type UserLookup = {
+  email: string;
+  displayName: string | null;
+};
 
-  if (search?.trim()) {
-    const searchTerm = `%${search.trim()}%`;
+function getDisplayLabel(user: UserLookup): string {
+  return user.displayName ?? user.email;
+}
+
+function getEffectiveSenderId(recording: Recording): string | null {
+  // For in-app recordings, sender is the uploader by default.
+  if (recording.senderId) {
+    return recording.senderId;
+  }
+  if (recording.importSource === "app") {
+    return recording.userId;
+  }
+  return null;
+}
+
+async function getAutoArchiveDays(userId: string): Promise<number | null> {
+  // Ensure settings row exists (default is "disabled").
+  await db
+    .insert(userSettings)
+    .values({ userId, autoArchiveDays: null })
+    .onConflictDoNothing();
+
+  const result = await db
+    .select({ autoArchiveDays: userSettings.autoArchiveDays })
+    .from(userSettings)
+    .where(eq(userSettings.userId, userId))
+    .limit(1);
+
+  return result[0]?.autoArchiveDays ?? null;
+}
+
+async function autoArchiveOldRecordings(
+  userId: string,
+  now: Date
+): Promise<void> {
+  const autoArchiveDays = await getAutoArchiveDays(userId);
+  if (!autoArchiveDays) return;
+
+  const thresholdMs = autoArchiveDays * 24 * 60 * 60 * 1000;
+  const thresholdDate = new Date(now.getTime() - thresholdMs);
+
+  await db
+    .update(recordings)
+    .set({
+      isArchived: true,
+      archivedAt: now,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(recordings.importSource, "app"),
+        eq(recordings.isArchived, false),
+        lt(recordings.recordedAt, thresholdDate)
+      )
+    );
+}
+
+function buildListWhereCondition(input: {
+  tab?: "current" | "archived";
+  search?: string;
+}): SQL | undefined {
+  const conditions: Array<SQL | undefined> = [];
+
+  if (input.tab === "current") {
+    conditions.push(
+      and(eq(recordings.importSource, "app"), eq(recordings.isArchived, false))
+    );
+  }
+
+  if (input.tab === "archived") {
+    conditions.push(
+      or(
+        eq(recordings.isArchived, true),
+        eq(recordings.importSource, "whatsapp")
+      )
+    );
+  }
+
+  const search = input.search?.trim();
+  if (search) {
+    const searchTerm = `%${search}%`;
 
     const keywordMatch = db
       .select({ id: sql`1` })
@@ -97,25 +184,26 @@ export async function listRecordings({
         )
       );
 
-    whereCondition.push(ilike(recordings.transcript, searchTerm));
-    whereCondition.push(ilike(recordings.originalFilename, searchTerm));
-    whereCondition.push(exists(keywordMatch));
+    conditions.push(
+      or(
+        ilike(recordings.transcript, searchTerm),
+        ilike(recordings.originalFilename, searchTerm),
+        ilike(recordings.notes, searchTerm),
+        exists(keywordMatch)
+      )
+    );
   }
 
-  const recordingResults = await db
-    .select()
-    .from(recordings)
-    .where(or(...whereCondition))
-    .orderBy(desc(recordings.recordedAt))
-    .limit(limit)
-    .offset(offset);
+  return and(...conditions);
+}
 
-  if (recordingResults.length === 0) {
-    return [];
+async function getKeywordsByRecordingIds(
+  recordingIds: string[]
+): Promise<Map<string, RecordingKeywordItem[]>> {
+  if (recordingIds.length === 0) {
+    return new Map();
   }
 
-  // Batch fetch keywords
-  const recordingIds = recordingResults.map((r) => r.id);
   const keywordResults = await db
     .select({
       recordingId: recordingKeywords.recordingId,
@@ -133,10 +221,121 @@ export async function listRecordings({
     keywordsByRecording.set(kw.recordingId, existing);
   }
 
-  return recordingResults.map((r) => ({
-    ...r,
-    keywords: keywordsByRecording.get(r.id) ?? [],
-  }));
+  return keywordsByRecording;
+}
+
+async function getUsersForRecordings(
+  recordingRows: Recording[]
+): Promise<Map<string, UserLookup>> {
+  const userIds = new Set<string>();
+  for (const recording of recordingRows) {
+    const senderId = getEffectiveSenderId(recording);
+    if (senderId) {
+      userIds.add(senderId);
+    }
+    if (recording.importedById) {
+      userIds.add(recording.importedById);
+    }
+  }
+
+  const userIdList = Array.from(userIds);
+  if (userIdList.length === 0) {
+    return new Map();
+  }
+
+  const userRows = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      displayName: users.displayName,
+    })
+    .from(users)
+    .where(inArray(users.id, userIdList));
+
+  const usersById = new Map<string, UserLookup>();
+  for (const user of userRows) {
+    usersById.set(user.id, {
+      email: user.email,
+      displayName: user.displayName,
+    });
+  }
+
+  return usersById;
+}
+
+function resolveName(
+  usersById: Map<string, UserLookup>,
+  id: string | null
+): string | null {
+  if (!id) return null;
+  const user = usersById.get(id);
+  return user ? getDisplayLabel(user) : null;
+}
+
+function toRecordingWithKeywordsAndUsers(
+  recording: Recording,
+  keywords: RecordingKeywordItem[],
+  usersById: Map<string, UserLookup>
+): RecordingWithKeywordsAndUsers {
+  const effectiveSenderId = getEffectiveSenderId(recording);
+
+  return {
+    ...recording,
+    senderId: effectiveSenderId,
+    senderName: resolveName(usersById, effectiveSenderId),
+    importedByName: resolveName(usersById, recording.importedById ?? null),
+    keywords,
+  };
+}
+
+// ============================================================================
+// List Recordings
+// ============================================================================
+
+/**
+ * List recordings with optional search and pagination.
+ * Searches across transcript, filename, and keywords.
+ */
+export async function listRecordings({
+  userId,
+  limit = 20,
+  offset = 0,
+  search,
+  tab,
+}: NonNullable<ListRecordingsInput> & {
+  userId: string;
+}): Promise<RecordingWithKeywordsAndUsers[]> {
+  const now = new Date();
+
+  // Auto-archive is applied transparently when fetching the current tab.
+  if (tab === "current") {
+    await autoArchiveOldRecordings(userId, now);
+  }
+  const where = buildListWhereCondition({ tab, search });
+
+  const recordingResults = await db
+    .select()
+    .from(recordings)
+    .where(where)
+    .orderBy(desc(recordings.recordedAt))
+    .limit(limit)
+    .offset(offset);
+
+  if (recordingResults.length === 0) {
+    return [];
+  }
+
+  const recordingIds = recordingResults.map((r) => r.id);
+  const keywordsByRecording = await getKeywordsByRecordingIds(recordingIds);
+  const usersById = await getUsersForRecordings(recordingResults);
+
+  return recordingResults.map((recording) =>
+    toRecordingWithKeywordsAndUsers(
+      recording,
+      keywordsByRecording.get(recording.id) ?? [],
+      usersById
+    )
+  );
 }
 
 // ============================================================================
@@ -148,7 +347,9 @@ export async function listRecordings({
  *
  * @throws ORPCError NOT_FOUND if recording doesn't exist
  */
-export async function getRecording(id: string): Promise<RecordingWithKeywords> {
+export async function getRecording(
+  id: string
+): Promise<RecordingWithKeywordsAndUsers> {
   const result = await db
     .select()
     .from(recordings)
@@ -173,13 +374,13 @@ export async function getRecording(id: string): Promise<RecordingWithKeywords> {
     .innerJoin(keywords, eq(recordingKeywords.keywordId, keywords.id))
     .where(eq(recordingKeywords.recordingId, id));
 
-  return {
-    ...recording,
-    keywords: keywordResults.map((kw) => ({
-      id: kw.keywordId,
-      name: kw.keywordName,
-    })),
-  };
+  const usersById = await getUsersForRecordings([recording]);
+
+  return toRecordingWithKeywordsAndUsers(
+    recording,
+    keywordResults.map((kw) => ({ id: kw.keywordId, name: kw.keywordName })),
+    usersById
+  );
 }
 
 // ============================================================================
@@ -236,6 +437,7 @@ export async function createRecording({
     .insert(recordings)
     .values({
       userId,
+      senderId: userId,
       audioUrl: uploadResult.url,
       durationSeconds: durationSeconds ?? null,
       fileSizeBytes: finalContent.length,
@@ -315,7 +517,7 @@ export async function updateRecording({
   id,
   recordedAt,
   keywords: newKeywords,
-}: UpdateRecordingInput): Promise<RecordingWithKeywords> {
+}: UpdateRecordingInput): Promise<RecordingWithKeywordsAndUsers> {
   // Verify recording exists
   const existing = await db
     .select()
@@ -348,6 +550,97 @@ export async function updateRecording({
       await saveKeywords(id, newKeywords);
     }
   }
+
+  return getRecording(id);
+}
+
+// ============================================================================
+// Archive / Unarchive
+// ============================================================================
+
+export async function archiveRecording(
+  id: string
+): Promise<RecordingWithKeywordsAndUsers> {
+  const existing = await db
+    .select({
+      id: recordings.id,
+      userId: recordings.userId,
+      senderId: recordings.senderId,
+      importSource: recordings.importSource,
+    })
+    .from(recordings)
+    .where(eq(recordings.id, id))
+    .limit(1);
+
+  const recording = existing[0];
+  if (!recording) {
+    throw new ORPCError("NOT_FOUND", {
+      message: "Recording not found",
+      data: { code: "RECORDING_NOT_FOUND", id },
+    });
+  }
+
+  const now = new Date();
+  const effectiveSenderId =
+    recording.senderId ??
+    (recording.importSource === "app" ? recording.userId : null);
+
+  const updateValues: {
+    isArchived: true;
+    archivedAt: Date;
+    updatedAt: Date;
+    senderId?: string | null;
+  } = {
+    isArchived: true,
+    archivedAt: now,
+    updatedAt: now,
+  };
+
+  if (effectiveSenderId) {
+    updateValues.senderId = effectiveSenderId;
+  }
+
+  await db.update(recordings).set(updateValues).where(eq(recordings.id, id));
+
+  return getRecording(id);
+}
+
+export async function unarchiveRecording(
+  id: string
+): Promise<RecordingWithKeywordsAndUsers> {
+  const existing = await db
+    .select({
+      id: recordings.id,
+      importSource: recordings.importSource,
+    })
+    .from(recordings)
+    .where(eq(recordings.id, id))
+    .limit(1);
+
+  const recording = existing[0];
+  if (!recording) {
+    throw new ORPCError("NOT_FOUND", {
+      message: "Recording not found",
+      data: { code: "RECORDING_NOT_FOUND", id },
+    });
+  }
+
+  if (recording.importSource === "whatsapp") {
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Cannot unarchive imported WhatsApp recordings",
+      data: { code: "CANNOT_UNARCHIVE_IMPORTED" },
+    });
+  }
+
+  const now = new Date();
+  await db
+    .update(recordings)
+    .set({
+      isArchived: false,
+      archivedAt: null,
+      updatedAt: now,
+    })
+    .where(eq(recordings.id, id));
 
   return getRecording(id);
 }

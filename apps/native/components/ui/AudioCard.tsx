@@ -1,15 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { Image } from "expo-image";
 import { PressableScale } from "pressto";
-import { useMemo } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { Gradients, GradientsDark } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { SoftCard } from "./SoftCard";
 
+export type ImportSource = "app" | "whatsapp";
+
 export interface AudioCardProps {
-  title: string;
+  senderName: string;
   date: string;
   description?: string;
   tags: string[];
@@ -18,17 +17,83 @@ export interface AudioCardProps {
   isBuffering?: boolean;
   onPlay?: () => void;
   isTranscribing?: boolean;
+  isFromMe?: boolean;
+  importSource?: ImportSource;
+  importedAt?: Date;
+  importedByName?: string;
 }
 
-// Pre-generate waveform data to avoid re-rendering issues
-const WAVEFORM_BARS = Array.from({ length: 12 }, (_, i) => ({
-  id: `bar-${i}`,
-  height: 10 + ((i * 7) % 15),
-  isEven: i % 2 === 0,
-}));
+const SOURCE_CONFIG = {
+  whatsapp: {
+    icon: "logo-whatsapp",
+    label: "WhatsApp",
+    color: "#25D366",
+  },
+  app: { icon: "archive", label: "Archived", color: "#d4aecd" }, // lilac
+} as const;
+
+function formatImportedDate(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+/**
+ * Generate a DiceBear avatar URL based on name
+ * Using "initials" style for clean, professional look
+ */
+function getAvatarUrl(name: string): string {
+  const seed = encodeURIComponent(name.toLowerCase().trim());
+  return `https://api.dicebear.com/9.x/initials/png?seed=${seed}&backgroundColor=d4aecd,c8b6d4,e8d5e0&backgroundType=gradientLinear&fontSize=42&fontWeight=500`;
+}
+
+/**
+ * Static waveform bars - decorative representation
+ */
+function WaveformBars({ color }: { color: string }) {
+  // Pre-defined bar heights for visual variety
+  const barHeights = [8, 14, 10, 18, 12, 16, 8, 14, 10, 18, 12, 8];
+
+  return (
+    <View style={waveformStyles.container}>
+      {barHeights.map((height, index) => (
+        <View
+          key={index}
+          style={[
+            waveformStyles.bar,
+            {
+              height,
+              backgroundColor: color,
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
+const waveformStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    flex: 1,
+  },
+  bar: {
+    width: 3,
+    borderRadius: 1.5,
+    opacity: 0.6,
+  },
+});
 
 export function AudioCard({
-  title,
+  senderName,
   date,
   description,
   tags,
@@ -37,133 +102,196 @@ export function AudioCard({
   isBuffering,
   onPlay,
   isTranscribing = false,
+  isFromMe = false,
+  importSource,
+  importedAt,
+  importedByName,
 }: AudioCardProps) {
   const text = useThemeColor({}, "text");
   const textSecondary = useThemeColor({}, "textSecondary");
-  const surface = useThemeColor({}, "surface");
   const lilac = useThemeColor({}, "lilac");
-  const tint = useThemeColor({}, "tint");
   const dustyPink = useThemeColor({}, "dustyPink");
-  const colorScheme = useColorScheme();
-  const primaryGradient =
-    colorScheme === "dark" ? GradientsDark.primary : Gradients.primary;
 
-  // Memoize waveform to prevent re-renders
-  const waveformBars = useMemo(() => WAVEFORM_BARS, []);
+  // Different styling for "me" vs "others"
+  const senderBadgeColor = isFromMe ? lilac : dustyPink;
+  const senderTextColor = isFromMe ? "#fff" : text;
 
   return (
     <SoftCard style={styles.container}>
+      {/* Header: Avatar + Sender Badge + Date */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: text }]}>{title}</Text>
-        <View style={styles.metaContainer}>
-          {duration && (
-            <Text style={[styles.date, { color: textSecondary }]}>
-              {duration} •{" "}
+        {/* Left: Avatar */}
+        <Image
+          contentFit="cover"
+          source={{ uri: getAvatarUrl(senderName) }}
+          style={styles.avatar}
+          transition={200}
+        />
+
+        {/* Middle: Sender name badge + Date */}
+        <View style={styles.infoContainer}>
+          <View style={styles.senderRow}>
+            <View
+              style={[
+                styles.senderBadge,
+                { backgroundColor: `${senderBadgeColor}30` },
+              ]}
+            >
+              <Text
+                numberOfLines={1}
+                style={[styles.senderText, { color: isFromMe ? lilac : text }]}
+              >
+                {isFromMe ? "Me" : senderName}
+              </Text>
+            </View>
+            <Text style={[styles.dateText, { color: textSecondary }]}>
+              {date}
             </Text>
-          )}
-          <Text style={[styles.date, { color: textSecondary }]}>{date}</Text>
+          </View>
         </View>
       </View>
 
-      {isTranscribing ? (
-        <View style={styles.transcribingContainer}>
-          <Ionicons color={textSecondary} name="sync-outline" size={14} />
-          <Text style={[styles.transcribingText, { color: textSecondary }]}>
-            Transcribing...
+      {/* Audio Row: Waveform + Duration + Play Button */}
+      <View style={styles.audioRow}>
+        <WaveformBars color={lilac} />
+
+        {duration && (
+          <Text style={[styles.durationText, { color: textSecondary }]}>
+            {duration}
           </Text>
-        </View>
-      ) : description ? (
-        <Text numberOfLines={2} style={[styles.description, { color: text }]}>
-          {description}
-        </Text>
-      ) : null}
+        )}
 
-      <View style={styles.footer}>
-        <View style={styles.tags}>
-          {tags.map((tag) => (
-            <View
-              key={tag}
-              style={[styles.tag, { backgroundColor: `${dustyPink}40` }]}
-            >
-              <Text style={[styles.tagText, { color: text }]}>{tag}</Text>
-            </View>
-          ))}
-        </View>
+        <PressableScale onPress={onPlay} style={styles.playButton}>
+          {isBuffering ? (
+            <ActivityIndicator color={lilac} size="small" />
+          ) : (
+            <Ionicons
+              color={lilac}
+              name={isPlaying ? "pause-circle" : "play-circle"}
+              size={44}
+            />
+          )}
+        </PressableScale>
+      </View>
 
-        <View style={styles.playerContainer}>
-          <View style={styles.waveform}>
-            {waveformBars.map((bar) => (
+      {/* Body: Transcript or Status */}
+      <View style={styles.body}>
+        {isTranscribing ? (
+          <View style={styles.transcribingRow}>
+            <Ionicons color={textSecondary} name="sync-outline" size={14} />
+            <Text style={[styles.transcribingText, { color: textSecondary }]}>
+              Transcribing...
+            </Text>
+          </View>
+        ) : description ? (
+          <Text
+            numberOfLines={2}
+            style={[styles.description, { color: textSecondary }]}
+          >
+            "{description}"
+          </Text>
+        ) : null}
+      </View>
+
+      {/* Footer: Tags & Import Info */}
+      {(tags.length > 0 || importSource) && (
+        <View style={styles.footer}>
+          <View style={styles.tags}>
+            {tags.map((tag) => (
               <View
-                key={bar.id}
-                style={[
-                  styles.bar,
-                  {
-                    height: bar.height,
-                    backgroundColor: bar.isEven ? lilac : tint,
-                  },
-                ]}
-              />
+                key={tag}
+                style={[styles.tag, { backgroundColor: `${dustyPink}30` }]}
+              >
+                <Text style={[styles.tagText, { color: text }]}>{tag}</Text>
+              </View>
             ))}
           </View>
 
-          <View onStartShouldSetResponder={() => true}>
-            <PressableScale onPress={onPlay}>
-              <LinearGradient
-                colors={primaryGradient}
-                end={{ x: 1, y: 1 }}
-                start={{ x: 0, y: 0 }}
-                style={[styles.playButton, { shadowColor: tint }]}
-              >
-                {isBuffering ? (
-                  <ActivityIndicator color={surface} size="small" />
-                ) : (
-                  <Ionicons
-                    color={surface}
-                    name={isPlaying ? "pause" : "play"}
-                    size={20}
-                    style={styles.playIcon}
-                  />
-                )}
-              </LinearGradient>
-            </PressableScale>
-          </View>
+          {importSource && importedAt && (
+            <View style={styles.importBadge}>
+              <Ionicons
+                color={SOURCE_CONFIG[importSource].color}
+                name={
+                  SOURCE_CONFIG[importSource]
+                    .icon as keyof typeof Ionicons.glyphMap
+                }
+                size={14}
+              />
+              <Text style={[styles.importText, { color: textSecondary }]}>
+                Imported {formatImportedDate(importedAt)}
+                {importedByName ? ` by ${importedByName}` : ""}
+              </Text>
+            </View>
+          )}
         </View>
-      </View>
+      )}
     </SoftCard>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {},
-  pressable: {
+  container: {
+    padding: 16,
     borderRadius: 24,
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "baseline",
-    marginBottom: 8,
+    alignItems: "center",
+    marginBottom: 12,
   },
-  metaContainer: {
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: 12,
+  },
+  infoContainer: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  senderRow: {
     flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  title: {
-    fontSize: 18,
+  senderBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  senderText: {
+    fontSize: 14,
     fontWeight: "600",
   },
-  date: {
+  dateText: {
     fontSize: 12,
+  },
+  audioRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 8,
+  },
+  durationText: {
+    fontSize: 13,
+    fontWeight: "500",
+    minWidth: 36,
+  },
+  playButton: {
+    // Icon handles sizing
+  },
+  body: {
+    marginBottom: 8,
   },
   description: {
     fontSize: 14,
-    marginBottom: 16,
     lineHeight: 20,
+    fontStyle: "italic",
   },
-  transcribingContainer: {
+  transcribingRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginBottom: 16,
   },
   transcribingText: {
     fontSize: 14,
@@ -172,51 +300,34 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-end",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
   },
   tags: {
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: 6,
     flex: 1,
-    marginRight: 12,
   },
   tag: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 8,
-    marginBottom: 4,
+    borderRadius: 8,
   },
   tagText: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: "500",
   },
-  playerContainer: {
+  importBadge: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 4,
+    paddingVertical: 2,
+    opacity: 0.8,
   },
-  waveform: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 12,
-    height: 30,
-  },
-  bar: {
-    width: 3,
-    marginHorizontal: 1,
-    borderRadius: 2,
-  },
-  playButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  playIcon: {
-    marginLeft: 2,
+  importText: {
+    fontSize: 11,
   },
 });

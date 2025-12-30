@@ -54,6 +54,52 @@ export function useUpdateRecordingMutation() {
   );
 }
 
+/**
+ * Mutation hook for archiving a recording.
+ * Moves recording to Archived tab.
+ *
+ * @example
+ * ```typescript
+ * const { mutate } = useArchiveRecordingMutation();
+ * mutate({ id: "uuid" });
+ * ```
+ */
+export function useArchiveRecordingMutation() {
+  return useMutation(
+    orpc.recordings.archive.mutationOptions({
+      onSuccess: (_, _variables, _onMutateResult, context) => {
+        // Invalidate recordings list
+        context.client.invalidateQueries({
+          queryKey: orpc.recordings.list.key(),
+        });
+      },
+    })
+  );
+}
+
+/**
+ * Mutation hook for unarchiving a recording.
+ * Moves recording back to Current tab.
+ *
+ * @example
+ * ```typescript
+ * const { mutate } = useUnarchiveRecordingMutation();
+ * mutate({ id: "uuid" });
+ * ```
+ */
+export function useUnarchiveRecordingMutation() {
+  return useMutation(
+    orpc.recordings.unarchive.mutationOptions({
+      onSuccess: (_, _variables, _onMutateResult, context) => {
+        // Invalidate recordings list
+        context.client.invalidateQueries({
+          queryKey: orpc.recordings.list.key(),
+        });
+      },
+    })
+  );
+}
+
 const POLLING_INTERVAL_MS = 3000;
 const POLLING_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
 

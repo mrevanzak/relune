@@ -1,13 +1,36 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { ThemedText } from "@/components/themed-text";
 import { SoftButton } from "@/components/ui/SoftButton";
-import { useImportWhatsAppMutation } from "@/features/import";
+import {
+  pickWhatsAppExportFile,
+  useImportWhatsAppMutation,
+  usePreviewWhatsAppMutation,
+} from "@/features/import";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
+type ImportState =
+  | "initial"
+  | "picking"
+  | "previewing"
+  | "importing"
+  | "success"
+  | "error";
+
 export default function ImportScreen() {
+  const params = useLocalSearchParams<{
+    senderMappings?: string;
+    saveMappings?: string;
+    fileBase64?: string;
+  }>();
+
+  const [importState, setImportState] = useState<ImportState>("initial");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const previewMutation = usePreviewWhatsAppMutation();
   const importMutation = useImportWhatsAppMutation();
 
   const textSecondary = useThemeColor({}, "textSecondary");
@@ -15,21 +38,118 @@ export default function ImportScreen() {
   const success = useThemeColor({}, "success");
   const errorColor = useThemeColor({}, "error");
 
-  const result = importMutation.data;
-  const error = importMutation.error;
-  const isCancelled = error?.message === "CANCELLED";
+  // Handle returning from mapping screen with mappings
+  // Use a ref to track if we've already processed these params
+  const processedParamsRef = useRef<string | null>(null);
 
-  const handleImport = () => {
-    importMutation.mutate();
-  };
+  useEffect(() => {
+    if (params.fileBase64 && params.senderMappings) {
+      // Prevent double-processing
+      const paramsKey = `${params.fileBase64}-${params.senderMappings}`;
+      if (processedParamsRef.current === paramsKey) return;
+      processedParamsRef.current = paramsKey;
 
-  const handleDone = () => {
-    importMutation.reset();
+      const senderMappings = JSON.parse(params.senderMappings) as Record<
+        string,
+        string
+      >;
+      const saveMappings = params.saveMappings === "true";
+
+      setImportState("importing");
+      importMutation.mutate(
+        {
+          file: params.fileBase64,
+          senderMappings,
+          saveMappings,
+        },
+        {
+          onSuccess: () => {
+            setImportState("success");
+          },
+          onError: (error) => {
+            setErrorMessage(error.message);
+            setImportState("error");
+          },
+        }
+      );
+    }
+  }, [
+    params.fileBase64,
+    params.senderMappings,
+    params.saveMappings,
+    importMutation,
+  ]);
+
+  const handleSelectFile = useCallback(async () => {
+    setImportState("picking");
+
+    const pickedFile = await pickWhatsAppExportFile();
+    if (!pickedFile) {
+      setImportState("initial");
+      return;
+    }
+
+    setImportState("previewing");
+
+    previewMutation.mutate(
+      { file: pickedFile.base64 },
+      {
+        onSuccess: (data) => {
+          // If there are multiple senders, navigate to mapping screen
+          if (data.senderNames.length > 1) {
+            router.push({
+              pathname: "/import-mapping",
+              params: {
+                senderNames: JSON.stringify(data.senderNames),
+                fileBase64: pickedFile.base64,
+              },
+            });
+            setImportState("initial"); // Reset state for when user comes back
+          } else {
+            // Single sender or no senders - proceed with direct import
+            setImportState("importing");
+            importMutation.mutate(
+              { file: pickedFile.base64 },
+              {
+                onSuccess: () => {
+                  setImportState("success");
+                },
+                onError: (error) => {
+                  setErrorMessage(error.message);
+                  setImportState("error");
+                },
+              }
+            );
+          }
+        },
+        onError: (error) => {
+          setErrorMessage(error.message);
+          setImportState("error");
+        },
+      }
+    );
+  }, [previewMutation, importMutation]);
+
+  const handleDone = useCallback(() => {
+    // Navigate back to home
     router.back();
-  };
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    setImportState("initial");
+    setErrorMessage(null);
+    previewMutation.reset();
+    importMutation.reset();
+  }, [previewMutation, importMutation]);
+
+  const result = importMutation.data;
+  const isLoading =
+    importState === "picking" ||
+    importState === "previewing" ||
+    importState === "importing";
 
   const renderContent = () => {
-    if (result) {
+    if (importState === "success" && result) {
       const hasErrors = result.failed.length > 0;
       const hasImports = result.imported > 0;
       const hasSkips = result.skipped > 0;
@@ -95,7 +215,7 @@ export default function ImportScreen() {
       );
     }
 
-    if (error && !isCancelled) {
+    if (importState === "error" && errorMessage) {
       return (
         <Animated.View
           entering={FadeIn}
@@ -104,13 +224,13 @@ export default function ImportScreen() {
         >
           <Ionicons color={errorColor} name="alert-circle" size={48} />
           <ThemedText style={{ color: errorColor, textAlign: "center" }}>
-            {error.message}
+            {errorMessage}
           </ThemedText>
         </Animated.View>
       );
     }
 
-    // Initial State
+    // Initial or loading state
     return (
       <Animated.View
         entering={FadeIn}
@@ -131,24 +251,35 @@ export default function ImportScreen() {
     );
   };
 
+  const renderButton = () => {
+    if (importState === "success") {
+      return <SoftButton onPress={handleDone} title="Done" />;
+    }
+
+    if (importState === "error") {
+      return <SoftButton onPress={handleRetry} title="Try Again" />;
+    }
+
+    const buttonTitle = isLoading
+      ? importState === "importing"
+        ? "Importing..."
+        : "Processing..."
+      : "Select Export File";
+
+    return (
+      <SoftButton
+        disabled={isLoading}
+        loading={isLoading}
+        onPress={handleSelectFile}
+        title={buttonTitle}
+      />
+    );
+  };
+
   return (
     <View style={[styles.container]}>
       <View style={styles.contentWrapper}>{renderContent()}</View>
-
-      <View style={styles.footer}>
-        {result ? (
-          <SoftButton onPress={handleDone} title="Done" />
-        ) : (
-          <SoftButton
-            disabled={importMutation.isPending}
-            loading={importMutation.isPending}
-            onPress={handleImport}
-            title={
-              importMutation.isPending ? "Importing..." : "Select Export File"
-            }
-          />
-        )}
-      </View>
+      <View style={styles.footer}>{renderButton()}</View>
     </View>
   );
 }
@@ -159,7 +290,7 @@ const styles = StyleSheet.create({
   },
   contentWrapper: {
     marginBottom: 32,
-    minHeight: 180, // Prevent layout jumps
+    minHeight: 180,
     justifyContent: "center",
   },
   contentContainer: {

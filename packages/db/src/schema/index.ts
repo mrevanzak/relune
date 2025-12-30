@@ -6,6 +6,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -36,6 +37,12 @@ export const recordings = pgTable("recordings", {
   importSource: importSourceEnum("import_source").default("app").notNull(),
   originalFilename: text("original_filename"),
   notes: text("notes"), // Optional text context from WhatsApp import
+  // Archive-related fields
+  senderId: uuid("sender_id").references(() => users.id), // Original sender (can differ from uploader)
+  isArchived: boolean("is_archived").default(false).notNull(),
+  archivedAt: timestamp("archived_at"),
+  importedAt: timestamp("imported_at"), // When WhatsApp import happened
+  importedById: uuid("imported_by_id").references(() => users.id), // Who performed the import
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -62,6 +69,33 @@ export const recordingKeywords = pgTable(
   (t) => [primaryKey({ columns: [t.recordingId, t.keywordId] })]
 );
 
+// Sender mappings table - for WhatsApp import name-to-user mapping
+export const senderMappings = pgTable(
+  "sender_mappings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }), // User who created this mapping
+    externalName: text("external_name").notNull(), // Name from WhatsApp (e.g., "Sarah")
+    mappedUserId: uuid("mapped_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }), // Which user account it maps to
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [unique().on(t.userId, t.externalName)]
+);
+
+// User settings table
+export const userSettings = pgTable("user_settings", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  autoArchiveDays: integer("auto_archive_days"), // Days before auto-archive (null = disabled)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Type exports
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -74,3 +108,9 @@ export type NewKeyword = typeof keywords.$inferInsert;
 
 export type RecordingKeyword = typeof recordingKeywords.$inferSelect;
 export type NewRecordingKeyword = typeof recordingKeywords.$inferInsert;
+
+export type SenderMapping = typeof senderMappings.$inferSelect;
+export type NewSenderMapping = typeof senderMappings.$inferInsert;
+
+export type UserSettings = typeof userSettings.$inferSelect;
+export type NewUserSettings = typeof userSettings.$inferInsert;

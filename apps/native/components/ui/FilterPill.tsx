@@ -68,23 +68,23 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   gradientContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
     overflow: "hidden",
   },
   inactiveContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
     overflow: "hidden",
   },
   activeText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
   },
   inactiveText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "500",
   },
 });

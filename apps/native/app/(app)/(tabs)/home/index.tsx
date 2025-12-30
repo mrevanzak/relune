@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { HeaderButton } from "@react-navigation/elements";
 import { Link, router, Stack } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,9 +16,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AudioCard } from "@/components/ui/AudioCard";
 import { FilterPill } from "@/components/ui/FilterPill";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Fonts } from "@/constants/theme";
+import { useSession } from "@/context/session";
 import {
+  useArchiveRecordingMutation,
   useDeleteRecordingMutation,
   useRecordingsWithPolling,
+  useUnarchiveRecordingMutation,
 } from "@/features/recordings";
 import { useRecordingPlayer } from "@/hooks/use-audio-player";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
@@ -25,19 +31,51 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import {
   formatDuration,
   formatRelativeDate,
-  generateRecordingTitle,
   isDateThisWeek,
   isDateToday,
 } from "@/lib/date";
 
-const FILTERS = ["Today", "This Week", "All Time"];
+type Tab = "current" | "archived";
+
+const TABS = ["Current", "Archived"];
+const CURRENT_FILTERS = ["Today", "This Week", "All Time"];
+const ARCHIVED_FILTERS = ["All", "From Me", "From Partner"];
+
+function HeaderTitle() {
+  const tint = useThemeColor({}, "tint");
+  // Use serif font + italic to mimic the script look from the design
+  const fontFamily =
+    Fonts?.serif ?? (Platform.OS === "ios" ? "Georgia" : "serif");
+
+  return (
+    <Text style={[styles.headerTitle, { color: tint, fontFamily }]}>
+      Relune
+    </Text>
+  );
+}
 
 export default function HomeScreen() {
+  const { session } = useSession();
+  const currentUserId = session?.user?.id;
   const { isRecording } = useAudioRecorder();
   const deleteMutation = useDeleteRecordingMutation();
+  const archiveMutation = useArchiveRecordingMutation();
+  const unarchiveMutation = useUnarchiveRecordingMutation();
+
+  // Tab state
+  const [tabIndex, setTabIndex] = useState(0);
+  const activeTab: Tab = tabIndex === 0 ? "current" : "archived";
+
+  // Filter state - reset when tab changes
+  const [activeFilter, setActiveFilter] = useState("All Time");
+  const filters = activeTab === "current" ? CURRENT_FILTERS : ARCHIVED_FILTERS;
+
+  // Reset filter when tab changes
+  useEffect(() => {
+    setActiveFilter(activeTab === "current" ? "All Time" : "All");
+  }, [activeTab]);
 
   // Search state with debounce for server-side search
-  const [activeFilter, setActiveFilter] = useState("All Time");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
@@ -54,6 +92,7 @@ export default function HomeScreen() {
     error,
   } = useRecordingsWithPolling({
     search: debouncedSearch || undefined,
+    tab: activeTab,
   });
 
   // Currently playing recording
@@ -83,79 +122,238 @@ export default function HomeScreen() {
   const surface = useThemeColor({}, "surface");
   const lilac = useThemeColor({}, "lilac");
 
-  // Filter recordings based on time filter only (search is server-side)
+  // Filter recordings based on active filter (client-side)
   const filteredRecordings = useMemo(() => {
     return recordings.filter((recording) => {
-      // Time filter only - search is handled by server
-      if (activeFilter === "Today" && !isDateToday(recording.recordedAt)) {
-        return false;
-      }
-      if (
-        activeFilter === "This Week" &&
-        !isDateThisWeek(recording.recordedAt)
-      ) {
-        return false;
+      if (activeTab === "current") {
+        // Time filter for current tab
+        if (activeFilter === "Today" && !isDateToday(recording.recordedAt)) {
+          return false;
+        }
+        if (
+          activeFilter === "This Week" &&
+          !isDateThisWeek(recording.recordedAt)
+        ) {
+          return false;
+        }
+        // "All Time" shows all
+      } else {
+        // Sender filter for archived tab
+        if (currentUserId) {
+          const isFromMe = recording.senderId === currentUserId;
+          if (activeFilter === "From Me" && !isFromMe) {
+            return false;
+          }
+          if (activeFilter === "From Partner" && isFromMe) {
+            return false;
+          }
+        }
+        // "All" shows all archived recordings
       }
       return true;
     });
-  }, [recordings, activeFilter]);
+  }, [recordings, activeFilter, activeTab, currentUserId]);
 
   // Handle play button press
-  const handlePlay = (recordingId: string) => {
-    const isCurrentlyPlaying =
-      currentlyPlayingId === recordingId && player.isPlaying;
+  const handlePlay = useCallback(
+    (recordingId: string) => {
+      const isCurrentlyPlaying =
+        currentlyPlayingId === recordingId && player.isPlaying;
 
-    // Only show spinner when we're about to PLAY (not pause)
-    if (!isCurrentlyPlaying) {
-      setPendingPlayId(recordingId);
-    }
-
-    // Defer the actual play action to allow React to re-render with spinner first
-    setTimeout(() => {
-      if (currentlyPlayingId === recordingId) {
-        player.togglePlayPause();
-      } else {
-        setCurrentlyPlayingId(recordingId);
-        // Player will auto-play when URL changes
+      // Only show spinner when we're about to PLAY (not pause)
+      if (!isCurrentlyPlaying) {
+        setPendingPlayId(recordingId);
       }
-    }, 0);
-  };
+
+      // Defer the actual play action to allow React to re-render with spinner first
+      setTimeout(() => {
+        if (currentlyPlayingId === recordingId) {
+          player.togglePlayPause();
+        } else {
+          setCurrentlyPlayingId(recordingId);
+          // Player will auto-play when URL changes
+        }
+      }, 0);
+    },
+    [currentlyPlayingId, player]
+  );
 
   // Handle delete with confirmation
-  const handleDelete = (recordingId: string, recordingTitle: string) => {
-    Alert.alert(
-      "Delete Recording",
-      `Are you sure you want to delete "${recordingTitle}"? This action cannot be undone.`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            deleteMutation.mutate({ id: recordingId });
+  const handleDelete = useCallback(
+    (recordingId: string, recordingTitle: string) => {
+      Alert.alert(
+        "Delete Recording",
+        `Are you sure you want to delete "${recordingTitle}"? This action cannot be undone.`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
           },
-        },
-      ]
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () => {
+              deleteMutation.mutate({ id: recordingId });
+            },
+          },
+        ]
+      );
+    },
+    [deleteMutation]
+  );
+
+  // Handle archive
+  const handleArchive = useCallback(
+    (recordingId: string, recordingTitle: string) => {
+      Alert.alert(
+        "Archive Recording",
+        `Move "${recordingTitle}" to Archived?`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Archive",
+            onPress: () => {
+              archiveMutation.mutate({ id: recordingId });
+            },
+          },
+        ]
+      );
+    },
+    [archiveMutation]
+  );
+
+  // Handle unarchive
+  const handleUnarchive = useCallback(
+    (recordingId: string) => {
+      unarchiveMutation.mutate({ id: recordingId });
+    },
+    [unarchiveMutation]
+  );
+
+  // Render content based on state
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <View style={styles.loadingState}>
+          <ActivityIndicator color={tint} size="large" />
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.emptyState}>
+          <Ionicons color={lilac} name="alert-circle-outline" size={48} />
+          <Text style={[styles.emptyText, { color: textSecondary }]}>
+            Failed to load recordings
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        contentContainerStyle={styles.listContent}
+        data={filteredRecordings}
+        ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+        keyExtractor={(item) => item.id}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Ionicons color={lilac} name="mic-off-outline" size={48} />
+            <Text style={[styles.emptyText, { color: textSecondary }]}>
+              No recordings found
+            </Text>
+          </View>
+        }
+        renderItem={({ item }) => {
+          const isArchived = activeTab === "archived";
+          const isFromMe = currentUserId
+            ? item.senderId === currentUserId
+            : false;
+          // Use senderName, fall back to "Unknown" if not available
+          const senderName = item.senderName ?? "Unknown";
+          // For delete/archive confirmations, use date as identifier
+          const itemLabel = formatRelativeDate(item.recordedAt);
+
+          return (
+            <Link href={`/recording/${item.id}`}>
+              <Link.Trigger>
+                <View style={{ width: "100%" }}>
+                  <AudioCard
+                    date={formatRelativeDate(item.recordedAt)}
+                    description={item.transcript ?? undefined}
+                    duration={formatDuration(item.durationSeconds) ?? undefined}
+                    importedAt={
+                      item.importedAt ? new Date(item.importedAt) : undefined
+                    }
+                    importedByName={item.importedByName ?? undefined}
+                    importSource={isArchived ? item.importSource : undefined}
+                    isBuffering={
+                      pendingPlayId === item.id ||
+                      (currentlyPlayingId === item.id && player.isBuffering)
+                    }
+                    isFromMe={isFromMe}
+                    isPlaying={
+                      currentlyPlayingId === item.id && player.isPlaying
+                    }
+                    isTranscribing={
+                      item.transcript === null || item.transcript === undefined
+                    }
+                    onPlay={() => handlePlay(item.id)}
+                    senderName={senderName}
+                    tags={item.keywords.map((kw) => kw.name)}
+                  />
+                </View>
+              </Link.Trigger>
+              <Link.Menu>
+                {activeTab === "current" ? (
+                  <Link.MenuAction
+                    icon="archivebox"
+                    onPress={() => handleArchive(item.id, itemLabel)}
+                    title="Archive"
+                  />
+                ) : (
+                  <Link.MenuAction
+                    icon="tray.and.arrow.up"
+                    onPress={() => handleUnarchive(item.id)}
+                    title="Unarchive"
+                  />
+                )}
+                <Link.MenuAction
+                  destructive
+                  icon="trash"
+                  onPress={() => handleDelete(item.id, itemLabel)}
+                  title="Delete"
+                />
+              </Link.Menu>
+            </Link>
+          );
+        }}
+        showsVerticalScrollIndicator={false}
+      />
     );
   };
 
   return (
-    <SafeAreaView
-      edges={["top"]}
-      style={[styles.container, { paddingTop: 40 }]}
-    >
+    <SafeAreaView style={[styles.container, { paddingTop: 56 }]}>
       {/* Native header configuration */}
       <Stack.Screen
         options={{
-          title: "Relune",
+          headerTitle: () => <HeaderTitle />,
+          title: "", // Clear default title string
           headerTransparent: true,
           headerRight: () => (
-            <HeaderButton onPress={() => router.push("/import")}>
-              <IconSymbol color={tint} name="square.and.arrow.up" size={24} />
-            </HeaderButton>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <HeaderButton onPress={() => router.push("/import")}>
+                <IconSymbol color={tint} name="square.and.arrow.up" size={24} />
+              </HeaderButton>
+              <HeaderButton onPress={() => router.push("/settings")}>
+                <IconSymbol color={tint} name="gearshape" size={24} />
+              </HeaderButton>
+            </View>
           ),
           headerSearchBarOptions: {
             placeholder: "Search by keyword",
@@ -166,6 +364,15 @@ export default function HomeScreen() {
         }}
       />
 
+      {/* Tab Switcher */}
+      <View style={styles.tabContainer}>
+        <SegmentedControl
+          onChange={setTabIndex}
+          segments={TABS}
+          selectedIndex={tabIndex}
+        />
+      </View>
+
       {/* Filters */}
       <View style={styles.filterContainer}>
         <ScrollView
@@ -173,7 +380,7 @@ export default function HomeScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
         >
-          {FILTERS.map((filter) => (
+          {filters.map((filter) => (
             <FilterPill
               isActive={activeFilter === filter}
               key={filter}
@@ -185,81 +392,7 @@ export default function HomeScreen() {
       </View>
 
       {/* Content */}
-      <View style={styles.contentContainer}>
-        <Text style={[styles.sectionTitle, { color: text }]}>
-          Recent Recordings
-        </Text>
-
-        {isLoading ? (
-          <View style={styles.loadingState}>
-            <ActivityIndicator color={tint} size="large" />
-          </View>
-        ) : error ? (
-          <View style={styles.emptyState}>
-            <Ionicons color={lilac} name="alert-circle-outline" size={48} />
-            <Text style={[styles.emptyText, { color: textSecondary }]}>
-              Failed to load recordings
-            </Text>
-          </View>
-        ) : (
-          <FlatList
-            clipToPadding={false}
-            contentContainerStyle={styles.listContent}
-            data={filteredRecordings}
-            ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-            keyExtractor={(item) => item.id}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <Ionicons color={lilac} name="mic-off-outline" size={48} />
-                <Text style={[styles.emptyText, { color: textSecondary }]}>
-                  No recordings found
-                </Text>
-              </View>
-            }
-            renderItem={({ item }) => {
-              const title = generateRecordingTitle(item.recordedAt);
-              return (
-                <Link href={`/recording/${item.id}`}>
-                  <Link.Trigger>
-                    <View style={{ width: "100%" }}>
-                      <AudioCard
-                        date={formatRelativeDate(item.recordedAt)}
-                        description={item.transcript ?? undefined}
-                        duration={
-                          formatDuration(item.durationSeconds) ?? undefined
-                        }
-                        isBuffering={
-                          pendingPlayId === item.id ||
-                          (currentlyPlayingId === item.id && player.isBuffering)
-                        }
-                        isPlaying={
-                          currentlyPlayingId === item.id && player.isPlaying
-                        }
-                        isTranscribing={
-                          item.transcript === null ||
-                          item.transcript === undefined
-                        }
-                        onPlay={() => handlePlay(item.id)}
-                        tags={item.keywords.map((kw) => kw.name)}
-                        title={title}
-                      />
-                    </View>
-                  </Link.Trigger>
-                  <Link.Menu>
-                    <Link.MenuAction
-                      destructive
-                      icon="trash"
-                      onPress={() => handleDelete(item.id, title)}
-                      title="Delete"
-                    />
-                  </Link.Menu>
-                </Link>
-              );
-            }}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
-      </View>
+      <View style={styles.contentContainer}>{renderContent()}</View>
 
       {/* Recording Overlay */}
       {isRecording && (
@@ -285,6 +418,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "400",
+    fontStyle: "italic",
+    letterSpacing: 0.5,
+  },
+  tabContainer: {
+    paddingHorizontal: 24,
+    marginBottom: 8,
+  },
   filterContainer: {
     marginTop: 8,
     marginBottom: 8,
@@ -296,18 +439,10 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    // Removed paddingHorizontal to prevent shadow clipping
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 16,
-    marginTop: 8,
-    paddingHorizontal: 24, // Added padding here
   },
   listContent: {
     paddingBottom: 96,
-    paddingHorizontal: 24, // Added padding here for FlatList content
+    paddingHorizontal: 24,
   },
   loadingState: {
     alignItems: "center",

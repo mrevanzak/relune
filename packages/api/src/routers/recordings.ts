@@ -31,13 +31,17 @@ export const recordingsRouter = {
    * const recordings = await client.recordings.list({ limit: 20, search: "meeting" });
    * ```
    */
-  list: protectedProcedure.input(listRecordingsInput).handler(({ input }) =>
-    RecordingsService.listRecordings({
-      limit: input?.limit,
-      offset: input?.offset,
-      search: input?.search,
-    })
-  ),
+  list: protectedProcedure
+    .input(listRecordingsInput)
+    .handler(({ input, context }) =>
+      RecordingsService.listRecordings({
+        userId: context.user.id,
+        limit: input?.limit,
+        offset: input?.offset,
+        search: input?.search,
+        tab: input?.tab,
+      })
+    ),
 
   /**
    * Get a single recording by ID.
@@ -103,6 +107,20 @@ export const recordingsRouter = {
       keywords: input.keywords,
     })
   ),
+
+  /**
+   * Archive a recording (move to Archived tab).
+   */
+  archive: protectedProcedure
+    .input(getRecordingInput)
+    .handler(({ input }) => RecordingsService.archiveRecording(input.id)),
+
+  /**
+   * Unarchive a recording (move back to Current tab).
+   */
+  unarchive: protectedProcedure
+    .input(getRecordingInput)
+    .handler(({ input }) => RecordingsService.unarchiveRecording(input.id)),
 
   /**
    * Delete a recording and its audio file.

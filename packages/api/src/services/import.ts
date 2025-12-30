@@ -211,6 +211,8 @@ export async function createImportedRecording(data: {
   originalFilename: string;
   notes: string | null;
   fileSizeBytes?: number;
+  senderId?: string; // Original sender (can differ from uploader)
+  importedById?: string; // Who performed the import
 }): Promise<string> {
   const result = await db
     .insert(recordings)
@@ -222,6 +224,9 @@ export async function createImportedRecording(data: {
       originalFilename: data.originalFilename,
       notes: data.notes,
       fileSizeBytes: data.fileSizeBytes,
+      senderId: data.senderId,
+      importedAt: new Date(),
+      importedById: data.importedById,
     })
     .returning({ id: recordings.id });
 

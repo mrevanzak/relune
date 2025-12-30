@@ -52,15 +52,15 @@ export function AudioPlayer({
 
   const handleToggle = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (!player.isPlaying) {
+    if (player.isPlaying) {
+      player.pause();
+    } else {
       // Set pending state immediately for instant feedback
       setIsPendingPlay(true);
       // Defer play to next tick so React can re-render with spinner first
       setTimeout(() => {
         player.play();
       }, 0);
-    } else {
-      player.pause();
     }
   };
 

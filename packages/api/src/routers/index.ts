@@ -3,6 +3,9 @@ import type { RouterClient } from "@orpc/server";
 import { publicProcedure } from "../index";
 import { importRouter } from "./import";
 import { recordingsRouter } from "./recordings";
+import { senderMappingsRouter } from "./sender-mappings";
+import { settingsRouter } from "./settings";
+import { usersRouter } from "./users";
 
 /**
  * Root application router.
@@ -41,6 +44,24 @@ export const appRouter = {
    * Requires authentication.
    */
   import: importRouter,
+
+  /**
+   * Users endpoints.
+   * Requires authentication.
+   */
+  users: usersRouter,
+
+  /**
+   * Settings endpoints.
+   * Requires authentication.
+   */
+  settings: settingsRouter,
+
+  /**
+   * Sender mappings endpoints.
+   * Requires authentication.
+   */
+  senderMappings: senderMappingsRouter,
 };
 
 export type AppRouter = typeof appRouter;
