@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
 import { File as ExpoFile } from "expo-file-system";
-import { orpc, safeClient } from "@/lib/api";
+import { orpc } from "@/lib/api";
 
 /**
  * Pick a WhatsApp export file and return its base64 content.
@@ -41,15 +41,7 @@ export async function pickWhatsAppExportFile(): Promise<{
  * ```
  */
 export function usePreviewWhatsAppMutation() {
-  return useMutation({
-    mutationFn: async (params: { file: string }) => {
-      const [error, data] = await safeClient.import.whatsappPreview({
-        file: params.file,
-      });
-      if (error) throw error;
-      return data;
-    },
-  });
+  return useMutation(orpc.import.whatsappPreview.mutationOptions());
 }
 
 /**
@@ -67,56 +59,14 @@ export function usePreviewWhatsAppMutation() {
  * ```
  */
 export function useImportWhatsAppMutation() {
-  return useMutation({
-    mutationFn: async (params: {
-      file: string;
-      senderMappings?: Record<string, string>;
-      saveMappings?: boolean;
-    }) => {
-      const [error, data] = await safeClient.import.whatsapp({
-        file: params.file,
-        senderMappings: params.senderMappings,
-        saveMappings: params.saveMappings,
-      });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (_data, _variables, _onMutateResult, context) => {
-      // Refresh recordings list after successful import
-      context.client.invalidateQueries({
-        queryKey: orpc.recordings.list.queryKey(),
-      });
-    },
-  });
-}
-
-/**
- * Legacy mutation hook that opens file picker, uploads ZIP, returns results.
- * For simple imports without sender mapping.
- *
- * @deprecated Use pickWhatsAppExportFile + useImportWhatsAppMutation for new code
- */
-export function useSimpleImportWhatsAppMutation() {
-  return useMutation({
-    mutationFn: async () => {
-      // 1. Open file picker for ZIP files
-      const pickedFile = await pickWhatsAppExportFile();
-      if (!pickedFile) {
-        throw new Error("CANCELLED");
-      }
-
-      // 2. Upload to server via oRPC
-      const [error, data] = await safeClient.import.whatsapp({
-        file: pickedFile.base64,
-      });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (_data, _variables, _onMutateResult, context) => {
-      // Refresh recordings list after successful import
-      context.client.invalidateQueries({
-        queryKey: orpc.recordings.list.queryKey(),
-      });
-    },
-  });
+  return useMutation(
+    orpc.import.whatsapp.mutationOptions({
+      onSuccess: (_data, _variables, _onMutateResult, context) => {
+        // Refresh recordings list after successful import
+        context.client.invalidateQueries({
+          queryKey: orpc.recordings.list.key(),
+        });
+      },
+    })
+  );
 }
