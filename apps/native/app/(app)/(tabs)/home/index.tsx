@@ -60,11 +60,21 @@ export default function HomeScreen() {
   const [currentlyPlayingId, setCurrentlyPlayingId] = useState<string | null>(
     null
   );
+  // Track when user requested play but audio isn't playing yet (for instant feedback)
+  const [pendingPlayId, setPendingPlayId] = useState<string | null>(null);
+
   const currentAudioUrl = useMemo(
     () => recordings.find((r) => r.id === currentlyPlayingId)?.audioUrl ?? null,
     [recordings, currentlyPlayingId]
   );
   const player = useRecordingPlayer(currentAudioUrl, { autoPlay: true });
+
+  // Clear pending state once audio starts playing
+  useEffect(() => {
+    if (player.isPlaying) {
+      setPendingPlayId(null);
+    }
+  }, [player.isPlaying]);
 
   // Theme colors
   const tint = useThemeColor({}, "tint");
@@ -92,12 +102,18 @@ export default function HomeScreen() {
 
   // Handle play button press
   const handlePlay = (recordingId: string) => {
-    if (currentlyPlayingId === recordingId) {
-      player.togglePlayPause();
-    } else {
-      setCurrentlyPlayingId(recordingId);
-      // Player will auto-play when URL changes
-    }
+    // Set pending state immediately for instant UI feedback
+    setPendingPlayId(recordingId);
+
+    // Defer the actual play action to allow React to re-render with spinner first
+    setTimeout(() => {
+      if (currentlyPlayingId === recordingId) {
+        player.togglePlayPause();
+      } else {
+        setCurrentlyPlayingId(recordingId);
+        // Player will auto-play when URL changes
+      }
+    }, 0);
   };
 
   // Handle delete with confirmation
@@ -208,7 +224,8 @@ export default function HomeScreen() {
                           formatDuration(item.durationSeconds) ?? undefined
                         }
                         isBuffering={
-                          currentlyPlayingId === item.id && player.isBuffering
+                          pendingPlayId === item.id ||
+                          (currentlyPlayingId === item.id && player.isBuffering)
                         }
                         isPlaying={
                           currentlyPlayingId === item.id && player.isPlaying
