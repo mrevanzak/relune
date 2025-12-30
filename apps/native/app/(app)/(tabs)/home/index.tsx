@@ -102,8 +102,13 @@ export default function HomeScreen() {
 
   // Handle play button press
   const handlePlay = (recordingId: string) => {
-    // Set pending state immediately for instant UI feedback
-    setPendingPlayId(recordingId);
+    const isCurrentlyPlaying =
+      currentlyPlayingId === recordingId && player.isPlaying;
+
+    // Only show spinner when we're about to PLAY (not pause)
+    if (!isCurrentlyPlaying) {
+      setPendingPlayId(recordingId);
+    }
 
     // Defer the actual play action to allow React to re-render with spinner first
     setTimeout(() => {
