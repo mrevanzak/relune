@@ -1,19 +1,23 @@
 import pino from "pino";
 
+const isDev = process.env.NODE_ENV !== "production";
+
 /**
  * Shared Pino logger instance.
  *
- * Uses pino-pretty for human-readable output in all environments.
- * All logs are structured JSON under the hood.
+ * - Development: pino-pretty for human-readable colored output
+ * - Production: plain JSON (fast, no worker threads, log-aggregation friendly)
  */
-export const logger = pino({
-  transport: {
-    target: "pino-pretty",
-    options: {
-      colorize: true,
-    },
-  },
-});
+export const logger = isDev
+  ? pino({
+      transport: {
+        target: "pino-pretty",
+        options: {
+          colorize: true,
+        },
+      },
+    })
+  : pino();
 
 /**
  * Create a child logger for a specific service.
