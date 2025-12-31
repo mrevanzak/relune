@@ -25,6 +25,7 @@ import {
   type SQL,
   sql,
 } from "drizzle-orm";
+import { createServiceLogger } from "../lib/logger";
 import type {
   CreateRecordingInput,
   ListRecordingsInput,
@@ -35,6 +36,8 @@ import {
   getContentType,
   uploadAudioToStorage,
 } from "./storage";
+
+const log = createServiceLogger("recordings");
 
 /**
  * Recordings service - business logic for audio recordings.
@@ -457,7 +460,7 @@ export async function createRecording({
 
   // Trigger transcription in background (fire-and-forget)
   processRecording(recording).catch((err) =>
-    console.error(`Transcription failed for recording ${recording.id}:`, err)
+    log.error({ recordingId: recording.id, err }, "Transcription failed")
   );
 
   return recording;

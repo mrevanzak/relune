@@ -1,10 +1,11 @@
 import { cors } from "@elysiajs/cors";
+import { LoggingHandlerPlugin } from "@orpc/experimental-pino";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
-import { onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { createContext } from "@relune/api/context";
+import { logger } from "@relune/api/lib/logger";
 import { appRouter } from "@relune/api/routers/index";
 import { env } from "@relune/env";
 import { Elysia } from "elysia";
@@ -16,9 +17,12 @@ import { Elysia } from "elysia";
  * OpenAPIHandler: Provides OpenAPI documentation at /api/*
  */
 const rpcHandler = new RPCHandler(appRouter, {
-  interceptors: [
-    onError((error) => {
-      console.error("[oRPC Error]", error);
+  plugins: [
+    new LoggingHandlerPlugin({
+      logger,
+      generateId: () => crypto.randomUUID(),
+      logRequestResponse: true,
+      logRequestAbort: true,
     }),
   ],
 });
@@ -28,10 +32,11 @@ const apiHandler = new OpenAPIHandler(appRouter, {
     new OpenAPIReferencePlugin({
       schemaConverters: [new ZodToJsonSchemaConverter()],
     }),
-  ],
-  interceptors: [
-    onError((error) => {
-      console.error("[OpenAPI Error]", error);
+    new LoggingHandlerPlugin({
+      logger,
+      generateId: () => crypto.randomUUID(),
+      logRequestResponse: true,
+      logRequestAbort: true,
     }),
   ],
 });
@@ -67,9 +72,8 @@ export const app = new Elysia()
   })
   .get("/", () => "OK")
   .listen(env.PORT, () => {
-    console.log(`Server is running on http://localhost:${env.PORT}`);
-    console.log(`  - RPC endpoint: http://localhost:${env.PORT}/rpc`);
-    console.log(`  - API docs: http://localhost:${env.PORT}/api`);
+    logger.info({ port: env.PORT }, "Server started");
+    logger.info({ rpc: "/rpc", api: "/api" }, "Endpoints available");
   });
 
 export type App = typeof app;
