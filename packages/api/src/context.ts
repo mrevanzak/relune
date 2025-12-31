@@ -1,5 +1,6 @@
 import { db } from "@relune/db";
 import { users } from "@relune/db/schema";
+import { eq } from "drizzle-orm";
 
 /**
  * Base context available to all procedures.
@@ -38,14 +39,40 @@ export type Context = BaseContext;
 /**
  * Ensure user exists in the public.users table.
  * Creates the user row if it doesn't exist (just-in-time provisioning).
- * Uses onConflictDoNothing to handle concurrent requests safely.
+ *
+ * If a "shadow" user exists with the same email but different ID,
+ * migrates the shadow user's ID to the real Supabase Auth ID.
+ * This preserves all foreign key references (recordings.senderId, etc.).
  */
 export async function ensureUserExists(user: AuthUser): Promise<void> {
-  await db
-    .insert(users)
-    .values({
-      id: user.id,
-      email: user.email ?? "",
-    })
-    .onConflictDoNothing();
+  const email = user.email?.trim().toLowerCase();
+
+  if (!email) {
+    // No email - just try to insert with ID conflict check
+    await db
+      .insert(users)
+      .values({ id: user.id, email: "" })
+      .onConflictDoNothing();
+    return;
+  }
+
+  // Check if a user with this email already exists
+  const existingUser = await db.query.users.findFirst({
+    where: eq(users.email, email),
+  });
+
+  if (existingUser) {
+    if (existingUser.id !== user.id) {
+      // Shadow user exists with different ID - migrate to real Supabase Auth ID
+      // This preserves all foreign key references (recordings.senderId, senderMappings.mappedUserId)
+      await db
+        .update(users)
+        .set({ id: user.id })
+        .where(eq(users.id, existingUser.id));
+    }
+    // else: same ID, user already exists correctly - nothing to do
+  } else {
+    // No existing user with this email - create new
+    await db.insert(users).values({ id: user.id, email }).onConflictDoNothing(); // Safety for race conditions on ID
+  }
 }

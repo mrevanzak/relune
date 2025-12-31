@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
+import { PressableScale } from "pressto";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Pressable,
@@ -10,9 +11,11 @@ import {
   Text,
   View,
 } from "react-native";
+import Animated, { FadeInUp, FadeOutUp } from "react-native-reanimated";
 import { ThemedText } from "@/components/themed-text";
 import { SoftButton } from "@/components/ui/SoftButton";
 import { SoftCard } from "@/components/ui/SoftCard";
+import { SoftInput } from "@/components/ui/SoftInput";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { orpc } from "@/lib/api";
 
@@ -44,6 +47,10 @@ export default function ImportMappingScreen() {
   const tint = useThemeColor({}, "tint");
   const surface = useThemeColor({}, "surface");
   const lilac = useThemeColor({}, "lilac");
+  const errorColor = useThemeColor({}, "error");
+
+  // Query client for cache invalidation
+  const queryClient = useQueryClient();
 
   // Fetch all users for dropdown
   const usersQuery = useQuery(orpc.users.list.queryOptions());
@@ -53,6 +60,70 @@ export default function ImportMappingScreen() {
 
   // Mapping state
   const [mappings, setMappings] = useState<SenderMappingState[]>([]);
+
+  // Inline create user form state
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserDisplayName, setNewUserDisplayName] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  // Create user mutation
+  const createUserMutation = useMutation(
+    orpc.users.create.mutationOptions({
+      onSuccess: async (newUser, _variables, _onMutateResult, context) => {
+        // Invalidate users query so new user appears everywhere
+        await context.client.invalidateQueries({
+          queryKey: orpc.users.list.key(),
+        });
+
+        // Auto-select the newly created user for the current mapping
+        if (expandedIndex !== null) {
+          updateMapping(expandedIndex, { mappedUserId: newUser.id });
+        }
+
+        // Reset form state
+        setExpandedIndex(null);
+        setNewUserEmail("");
+        setNewUserDisplayName("");
+        setCreateError(null);
+      },
+      onError: (error) => {
+        // Show error message
+        const message =
+          error instanceof Error ? error.message : "Failed to create user";
+        setCreateError(message);
+      },
+    })
+  );
+
+  // Handle opening the create form for a specific mapping
+  const openCreateForm = useCallback((index: number, senderName: string) => {
+    setExpandedIndex(index);
+    setNewUserEmail("");
+    setNewUserDisplayName(senderName); // Pre-fill with sender name
+    setCreateError(null);
+  }, []);
+
+  // Handle closing the create form
+  const closeCreateForm = useCallback(() => {
+    setExpandedIndex(null);
+    setNewUserEmail("");
+    setNewUserDisplayName("");
+    setCreateError(null);
+  }, []);
+
+  // Handle creating a new user
+  const handleCreateUser = useCallback(() => {
+    if (!newUserEmail.trim()) {
+      setCreateError("Email is required");
+      return;
+    }
+    setCreateError(null);
+    createUserMutation.mutate({
+      email: newUserEmail.trim(),
+      displayName: newUserDisplayName.trim() || undefined,
+    });
+  }, [newUserEmail, newUserDisplayName, createUserMutation]);
 
   // Initialize mappings when data is available
   useEffect(() => {
@@ -175,7 +246,94 @@ export default function ImportMappingScreen() {
                       </Pressable>
                     );
                   })}
+                  {/* Add new user pill */}
+                  <PressableScale
+                    onPress={() => openCreateForm(index, mapping.externalName)}
+                    style={[
+                      styles.userPill,
+                      styles.addUserPill,
+                      {
+                        borderColor: `${textSecondary}40`,
+                        borderStyle: "dashed",
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      color={textSecondary}
+                      name="add"
+                      size={16}
+                      style={styles.addIcon}
+                    />
+                    <Text
+                      style={[styles.userPillText, { color: textSecondary }]}
+                    >
+                      Add new
+                    </Text>
+                  </PressableScale>
                 </ScrollView>
+
+                {/* Inline create user form */}
+                {expandedIndex === index && (
+                  <Animated.View
+                    entering={FadeInUp.duration(200).springify()}
+                    exiting={FadeOutUp.duration(150)}
+                    style={styles.createForm}
+                  >
+                    <View style={styles.createFormHeader}>
+                      <Text style={[styles.createFormTitle, { color: text }]}>
+                        Create new user
+                      </Text>
+                      <Pressable
+                        hitSlop={8}
+                        onPress={closeCreateForm}
+                        style={styles.closeButton}
+                      >
+                        <Ionicons
+                          color={textSecondary}
+                          name="close"
+                          size={20}
+                        />
+                      </Pressable>
+                    </View>
+
+                    <SoftInput
+                      autoCapitalize="none"
+                      autoComplete="email"
+                      autoFocus
+                      icon="mail-outline"
+                      keyboardType="email-address"
+                      onChangeText={setNewUserEmail}
+                      placeholder="Email address"
+                      value={newUserEmail}
+                    />
+
+                    <SoftInput
+                      icon="person-outline"
+                      onChangeText={setNewUserDisplayName}
+                      placeholder="Display name (optional)"
+                      value={newUserDisplayName}
+                    />
+
+                    {createError && (
+                      <Text style={[styles.errorText, { color: errorColor }]}>
+                        {createError}
+                      </Text>
+                    )}
+
+                    <SoftButton
+                      disabled={
+                        !newUserEmail.trim() || createUserMutation.isPending
+                      }
+                      loading={createUserMutation.isPending}
+                      onPress={handleCreateUser}
+                      title={
+                        createUserMutation.isPending
+                          ? "Creating..."
+                          : "Create & Map"
+                      }
+                    />
+                  </Animated.View>
+                )}
               </View>
 
               <View style={styles.saveRow}>
@@ -274,6 +432,36 @@ const styles = StyleSheet.create({
   userPillText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  addUserPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "transparent",
+  },
+  addIcon: {
+    marginRight: 4,
+  },
+  createForm: {
+    marginTop: 12,
+    gap: 12,
+  },
+  createFormHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  createFormTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  closeButton: {
+    padding: 4,
+  },
+  errorText: {
+    fontSize: 13,
+  },
+  spinner: {
+    marginTop: 4,
   },
   saveRow: {
     flexDirection: "row",
