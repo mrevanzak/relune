@@ -28,7 +28,7 @@ type SenderMappingState = {
 export default function ImportMappingScreen() {
   const params = useLocalSearchParams<{
     senderNames?: string;
-    fileBase64?: string;
+    fileRef?: string;
   }>();
 
   // Parse sender names from params (comma-separated)
@@ -174,10 +174,10 @@ export default function ImportMappingScreen() {
       params: {
         senderMappings: JSON.stringify(senderMappingsObj),
         saveMappings: saveMappings ? "true" : "false",
-        fileBase64: params.fileBase64,
+        fileRef: params.fileRef,
       },
     });
-  }, [mappings, params.fileBase64]);
+  }, [mappings, params.fileRef]);
 
   const users = usersQuery.data ?? [];
   const background = useThemeColor({}, "background");

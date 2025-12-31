@@ -30,13 +30,29 @@ export async function pickWhatsAppExportFile(): Promise<{
 }
 
 /**
+ * Mutation hook for uploading a WhatsApp chat export ZIP to temp storage.
+ * Returns a fileRef that can be used for preview and import.
+ *
+ * @example
+ * ```typescript
+ * const { mutate, data } = useUploadWhatsAppMutation();
+ * mutate({ file: base64Data });
+ * // data.fileRef contains the reference to use for preview/import
+ * ```
+ */
+export function useUploadWhatsAppMutation() {
+  return useMutation(orpc.import.whatsappUpload.mutationOptions());
+}
+
+/**
  * Mutation hook for previewing a WhatsApp chat export.
  * Returns sender names without importing.
+ * Requires a fileRef from useUploadWhatsAppMutation.
  *
  * @example
  * ```typescript
  * const { mutate, data } = usePreviewWhatsAppMutation();
- * mutate({ file: base64Data });
+ * mutate({ fileRef: "uuid-from-upload" });
  * // data.senderNames contains unique sender names
  * ```
  */
@@ -46,13 +62,14 @@ export function usePreviewWhatsAppMutation() {
 
 /**
  * Mutation hook for importing WhatsApp chat exports with sender mappings.
+ * Requires a fileRef from useUploadWhatsAppMutation.
  *
  * @example
  * ```typescript
  * const { mutate, isPending, data } = useImportWhatsAppMutation();
  *
  * mutate({
- *   file: base64Data,
+ *   fileRef: "uuid-from-upload",
  *   senderMappings: { "Sarah": "user-uuid-1" },
  *   saveMappings: true,
  * });

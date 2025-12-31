@@ -8,12 +8,28 @@ import * as z from "zod";
 // Input Schemas
 // ============================================================================
 
-export const whatsappPreviewInput = z.object({
+/**
+ * Upload a WhatsApp export ZIP file to temporary storage.
+ * Returns a fileRef that can be used for preview and import.
+ */
+export const whatsappUploadInput = z.object({
   file: z.string().min(1, "File is required"), // base64-encoded ZIP file
 });
 
+/**
+ * Preview a previously uploaded WhatsApp export.
+ * Use the fileRef returned from whatsappUpload.
+ */
+export const whatsappPreviewInput = z.object({
+  fileRef: z.string().min(1, "File reference is required"),
+});
+
+/**
+ * Import recordings from a previously uploaded WhatsApp export.
+ * Use the fileRef returned from whatsappUpload.
+ */
 export const whatsappImportInput = z.object({
-  file: z.string().min(1, "File is required"), // base64-encoded ZIP file
+  fileRef: z.string().min(1, "File reference is required"),
   senderMappings: z.record(z.string(), z.string()).optional(), // externalName → userId
   saveMappings: z.boolean().optional().default(false), // Whether to save mappings for future use
 });
@@ -44,6 +60,7 @@ export const importResultSchema = z.object({
 // Type Exports
 // ============================================================================
 
+export type WhatsappUploadInput = z.infer<typeof whatsappUploadInput>;
 export type WhatsappPreviewInput = z.infer<typeof whatsappPreviewInput>;
 export type WhatsappImportInput = z.infer<typeof whatsappImportInput>;
 export type ImportResult = z.infer<typeof importResultSchema>;

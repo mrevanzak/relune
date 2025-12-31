@@ -9,12 +9,14 @@ import {
   pickWhatsAppExportFile,
   useImportWhatsAppMutation,
   usePreviewWhatsAppMutation,
+  useUploadWhatsAppMutation,
 } from "@/features/import";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 type ImportState =
   | "initial"
   | "picking"
+  | "uploading"
   | "previewing"
   | "importing"
   | "success"
@@ -24,12 +26,13 @@ export default function ImportScreen() {
   const params = useLocalSearchParams<{
     senderMappings?: string;
     saveMappings?: string;
-    fileBase64?: string;
+    fileRef?: string;
   }>();
 
   const [importState, setImportState] = useState<ImportState>("initial");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const uploadMutation = useUploadWhatsAppMutation();
   const previewMutation = usePreviewWhatsAppMutation();
   const importMutation = useImportWhatsAppMutation();
 
@@ -43,9 +46,9 @@ export default function ImportScreen() {
   const processedParamsRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (params.fileBase64 && params.senderMappings) {
+    if (params.fileRef && params.senderMappings) {
       // Prevent double-processing
-      const paramsKey = `${params.fileBase64}-${params.senderMappings}`;
+      const paramsKey = `${params.fileRef}-${params.senderMappings}`;
       if (processedParamsRef.current === paramsKey) return;
       processedParamsRef.current = paramsKey;
 
@@ -58,7 +61,7 @@ export default function ImportScreen() {
       setImportState("importing");
       importMutation.mutate(
         {
-          file: params.fileBase64,
+          fileRef: params.fileRef,
           senderMappings,
           saveMappings,
         },
@@ -74,7 +77,7 @@ export default function ImportScreen() {
       );
     }
   }, [
-    params.fileBase64,
+    params.fileRef,
     params.senderMappings,
     params.saveMappings,
     importMutation,
@@ -89,38 +92,55 @@ export default function ImportScreen() {
       return;
     }
 
-    setImportState("previewing");
+    // Step 1: Upload to temp storage
+    setImportState("uploading");
 
-    previewMutation.mutate(
+    uploadMutation.mutate(
       { file: pickedFile.base64 },
       {
-        onSuccess: (data) => {
-          // If there are multiple senders, navigate to mapping screen
-          if (data.senderNames.length > 1) {
-            router.replace({
-              pathname: "/import-mapping",
-              params: {
-                senderNames: JSON.stringify(data.senderNames),
-                fileBase64: pickedFile.base64,
+        onSuccess: (uploadData) => {
+          const { fileRef } = uploadData;
+
+          // Step 2: Preview the uploaded file
+          setImportState("previewing");
+
+          previewMutation.mutate(
+            { fileRef },
+            {
+              onSuccess: (previewData) => {
+                // If there are multiple senders, navigate to mapping screen
+                if (previewData.senderNames.length > 1) {
+                  router.replace({
+                    pathname: "/import-mapping",
+                    params: {
+                      senderNames: JSON.stringify(previewData.senderNames),
+                      fileRef,
+                    },
+                  });
+                  setImportState("initial"); // Reset state for when user comes back
+                } else {
+                  // Single sender or no senders - proceed with direct import
+                  setImportState("importing");
+                  importMutation.mutate(
+                    { fileRef },
+                    {
+                      onSuccess: () => {
+                        setImportState("success");
+                      },
+                      onError: (error) => {
+                        setErrorMessage(error.message);
+                        setImportState("error");
+                      },
+                    }
+                  );
+                }
               },
-            });
-            setImportState("initial"); // Reset state for when user comes back
-          } else {
-            // Single sender or no senders - proceed with direct import
-            setImportState("importing");
-            importMutation.mutate(
-              { file: pickedFile.base64 },
-              {
-                onSuccess: () => {
-                  setImportState("success");
-                },
-                onError: (error) => {
-                  setErrorMessage(error.message);
-                  setImportState("error");
-                },
-              }
-            );
-          }
+              onError: (error) => {
+                setErrorMessage(error.message);
+                setImportState("error");
+              },
+            }
+          );
         },
         onError: (error) => {
           setErrorMessage(error.message);
@@ -128,7 +148,7 @@ export default function ImportScreen() {
         },
       }
     );
-  }, [previewMutation, importMutation]);
+  }, [uploadMutation, previewMutation, importMutation]);
 
   const handleDone = useCallback(() => {
     // Navigate back to home
@@ -138,13 +158,15 @@ export default function ImportScreen() {
   const handleRetry = useCallback(() => {
     setImportState("initial");
     setErrorMessage(null);
+    uploadMutation.reset();
     previewMutation.reset();
     importMutation.reset();
-  }, [previewMutation, importMutation]);
+  }, [uploadMutation, previewMutation, importMutation]);
 
   const result = importMutation.data;
   const isLoading =
     importState === "picking" ||
+    importState === "uploading" ||
     importState === "previewing" ||
     importState === "importing";
 
@@ -260,11 +282,16 @@ export default function ImportScreen() {
       return <SoftButton onPress={handleRetry} title="Try Again" />;
     }
 
-    const buttonTitle = isLoading
-      ? importState === "importing"
-        ? "Importing..."
-        : "Processing..."
-      : "Select Export File";
+    let buttonTitle = "Select Export File";
+    if (isLoading) {
+      if (importState === "importing") {
+        buttonTitle = "Importing...";
+      } else if (importState === "uploading") {
+        buttonTitle = "Uploading...";
+      } else {
+        buttonTitle = "Processing...";
+      }
+    }
 
     return (
       <SoftButton

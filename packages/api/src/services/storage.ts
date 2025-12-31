@@ -90,3 +90,71 @@ export async function deleteAudioFromStorage(
     return { success: false, error: `Failed to parse audio URL: ${message}` };
   }
 }
+
+// ============================================================================
+// Temporary File Storage (for import processing)
+// ============================================================================
+
+/**
+ * Upload a temporary file for import processing.
+ * Stored at temp/{uuid} in the audio bucket.
+ * Should be deleted after processing via deleteTempFile().
+ */
+export async function uploadTempFile(
+  content: Uint8Array
+): Promise<{ fileRef: string; error: string | null }> {
+  const fileRef = randomUUID();
+  const storagePath = `temp/${fileRef}`;
+
+  const { error } = await supabase.storage
+    .from("audio")
+    .upload(storagePath, content, {
+      contentType: "application/zip",
+      upsert: false,
+    });
+
+  if (error) {
+    return { fileRef: "", error: error.message };
+  }
+
+  return { fileRef, error: null };
+}
+
+/**
+ * Retrieve a temporary file by reference.
+ * Returns the file content as Uint8Array.
+ */
+export async function getTempFile(
+  fileRef: string
+): Promise<{ data: Uint8Array | null; error: string | null }> {
+  const storagePath = `temp/${fileRef}`;
+
+  const { data, error } = await supabase.storage
+    .from("audio")
+    .download(storagePath);
+
+  if (error) {
+    return { data: null, error: error.message };
+  }
+
+  // Convert Blob to Uint8Array
+  const arrayBuffer = await data.arrayBuffer();
+  return { data: new Uint8Array(arrayBuffer), error: null };
+}
+
+/**
+ * Delete a temporary file after processing.
+ */
+export async function deleteTempFile(
+  fileRef: string
+): Promise<{ success: boolean; error: string | null }> {
+  const storagePath = `temp/${fileRef}`;
+
+  const { error } = await supabase.storage.from("audio").remove([storagePath]);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, error: null };
+}

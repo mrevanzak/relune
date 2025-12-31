@@ -3,12 +3,39 @@ import { fileTypeFromBuffer } from "file-type";
 import JSZip from "jszip";
 
 import { protectedProcedure } from "../index";
-import { whatsappImportInput, whatsappPreviewInput } from "../models/import";
+import {
+  whatsappImportInput,
+  whatsappPreviewInput,
+  whatsappUploadInput,
+} from "../models/import";
 import { convertToM4a, needsConversion } from "../services/audio-converter";
 import * as ImportService from "../services/import";
 import * as RecordingsService from "../services/recordings";
 import * as SenderMappingsService from "../services/sender-mappings";
-import { getContentType, uploadAudioToStorage } from "../services/storage";
+import {
+  deleteTempFile,
+  getContentType,
+  getTempFile,
+  uploadAudioToStorage,
+  uploadTempFile,
+} from "../services/storage";
+
+// Audio file extension pattern (defined at module level for performance)
+const AUDIO_FILE_PATTERN = /\.(opus|m4a|mp3|wav|ogg)$/i;
+
+/**
+ * Helper to fetch and validate a temp file from storage
+ */
+async function fetchTempZip(fileRef: string): Promise<Uint8Array> {
+  const { data: fileBuffer, error: fetchError } = await getTempFile(fileRef);
+  if (fetchError || !fileBuffer) {
+    throw new ORPCError("NOT_FOUND", {
+      message: "File not found. Please re-upload the ZIP file.",
+      data: { code: "FILE_NOT_FOUND" },
+    });
+  }
+  return fileBuffer;
+}
 
 /**
  * Import Router
@@ -18,13 +45,13 @@ import { getContentType, uploadAudioToStorage } from "../services/storage";
  */
 export const importRouter = {
   /**
-   * Preview a WhatsApp chat export ZIP file.
-   * Returns the unique sender names found in the chat without importing.
+   * Upload a WhatsApp chat export ZIP file to temporary storage.
+   * Returns a fileRef that can be used for preview and import.
    *
-   * @throws BAD_REQUEST if file is not a ZIP or missing _chat.txt
+   * @throws BAD_REQUEST if file is not a ZIP archive
    */
-  whatsappPreview: protectedProcedure
-    .input(whatsappPreviewInput)
+  whatsappUpload: protectedProcedure
+    .input(whatsappUploadInput)
     .handler(async ({ input }) => {
       const { file } = input;
 
@@ -39,6 +66,33 @@ export const importRouter = {
           data: { code: "INVALID_FILE_TYPE" },
         });
       }
+
+      // Upload to temporary storage
+      const { fileRef, error } = await uploadTempFile(fileBuffer);
+      if (error) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: `Failed to upload file: ${error}`,
+          data: { code: "UPLOAD_FAILED" },
+        });
+      }
+
+      return { fileRef };
+    }),
+
+  /**
+   * Preview a WhatsApp chat export ZIP file.
+   * Returns the unique sender names found in the chat without importing.
+   *
+   * @throws NOT_FOUND if fileRef is invalid or expired
+   * @throws BAD_REQUEST if file is missing _chat.txt
+   */
+  whatsappPreview: protectedProcedure
+    .input(whatsappPreviewInput)
+    .handler(async ({ input }) => {
+      const { fileRef } = input;
+
+      // Fetch ZIP from temp storage
+      const fileBuffer = await fetchTempZip(fileRef);
 
       // Extract ZIP contents
       const zip = await JSZip.loadAsync(fileBuffer);
@@ -55,7 +109,7 @@ export const importRouter = {
         if (baseName === "_chat.txt") {
           chatTxtContent = await zipEntry.async("string");
         } else if (
-          baseName.match(/\.(opus|m4a|mp3|wav|ogg)$/i) &&
+          AUDIO_FILE_PATTERN.test(baseName) &&
           !baseName.startsWith(".")
         ) {
           audioFileCount++;
@@ -90,15 +144,16 @@ export const importRouter = {
         parseErrors,
       };
     }),
+
   /**
-   * Import recordings from a WhatsApp chat export ZIP file.
+   * Import recordings from a previously uploaded WhatsApp chat export.
    *
    * The ZIP file should contain:
    * - _chat.txt: WhatsApp chat export file
    * - Audio files (.opus, .m4a, .mp3, .wav, .ogg)
    *
    * Process:
-   * 1. Validate ZIP file
+   * 1. Fetch ZIP from temp storage
    * 2. Parse _chat.txt for audio message metadata
    * 3. For each audio message:
    *    - Resolve/create user by display name
@@ -107,32 +162,25 @@ export const importRouter = {
    *    - Upload to storage
    *    - Create recording in database
    * 4. Trigger transcription for imported recordings
+   * 5. Delete temp file from storage
    *
-   * @throws BAD_REQUEST if file is not a ZIP or missing _chat.txt
+   * @throws NOT_FOUND if fileRef is invalid or expired
+   * @throws BAD_REQUEST if file is missing _chat.txt
    *
    * @example
    * ```typescript
-   * const result = await client.import.whatsapp({ file: base64ZipData });
+   * const result = await client.import.whatsapp({ fileRef: "uuid" });
    * console.log(`Imported ${result.imported} recordings`);
    * ```
    */
   whatsapp: protectedProcedure
     .input(whatsappImportInput)
     .handler(async ({ input, context }) => {
-      const { file, senderMappings, saveMappings } = input;
+      const { fileRef, senderMappings, saveMappings } = input;
       const importerId = context.user.id;
 
-      // Convert base64 string to buffer
-      const fileBuffer = Buffer.from(file, "base64");
-
-      // Validate it's a zip file
-      const fileType = await fileTypeFromBuffer(fileBuffer);
-      if (fileType?.mime !== "application/zip") {
-        throw new ORPCError("BAD_REQUEST", {
-          message: "File must be a ZIP archive",
-          data: { code: "INVALID_FILE_TYPE" },
-        });
-      }
+      // Fetch ZIP from temp storage
+      const fileBuffer = await fetchTempZip(fileRef);
 
       // Extract ZIP contents
       const zip = await JSZip.loadAsync(fileBuffer);
@@ -149,7 +197,7 @@ export const importRouter = {
         if (baseName === "_chat.txt") {
           chatTxtContent = await zipEntry.async("string");
         } else if (
-          baseName.match(/\.(opus|m4a|mp3|wav|ogg)$/i) &&
+          AUDIO_FILE_PATTERN.test(baseName) &&
           !baseName.startsWith(".")
         ) {
           const content = await zipEntry.async("uint8array");
@@ -176,7 +224,7 @@ export const importRouter = {
       // Cache user IDs to avoid repeated lookups
       const userCache = new Map<string, string>();
       // Track which senders we've saved mappings for
-      const savedMappings = new Set<string>();
+      const savedMappingsSet = new Set<string>();
 
       for (const msg of audioMessages) {
         try {
@@ -203,14 +251,14 @@ export const importRouter = {
             if (
               saveMappings &&
               mappedUserId &&
-              !savedMappings.has(msg.sender)
+              !savedMappingsSet.has(msg.sender)
             ) {
               await SenderMappingsService.upsertSenderMapping({
                 userId: importerId,
                 externalName: msg.sender,
                 mappedUserId,
               });
-              savedMappings.add(msg.sender);
+              savedMappingsSet.add(msg.sender);
             }
           }
 
@@ -286,6 +334,11 @@ export const importRouter = {
             console.error("Transcription failed for imported recordings:", err)
         );
       }
+
+      // Clean up temp file (fire-and-forget, don't block response)
+      deleteTempFile(fileRef).catch((err) =>
+        console.error("Failed to delete temp file:", err)
+      );
 
       return {
         imported: imported.length,
