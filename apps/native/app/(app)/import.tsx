@@ -97,7 +97,7 @@ export default function ImportScreen() {
         onSuccess: (data) => {
           // If there are multiple senders, navigate to mapping screen
           if (data.senderNames.length > 1) {
-            router.push({
+            router.replace({
               pathname: "/import-mapping",
               params: {
                 senderNames: JSON.stringify(data.senderNames),
