@@ -304,6 +304,7 @@ const styles = StyleSheet.create({
   tags: {
     flexDirection: "row",
     gap: 6,
+    flexWrap: "wrap",
   },
   tag: {
     paddingHorizontal: 10,
