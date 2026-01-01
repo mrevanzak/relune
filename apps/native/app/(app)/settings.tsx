@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Application from "expo-application";
-import { PressableScale } from "pressto";
-import { useCallback, useState } from "react";
+import { PressableOpacity, PressableScale } from "pressto";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -11,7 +11,12 @@ import {
   Text,
   View,
 } from "react-native";
-import Animated, { FadeIn } from "react-native-reanimated";
+import Animated, {
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { SoftCard } from "@/components/ui/SoftCard";
 import { SoftInput } from "@/components/ui/SoftInput";
 import { useSession } from "@/context/session";
@@ -48,6 +53,25 @@ export default function SettingsScreen() {
   const updateDisplayNameMutation = useUpdateDisplayNameMutation();
   const [displayNameInput, setDisplayNameInput] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
+
+  // Animation for edit mode transition
+  const editProgress = useSharedValue(0);
+
+  useEffect(() => {
+    editProgress.value = withTiming(isEditingName ? 1 : 0, {
+      duration: reducedMotion ? 0 : 200,
+    });
+  }, [isEditingName, reducedMotion, editProgress]);
+
+  const editAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: editProgress.value,
+    transform: [{ scale: 0.95 + editProgress.value * 0.05 }],
+  }));
+
+  const displayAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: 1 - editProgress.value,
+    transform: [{ scale: 1 - editProgress.value * 0.05 }],
+  }));
 
   const settingsQuery = useSettings();
   const mappingsQuery = useSenderMappings();
@@ -132,49 +156,63 @@ export default function SettingsScreen() {
             <Text style={[styles.profileLabel, { color: textSecondary }]}>
               Display Name
             </Text>
-            {isEditingName ? (
-              <View style={styles.editNameContainer}>
-                <SoftInput
-                  autoFocus
-                  containerStyle={styles.nameInput}
-                  onChangeText={setDisplayNameInput}
-                  onSubmitEditing={handleSaveDisplayName}
-                  placeholder="Enter display name"
-                  returnKeyType="done"
-                  value={displayNameInput}
-                />
-                <View style={styles.editNameButtons}>
-                  <Pressable
-                    disabled={updateDisplayNameMutation.isPending}
-                    onPress={handleCancelEditName}
-                    style={styles.editButton}
-                  >
-                    <Ionicons color={textSecondary} name="close" size={22} />
-                  </Pressable>
-                  <Pressable
-                    disabled={updateDisplayNameMutation.isPending}
-                    onPress={handleSaveDisplayName}
-                    style={styles.editButton}
-                  >
-                    {updateDisplayNameMutation.isPending ? (
-                      <ActivityIndicator color={tint} size="small" />
-                    ) : (
-                      <Ionicons color={tint} name="checkmark" size={22} />
-                    )}
-                  </Pressable>
-                </View>
-              </View>
-            ) : (
-              <PressableScale
-                onPress={handleStartEditName}
-                style={styles.profileValueRow}
+            <View>
+              {/* Display mode - shows when not editing */}
+              <Animated.View
+                pointerEvents={isEditingName ? "none" : "auto"}
+                style={[
+                  displayAnimatedStyle,
+                  isEditingName && styles.hiddenAbsolute,
+                ]}
               >
-                <Text style={[styles.profileValue, { color: text }]}>
-                  {userQuery.data?.displayName || "Not set"}
-                </Text>
-                <Ionicons color={textSecondary} name="pencil" size={18} />
-              </PressableScale>
-            )}
+                <PressableOpacity
+                  onPress={handleStartEditName}
+                  style={styles.profileValueRow}
+                >
+                  <Text style={[styles.profileValue, { color: text }]}>
+                    {userQuery.data?.displayName || "Not set"}
+                  </Text>
+                  <Ionicons color={textSecondary} name="pencil" size={18} />
+                </PressableOpacity>
+              </Animated.View>
+
+              {/* Edit mode - shows when editing */}
+              {isEditingName && (
+                <Animated.View
+                  style={[styles.editNameContainer, editAnimatedStyle]}
+                >
+                  <SoftInput
+                    autoFocus
+                    containerStyle={styles.nameInput}
+                    onChangeText={setDisplayNameInput}
+                    onSubmitEditing={handleSaveDisplayName}
+                    placeholder="Enter display name"
+                    returnKeyType="done"
+                    value={displayNameInput}
+                  />
+                  <View style={styles.editNameButtons}>
+                    <Pressable
+                      disabled={updateDisplayNameMutation.isPending}
+                      onPress={handleCancelEditName}
+                      style={styles.editButton}
+                    >
+                      <Ionicons color={textSecondary} name="close" size={22} />
+                    </Pressable>
+                    <Pressable
+                      disabled={updateDisplayNameMutation.isPending}
+                      onPress={handleSaveDisplayName}
+                      style={styles.editButton}
+                    >
+                      {updateDisplayNameMutation.isPending ? (
+                        <ActivityIndicator color={tint} size="small" />
+                      ) : (
+                        <Ionicons color={tint} name="checkmark" size={22} />
+                      )}
+                    </Pressable>
+                  </View>
+                </Animated.View>
+              )}
+            </View>
           </View>
 
           {/* Email Row */}
@@ -210,7 +248,7 @@ export default function SettingsScreen() {
             const isLast = index === AUTO_ARCHIVE_OPTIONS.length - 1;
 
             return (
-              <PressableScale
+              <PressableOpacity
                 key={option.label}
                 onPress={() => handleAutoArchiveChange(option.value)}
                 style={[
@@ -226,7 +264,7 @@ export default function SettingsScreen() {
                 </Text>
                 {isSelected &&
                   (reducedMotion ? (
-                    <Ionicons color={tint} name="checkmark" size={24} />
+                    <Ionicons color={tint} name="checkmark" size={20} />
                   ) : (
                     <Animated.View
                       entering={FadeIn.duration(150).withInitialValues({
@@ -234,10 +272,10 @@ export default function SettingsScreen() {
                         transform: [{ scale: 0.8 }],
                       })}
                     >
-                      <Ionicons color={tint} name="checkmark" size={24} />
+                      <Ionicons color={tint} name="checkmark" size={20} />
                     </Animated.View>
                   ))}
-              </PressableScale>
+              </PressableOpacity>
             );
           })}
         </SoftCard>
@@ -305,15 +343,15 @@ export default function SettingsScreen() {
       </View>
 
       {/* Sign Out */}
-      <PressableScale onPress={handleSignOut} style={styles.signOutButton}>
+      <PressableOpacity onPress={handleSignOut} style={styles.signOutButton}>
         <Ionicons color={errorColor} name="log-out-outline" size={20} />
         <Text style={[styles.signOutText, { color: errorColor }]}>
           Sign Out
         </Text>
-      </PressableScale>
+      </PressableOpacity>
 
       {/* Version / Check for Updates */}
-      <PressableScale
+      <PressableOpacity
         onPress={isChecking ? undefined : checkForUpdate}
         style={[styles.versionContainer, isChecking && styles.disabled]}
       >
@@ -325,7 +363,7 @@ export default function SettingsScreen() {
             {Application.nativeBuildVersion})
           </Text>
         )}
-      </PressableScale>
+      </PressableOpacity>
     </ScrollView>
   );
 }
@@ -379,6 +417,10 @@ const styles = StyleSheet.create({
   },
   editNameContainer: {
     gap: 12,
+  },
+  hiddenAbsolute: {
+    position: "absolute",
+    opacity: 0,
   },
   nameInput: {
     marginTop: 4,

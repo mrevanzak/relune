@@ -32,17 +32,17 @@ export function useUpdateSettingsMutation() {
       onMutate: async (newSettings) => {
         // Cancel outgoing refetches to avoid overwriting optimistic update
         await queryClient.cancelQueries({
-          queryKey: orpc.settings.get.key(),
+          queryKey: orpc.settings.get.queryKey(),
         });
 
         // Snapshot previous value for rollback
         const previousSettings = queryClient.getQueryData(
-          orpc.settings.get.key()
+          orpc.settings.get.queryKey()
         );
 
         // Optimistically update cache
         queryClient.setQueryData(
-          orpc.settings.get.key(),
+          orpc.settings.get.queryKey(),
           (old: typeof previousSettings) =>
             old ? { ...old, ...newSettings } : old
         );
@@ -53,7 +53,7 @@ export function useUpdateSettingsMutation() {
         // Rollback on error
         if (onMutateResult?.previousSettings) {
           queryClient.setQueryData(
-            orpc.settings.get.key(),
+            orpc.settings.get.queryKey(),
             onMutateResult.previousSettings
           );
         }
@@ -61,7 +61,7 @@ export function useUpdateSettingsMutation() {
       onSettled: () => {
         // Refetch to ensure server state is synced
         queryClient.invalidateQueries({
-          queryKey: orpc.settings.get.key(),
+          queryKey: orpc.settings.get.queryKey(),
         });
       },
     })
