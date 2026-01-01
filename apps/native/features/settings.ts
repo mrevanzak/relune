@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import * as Updates from "expo-updates";
 import { useCallback, useState } from "react";
 import { Alert } from "react-native";
-import { orpc } from "@/lib/api";
+import { orpc, queryClient } from "@/lib/api";
 
 /**
  * Settings feature: queries and mutations for user settings.
@@ -18,6 +18,7 @@ export function useSettings() {
 
 /**
  * Mutation hook for updating user settings.
+ * Uses optimistic updates for instant UI feedback.
  *
  * @example
  * ```typescript
@@ -28,8 +29,38 @@ export function useSettings() {
 export function useUpdateSettingsMutation() {
   return useMutation(
     orpc.settings.update.mutationOptions({
-      onSuccess: (_, _variables, _onMutateResult, context) => {
-        context.client.invalidateQueries({
+      onMutate: async (newSettings) => {
+        // Cancel outgoing refetches to avoid overwriting optimistic update
+        await queryClient.cancelQueries({
+          queryKey: orpc.settings.get.key(),
+        });
+
+        // Snapshot previous value for rollback
+        const previousSettings = queryClient.getQueryData(
+          orpc.settings.get.key()
+        );
+
+        // Optimistically update cache
+        queryClient.setQueryData(
+          orpc.settings.get.key(),
+          (old: typeof previousSettings) =>
+            old ? { ...old, ...newSettings } : old
+        );
+
+        return { previousSettings };
+      },
+      onError: (_err, _newSettings, onMutateResult) => {
+        // Rollback on error
+        if (onMutateResult?.previousSettings) {
+          queryClient.setQueryData(
+            orpc.settings.get.key(),
+            onMutateResult.previousSettings
+          );
+        }
+      },
+      onSettled: () => {
+        // Refetch to ensure server state is synced
+        queryClient.invalidateQueries({
           queryKey: orpc.settings.get.key(),
         });
       },
