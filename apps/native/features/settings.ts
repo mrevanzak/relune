@@ -1,7 +1,6 @@
 import { toast } from "@baronha/ting";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as Updates from "expo-updates";
-import { useCallback, useState } from "react";
 import { Alert } from "react-native";
 import { orpc, queryClient } from "@/lib/api";
 
@@ -91,29 +90,28 @@ export function useDeleteSenderMappingMutation() {
 }
 
 /**
- * Hook to manually check for OTA updates and apply them.
+ * Mutation hook to manually check for OTA updates and apply them.
  * Tapping on the version number triggers this check.
+ *
+ * @example
+ * ```typescript
+ * const { mutate, isPending } = useCheckForUpdatesMutation();
+ * mutate(); // triggers the update check
+ * ```
  */
-export function useCheckForUpdates() {
-  const [isChecking, setIsChecking] = useState(false);
+export function useCheckForUpdatesMutation() {
+  return useMutation({
+    mutationFn: async () => {
+      // In dev mode, expo-updates is not available
+      if (__DEV__) {
+        const error = new Error("OTA updates are disabled in development mode");
+        error.name = "DevModeError";
+        throw error;
+      }
 
-  const checkForUpdate = useCallback(async () => {
-    // In dev mode, expo-updates is not available
-    if (__DEV__) {
-      toast({
-        title: "Updates not available",
-        message: "OTA updates are disabled in development mode",
-        preset: "error",
-        haptic: "warning",
-      });
-      return;
-    }
-
-    setIsChecking(true);
-
-    try {
-      const update = await Updates.checkForUpdateAsync();
-
+      return await Updates.checkForUpdateAsync();
+    },
+    onSuccess: (update) => {
       if (update.isAvailable) {
         // Use native Alert for confirmation
         Alert.alert(
@@ -152,17 +150,23 @@ export function useCheckForUpdates() {
           haptic: "success",
         });
       }
-    } catch (_error) {
-      toast({
-        title: "Update check failed",
-        message: "Could not check for updates",
-        preset: "error",
-        haptic: "error",
-      });
-    } finally {
-      setIsChecking(false);
-    }
-  }, []);
-
-  return { checkForUpdate, isChecking };
+    },
+    onError: (error) => {
+      if (error.name === "DevModeError") {
+        toast({
+          title: "Updates not available",
+          message: "OTA updates are disabled in development mode",
+          preset: "error",
+          haptic: "warning",
+        });
+      } else {
+        toast({
+          title: "Update check failed",
+          message: "Could not check for updates",
+          preset: "error",
+          haptic: "error",
+        });
+      }
+    },
+  });
 }
