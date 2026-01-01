@@ -22,7 +22,7 @@ import { SoftInput } from "@/components/ui/SoftInput";
 import { useSession } from "@/context/session";
 import { useCurrentUser, useUpdateDisplayNameMutation } from "@/features/auth";
 import {
-  useCheckForUpdates,
+  useCheckForUpdatesMutation,
   useDeleteSenderMappingMutation,
   useSenderMappings,
   useSettings,
@@ -77,7 +77,8 @@ export default function SettingsScreen() {
   const mappingsQuery = useSenderMappings();
   const updateSettingsMutation = useUpdateSettingsMutation();
   const deleteMappingMutation = useDeleteSenderMappingMutation();
-  const { checkForUpdate, isChecking } = useCheckForUpdates();
+  const { mutate: checkForUpdate, isPending: isChecking } =
+    useCheckForUpdatesMutation();
 
   const currentAutoArchiveDays = settingsQuery.data?.autoArchiveDays ?? null;
 
@@ -352,7 +353,7 @@ export default function SettingsScreen() {
 
       {/* Version / Check for Updates */}
       <PressableOpacity
-        onPress={isChecking ? undefined : checkForUpdate}
+        onPress={isChecking ? undefined : () => checkForUpdate()}
         style={[styles.versionContainer, isChecking && styles.disabled]}
       >
         {isChecking ? (
