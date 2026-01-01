@@ -7,6 +7,7 @@
     "dev": "expo start --dev-client",
     "lint": "expo lint",
     "prebuild": "expo prebuild",
+    "prebuild:clean": "expo prebuild --clean",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "xcode": "xed -b ios",
