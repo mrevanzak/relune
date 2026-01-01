@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Application from "expo-application";
 import { useCallback } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -10,6 +12,7 @@ import {
 } from "react-native";
 import { SoftCard } from "@/components/ui/SoftCard";
 import {
+  useCheckForUpdates,
   useDeleteSenderMappingMutation,
   useSenderMappings,
   useSettings,
@@ -36,6 +39,7 @@ export default function SettingsScreen() {
   const mappingsQuery = useSenderMappings();
   const updateSettingsMutation = useUpdateSettingsMutation();
   const deleteMappingMutation = useDeleteSenderMappingMutation();
+  const { checkForUpdate, isChecking } = useCheckForUpdates();
 
   const currentAutoArchiveDays = settingsQuery.data?.autoArchiveDays ?? null;
 
@@ -169,6 +173,22 @@ export default function SettingsScreen() {
           </SoftCard>
         )}
       </View>
+
+      {/* Version / Check for Updates */}
+      <Pressable
+        disabled={isChecking}
+        onPress={checkForUpdate}
+        style={styles.versionContainer}
+      >
+        {isChecking ? (
+          <ActivityIndicator color={textSecondary} size="small" />
+        ) : (
+          <Text style={[styles.versionText, { color: textSecondary }]}>
+            v{Application.nativeApplicationVersion} (
+            {Application.nativeBuildVersion})
+          </Text>
+        )}
+      </Pressable>
     </ScrollView>
   );
 }
@@ -243,5 +263,13 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
+  },
+  versionContainer: {
+    alignItems: "center",
+    paddingVertical: 16,
+    marginTop: 8,
+  },
+  versionText: {
+    fontSize: 13,
   },
 });

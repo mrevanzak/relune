@@ -1,4 +1,8 @@
+import { toast } from "@baronha/ting";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import * as Updates from "expo-updates";
+import { useCallback, useState } from "react";
+import { Alert } from "react-native";
 import { orpc } from "@/lib/api";
 
 /**
@@ -53,4 +57,81 @@ export function useDeleteSenderMappingMutation() {
       },
     })
   );
+}
+
+/**
+ * Hook to manually check for OTA updates and apply them.
+ * Tapping on the version number triggers this check.
+ */
+export function useCheckForUpdates() {
+  const [isChecking, setIsChecking] = useState(false);
+
+  const checkForUpdate = useCallback(async () => {
+    // In dev mode, expo-updates is not available
+    if (__DEV__) {
+      toast({
+        title: "Updates not available",
+        message: "OTA updates are disabled in development mode",
+        preset: "error",
+        haptic: "warning",
+      });
+      return;
+    }
+
+    setIsChecking(true);
+
+    try {
+      const update = await Updates.checkForUpdateAsync();
+
+      if (update.isAvailable) {
+        // Use native Alert for confirmation
+        Alert.alert(
+          "Update Available",
+          "A new version is available. Would you like to update now?",
+          [
+            { text: "Later", style: "cancel" },
+            {
+              text: "Update",
+              onPress: async () => {
+                toast({
+                  title: "Downloading update...",
+                  preset: "spinner",
+                  duration: 10,
+                });
+
+                try {
+                  await Updates.fetchUpdateAsync();
+                  await Updates.reloadAsync();
+                } catch (_fetchError) {
+                  toast({
+                    title: "Update failed",
+                    message: "Could not download the update",
+                    preset: "error",
+                    haptic: "error",
+                  });
+                }
+              },
+            },
+          ]
+        );
+      } else {
+        toast({
+          title: "You're up to date!",
+          preset: "done",
+          haptic: "success",
+        });
+      }
+    } catch (_error) {
+      toast({
+        title: "Update check failed",
+        message: "Could not check for updates",
+        preset: "error",
+        haptic: "error",
+      });
+    } finally {
+      setIsChecking(false);
+    }
+  }, []);
+
+  return { checkForUpdate, isChecking };
 }
