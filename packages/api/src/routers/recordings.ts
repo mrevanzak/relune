@@ -7,6 +7,7 @@ import {
   processPendingInput,
   updateRecordingInput,
 } from "../models/recordings";
+import * as NotificationsService from "../services/notifications";
 import * as RecordingsService from "../services/recordings";
 
 /**
@@ -76,15 +77,27 @@ export const recordingsRouter = {
    */
   create: protectedProcedure
     .input(createRecordingInput)
-    .handler(({ input, context }) =>
-      RecordingsService.createRecording({
+    .handler(async ({ input, context }) => {
+      const recording = await RecordingsService.createRecording({
         userId: context.user.id,
         file: input.file,
         filename: input.filename,
         durationSeconds: input.durationSeconds,
         recordedAt: input.recordedAt,
-      })
-    ),
+      });
+
+      // Send push notification to all users except the sender
+      const senderName = await NotificationsService.getUserDisplayName(
+        context.user.id
+      );
+      NotificationsService.broadcastNotification(
+        context.user.id,
+        "New Recording",
+        `${senderName} just sent a new recording`
+      ).catch((err) => console.error("Failed to send notification:", err));
+
+      return recording;
+    }),
 
   /**
    * Update recording metadata.
@@ -113,7 +126,21 @@ export const recordingsRouter = {
    */
   archive: protectedProcedure
     .input(getRecordingInput)
-    .handler(({ input }) => RecordingsService.archiveRecording(input.id)),
+    .handler(async ({ input, context }) => {
+      const result = await RecordingsService.archiveRecording(input.id);
+
+      // Send push notification to all users except the one who archived
+      const userName = await NotificationsService.getUserDisplayName(
+        context.user.id
+      );
+      NotificationsService.broadcastNotification(
+        context.user.id,
+        "Recording Archived",
+        `${userName} archived a recording`
+      ).catch((err) => console.error("Failed to send notification:", err));
+
+      return result;
+    }),
 
   /**
    * Unarchive a recording (move back to Current tab).

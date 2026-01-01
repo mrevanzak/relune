@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Application from "expo-application";
-import { useCallback } from "react";
+import { PressableScale } from "pressto";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -10,7 +11,11 @@ import {
   Text,
   View,
 } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { SoftCard } from "@/components/ui/SoftCard";
+import { SoftInput } from "@/components/ui/SoftInput";
+import { useSession } from "@/context/session";
+import { useCurrentUser, useUpdateDisplayNameMutation } from "@/features/auth";
 import {
   useCheckForUpdates,
   useDeleteSenderMappingMutation,
@@ -18,6 +23,7 @@ import {
   useSettings,
   useUpdateSettingsMutation,
 } from "@/features/settings";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 const AUTO_ARCHIVE_OPTIONS = [
@@ -34,6 +40,14 @@ export default function SettingsScreen() {
   const tint = useThemeColor({}, "tint");
   const lilac = useThemeColor({}, "lilac");
   const errorColor = useThemeColor({}, "error");
+  const reducedMotion = useReducedMotion();
+
+  // Profile state
+  const { signOut } = useSession();
+  const userQuery = useCurrentUser();
+  const updateDisplayNameMutation = useUpdateDisplayNameMutation();
+  const [displayNameInput, setDisplayNameInput] = useState("");
+  const [isEditingName, setIsEditingName] = useState(false);
 
   const settingsQuery = useSettings();
   const mappingsQuery = useSenderMappings();
@@ -68,7 +82,39 @@ export default function SettingsScreen() {
     [deleteMappingMutation]
   );
 
-  const isLoading = settingsQuery.isLoading || mappingsQuery.isLoading;
+  const handleStartEditName = useCallback(() => {
+    setDisplayNameInput(userQuery.data?.displayName ?? "");
+    setIsEditingName(true);
+  }, [userQuery.data?.displayName]);
+
+  const handleSaveDisplayName = useCallback(() => {
+    const trimmed = displayNameInput.trim();
+    updateDisplayNameMutation.mutate(
+      { displayName: trimmed },
+      {
+        onSuccess: () => {
+          setIsEditingName(false);
+        },
+      }
+    );
+  }, [displayNameInput, updateDisplayNameMutation]);
+
+  const handleCancelEditName = useCallback(() => {
+    setIsEditingName(false);
+    setDisplayNameInput("");
+  }, []);
+
+  const handleSignOut = useCallback(() => {
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: signOut,
+      },
+    ]);
+  }, [signOut]);
+
   const mappings = mappingsQuery.data ?? [];
 
   return (
@@ -77,6 +123,80 @@ export default function SettingsScreen() {
       contentInsetAdjustmentBehavior="always"
       style={styles.container}
     >
+      {/* Profile Section */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: text }]}>PROFILE</Text>
+        <SoftCard style={styles.profileCard}>
+          {/* Display Name Row */}
+          <View style={styles.profileRow}>
+            <Text style={[styles.profileLabel, { color: textSecondary }]}>
+              Display Name
+            </Text>
+            {isEditingName ? (
+              <View style={styles.editNameContainer}>
+                <SoftInput
+                  autoFocus
+                  containerStyle={styles.nameInput}
+                  onChangeText={setDisplayNameInput}
+                  onSubmitEditing={handleSaveDisplayName}
+                  placeholder="Enter display name"
+                  returnKeyType="done"
+                  value={displayNameInput}
+                />
+                <View style={styles.editNameButtons}>
+                  <Pressable
+                    disabled={updateDisplayNameMutation.isPending}
+                    onPress={handleCancelEditName}
+                    style={styles.editButton}
+                  >
+                    <Ionicons color={textSecondary} name="close" size={22} />
+                  </Pressable>
+                  <Pressable
+                    disabled={updateDisplayNameMutation.isPending}
+                    onPress={handleSaveDisplayName}
+                    style={styles.editButton}
+                  >
+                    {updateDisplayNameMutation.isPending ? (
+                      <ActivityIndicator color={tint} size="small" />
+                    ) : (
+                      <Ionicons color={tint} name="checkmark" size={22} />
+                    )}
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <PressableScale
+                onPress={handleStartEditName}
+                style={styles.profileValueRow}
+              >
+                <Text style={[styles.profileValue, { color: text }]}>
+                  {userQuery.data?.displayName || "Not set"}
+                </Text>
+                <Ionicons color={textSecondary} name="pencil" size={18} />
+              </PressableScale>
+            )}
+          </View>
+
+          {/* Email Row */}
+          <View
+            style={[
+              styles.profileRow,
+              {
+                borderTopWidth: StyleSheet.hairlineWidth,
+                borderTopColor: `${textSecondary}30`,
+              },
+            ]}
+          >
+            <Text style={[styles.profileLabel, { color: textSecondary }]}>
+              Email
+            </Text>
+            <Text style={[styles.profileValue, { color: text }]}>
+              {userQuery.data?.email ?? "..."}
+            </Text>
+          </View>
+        </SoftCard>
+      </View>
+
       {/* Auto-Archive Section */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: text }]}>AUTO-ARCHIVE</Text>
@@ -90,7 +210,7 @@ export default function SettingsScreen() {
             const isLast = index === AUTO_ARCHIVE_OPTIONS.length - 1;
 
             return (
-              <Pressable
+              <PressableScale
                 key={option.label}
                 onPress={() => handleAutoArchiveChange(option.value)}
                 style={[
@@ -104,10 +224,20 @@ export default function SettingsScreen() {
                 <Text style={[styles.optionLabel, { color: text }]}>
                   {option.label}
                 </Text>
-                {isSelected && (
-                  <Ionicons color={tint} name="checkmark" size={24} />
-                )}
-              </Pressable>
+                {isSelected &&
+                  (reducedMotion ? (
+                    <Ionicons color={tint} name="checkmark" size={24} />
+                  ) : (
+                    <Animated.View
+                      entering={FadeIn.duration(150).withInitialValues({
+                        opacity: 0,
+                        transform: [{ scale: 0.8 }],
+                      })}
+                    >
+                      <Ionicons color={tint} name="checkmark" size={24} />
+                    </Animated.View>
+                  ))}
+              </PressableScale>
             );
           })}
         </SoftCard>
@@ -155,7 +285,7 @@ export default function SettingsScreen() {
                         mapping.mappedUser.email}
                     </Text>
                   </View>
-                  <Pressable
+                  <PressableScale
                     onPress={() =>
                       handleDeleteMapping(mapping.id, mapping.externalName)
                     }
@@ -166,7 +296,7 @@ export default function SettingsScreen() {
                       name="close-circle"
                       size={24}
                     />
-                  </Pressable>
+                  </PressableScale>
                 </View>
               );
             })}
@@ -174,11 +304,18 @@ export default function SettingsScreen() {
         )}
       </View>
 
+      {/* Sign Out */}
+      <PressableScale onPress={handleSignOut} style={styles.signOutButton}>
+        <Ionicons color={errorColor} name="log-out-outline" size={20} />
+        <Text style={[styles.signOutText, { color: errorColor }]}>
+          Sign Out
+        </Text>
+      </PressableScale>
+
       {/* Version / Check for Updates */}
-      <Pressable
-        disabled={isChecking}
-        onPress={checkForUpdate}
-        style={styles.versionContainer}
+      <PressableScale
+        onPress={isChecking ? undefined : checkForUpdate}
+        style={[styles.versionContainer, isChecking && styles.disabled]}
       >
         {isChecking ? (
           <ActivityIndicator color={textSecondary} size="small" />
@@ -188,7 +325,7 @@ export default function SettingsScreen() {
             {Application.nativeBuildVersion})
           </Text>
         )}
-      </Pressable>
+      </PressableScale>
     </ScrollView>
   );
 }
@@ -219,6 +356,42 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 16,
   },
+  // Profile section styles
+  profileCard: {
+    padding: 0,
+  },
+  profileRow: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  profileLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  profileValue: {
+    fontSize: 16,
+  },
+  profileValueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  editNameContainer: {
+    gap: 12,
+  },
+  nameInput: {
+    marginTop: 4,
+  },
+  editNameButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  editButton: {
+    padding: 8,
+  },
+  // Auto-archive styles
   optionsCard: {
     padding: 0,
   },
@@ -232,6 +405,7 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 16,
   },
+  // Mappings styles
   mappingsCard: {
     padding: 0,
   },
@@ -264,6 +438,20 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
   },
+  // Sign out button
+  signOutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 16,
+    marginTop: 8,
+  },
+  signOutText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  // Version
   versionContainer: {
     alignItems: "center",
     paddingVertical: 16,
@@ -271,5 +459,8 @@ const styles = StyleSheet.create({
   },
   versionText: {
     fontSize: 13,
+  },
+  disabled: {
+    opacity: 0.5,
   },
 });

@@ -1,12 +1,48 @@
 import {
   AudioModule,
-  RecordingPresets,
+  AudioQuality,
+  IOSOutputFormat,
+  type RecordingOptions,
   setAudioModeAsync,
   useAudioRecorderState,
   useAudioRecorder as useExpoAudioRecorder,
 } from "expo-audio";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
+
+/**
+ * Voice-optimized recording preset for iOS.
+ *
+ * Changes from HIGH_QUALITY:
+ * - Mono channel (1) instead of stereo (2) - focuses all gain on single channel for voice
+ * - Higher bit rate (192kbps) for better dynamic range
+ * - Metering enabled for potential future level monitoring
+ *
+ * Note: If recordings are still too quiet, consider server-side audio normalization
+ * using ffmpeg during the upload/processing pipeline.
+ */
+const VOICE_OPTIMIZED: RecordingOptions = {
+  extension: ".m4a",
+  sampleRate: 44_100,
+  numberOfChannels: 1, // Mono for voice - concentrates gain on single channel
+  bitRate: 192_000, // Higher bitrate for better dynamic range (was 128000)
+  isMeteringEnabled: true,
+  android: {
+    outputFormat: "mpeg4",
+    audioEncoder: "aac",
+  },
+  ios: {
+    outputFormat: IOSOutputFormat.MPEG4AAC,
+    audioQuality: AudioQuality.MAX,
+    linearPCMBitDepth: 16,
+    linearPCMIsBigEndian: false,
+    linearPCMIsFloat: false,
+  },
+  web: {
+    mimeType: "audio/webm",
+    bitsPerSecond: 192_000,
+  },
+};
 
 export interface RecordingResult {
   uri: string;
@@ -33,14 +69,11 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const startTimeRef = useRef<number | null>(null);
   const recordingUriRef = useRef<string | null>(null);
 
-  const recorder = useExpoAudioRecorder(
-    RecordingPresets.HIGH_QUALITY,
-    (status) => {
-      if (status.isFinished && status.url) {
-        recordingUriRef.current = status.url;
-      }
+  const recorder = useExpoAudioRecorder(VOICE_OPTIMIZED, (status) => {
+    if (status.isFinished && status.url) {
+      recordingUriRef.current = status.url;
     }
-  );
+  });
 
   const recorderState = useAudioRecorderState(recorder);
 

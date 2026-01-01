@@ -17,6 +17,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       bundleIdentifier: "com.mrevanzak.relune",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
+        UIBackgroundModes: ["remote-notification"],
       },
     },
     android: {
@@ -45,6 +46,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       "react-native-bottom-tabs",
       "expo-document-picker",
       "@react-native-community/datetimepicker",
+      [
+        "expo-notifications",
+        {
+          icon: "./assets/images/icon.png",
+          color: "#d4aecd",
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,

@@ -2,6 +2,7 @@ import type { RouterClient } from "@orpc/server";
 
 import { publicProcedure } from "../index";
 import { importRouter } from "./import";
+import { notificationsRouter } from "./notifications";
 import { recordingsRouter } from "./recordings";
 import { senderMappingsRouter } from "./sender-mappings";
 import { settingsRouter } from "./settings";
@@ -62,6 +63,12 @@ export const appRouter = {
    * Requires authentication.
    */
   senderMappings: senderMappingsRouter,
+
+  /**
+   * Notifications endpoints.
+   * Requires authentication.
+   */
+  notifications: notificationsRouter,
 };
 
 export type AppRouter = typeof appRouter;

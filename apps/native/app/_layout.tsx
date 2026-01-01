@@ -16,6 +16,7 @@ import { BootstrapErrorScreen } from "@/components/BootstrapErrorScreen";
 import { QueryProvider } from "@/components/QueryProvider";
 import { GradientBackground } from "@/components/ui/GradientBackground";
 import { SessionProvider, useSession } from "@/context/session";
+import { useInitializeNotifications } from "@/features/notifications";
 import { useProcessUploadQueue } from "@/features/upload";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
@@ -30,6 +31,9 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { isInitialized, error, retry, session } = useSession();
   const { processQueue } = useProcessUploadQueue();
+
+  // Initialize push notifications when user is authenticated
+  useInitializeNotifications(!!session);
 
   // Hide splash screen when bootstrap completes
   const onLayoutRootView = useCallback(async () => {

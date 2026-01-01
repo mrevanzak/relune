@@ -23,6 +23,11 @@ export function useRecordingPlayer(
   const status = useAudioPlayerStatus(player);
   const previousUrlRef = useRef<string | null>(null);
 
+  // Ensure playback volume is at maximum (1.0) for louder audio
+  useEffect(() => {
+    player.volume = 1.0;
+  }, [player]);
+
   // Auto-play when URL changes to a new non-null value (only if autoPlay is enabled)
   useEffect(() => {
     if (autoPlay && audioUrl && audioUrl !== previousUrlRef.current) {

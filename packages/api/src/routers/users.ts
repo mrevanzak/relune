@@ -1,13 +1,29 @@
 import { protectedProcedure } from "../index";
-import { createUserInput } from "../models/users";
+import { createUserInput, updateDisplayNameInput } from "../models/users";
 import * as UsersService from "../services/users";
 
 /**
  * Users Router
  *
- * Endpoints for listing and creating users.
+ * Endpoints for user management and profile.
  */
 export const usersRouter = {
+  /**
+   * Get the current user's profile.
+   */
+  me: protectedProcedure.handler(({ context }) =>
+    UsersService.getCurrentUser(context.user.id)
+  ),
+
+  /**
+   * Update the current user's display name.
+   */
+  updateDisplayName: protectedProcedure
+    .input(updateDisplayNameInput)
+    .handler(({ context, input }) =>
+      UsersService.updateDisplayName(context.user.id, input.displayName)
+    ),
+
   /**
    * List all users (id, email, displayName).
    */

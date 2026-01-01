@@ -10,6 +10,7 @@ import {
 } from "../models/import";
 import { convertToM4a, needsConversion } from "../services/audio-converter";
 import * as ImportService from "../services/import";
+import * as NotificationsService from "../services/notifications";
 import * as RecordingsService from "../services/recordings";
 import * as SenderMappingsService from "../services/sender-mappings";
 import {
@@ -333,6 +334,15 @@ export const importRouter = {
           (err) =>
             console.error("Transcription failed for imported recordings:", err)
         );
+
+        // Send push notification to all users except the importer
+        const importerName =
+          await NotificationsService.getUserDisplayName(importerId);
+        NotificationsService.broadcastNotification(
+          importerId,
+          "WhatsApp Import Complete",
+          `${importerName} imported ${imported.length} voice note${imported.length === 1 ? "" : "s"} from WhatsApp`
+        ).catch((err) => console.error("Failed to send notification:", err));
       }
 
       // Clean up temp file (fire-and-forget, don't block response)

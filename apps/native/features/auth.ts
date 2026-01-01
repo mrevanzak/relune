@@ -1,10 +1,36 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { orpc } from "@/lib/api";
 import { getSupabaseClient } from "@/lib/supabase";
 import { authStore } from "@/stores/auth";
 
 interface AuthCredentials {
   email: string;
   password: string;
+}
+
+/**
+ * Query hook for getting the current user's profile.
+ * Returns id, email, and displayName.
+ */
+export function useCurrentUser() {
+  return useQuery(orpc.users.me.queryOptions());
+}
+
+/**
+ * Mutation hook for updating the current user's display name.
+ * Invalidates the user profile cache on success.
+ */
+export function useUpdateDisplayNameMutation() {
+  return useMutation(
+    orpc.users.updateDisplayName.mutationOptions({
+      onSuccess: (_, _variables, _onMutateResult, context) => {
+        // Invalidate user profile cache
+        context.client.invalidateQueries({
+          queryKey: orpc.users.me.key(),
+        });
+      },
+    })
+  );
 }
 
 /**

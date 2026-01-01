@@ -13,6 +13,58 @@ export type UserSummary = {
   displayName: string | null;
 };
 
+/**
+ * Get the current user's profile.
+ *
+ * @throws ORPCError NOT_FOUND if user doesn't exist in database
+ */
+export async function getCurrentUser(userId: string): Promise<UserSummary> {
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    columns: { id: true, email: true, displayName: true },
+  });
+
+  if (!user) {
+    throw new ORPCError("NOT_FOUND", {
+      message: "User not found",
+      data: { code: "USER_NOT_FOUND" },
+    });
+  }
+
+  return user;
+}
+
+/**
+ * Update the current user's display name.
+ *
+ * @throws ORPCError NOT_FOUND if user doesn't exist
+ */
+export async function updateDisplayName(
+  userId: string,
+  displayName: string
+): Promise<UserSummary> {
+  const trimmed = displayName.trim();
+
+  const [updated] = await db
+    .update(users)
+    .set({ displayName: trimmed || null })
+    .where(eq(users.id, userId))
+    .returning({
+      id: users.id,
+      email: users.email,
+      displayName: users.displayName,
+    });
+
+  if (!updated) {
+    throw new ORPCError("NOT_FOUND", {
+      message: "User not found",
+      data: { code: "USER_NOT_FOUND" },
+    });
+  }
+
+  return updated;
+}
+
 export async function listUsers(): Promise<UserSummary[]> {
   return await db
     .select({
