@@ -25,6 +25,7 @@ import {
   useRecordingsWithPolling,
   useUnarchiveRecordingMutation,
 } from "@/features/recordings";
+import { useSettings } from "@/features/settings";
 import { useRecordingPlayer } from "@/hooks/use-audio-player";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { useThemeColor } from "@/hooks/use-theme-color";
@@ -61,6 +62,9 @@ export default function HomeScreen() {
   const deleteMutation = useDeleteRecordingMutation();
   const archiveMutation = useArchiveRecordingMutation();
   const unarchiveMutation = useUnarchiveRecordingMutation();
+
+  // prefetch settings query
+  useSettings();
 
   // Tab state
   const [tabIndex, setTabIndex] = useState(0);
