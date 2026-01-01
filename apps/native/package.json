@@ -12,7 +12,8 @@
     "ios": "expo run:ios",
     "xcode": "xed -b ios",
     "doctor": "npx expo-doctor@latest",
-    "type-check": "tsc  --noemit"
+    "type-check": "tsc  --noemit",
+    "submit:ios": "eas build --auto-submit -p ios -e production"
   },
   "dependencies": {
     "@baronha/ting": "^1.2.3",
