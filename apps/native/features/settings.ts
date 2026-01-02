@@ -1,7 +1,7 @@
-import { toast } from "@baronha/ting";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as Updates from "expo-updates";
 import { Alert } from "react-native";
+import { toast } from "@/components/ui/notifications";
 import { orpc, queryClient } from "@/lib/api";
 
 /**

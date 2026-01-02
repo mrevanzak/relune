@@ -1,15 +1,10 @@
 import { BlurView } from "expo-blur";
 import { useState } from "react";
-import {
-  type NativeSyntheticEvent,
-  StyleSheet,
-  Text,
-  type TextLayoutEventData,
-  View,
-} from "react-native";
+import { StyleSheet, Text, type TextLayoutEventData, View } from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useThemeColor } from "@/hooks/use-theme-color";
+import { useIconColor } from "../hooks/useIconColor";
 import { DoneIcon, ErrorIcon, SpinnerIcon } from "../icons";
+import { SPIndicatorLabelColors } from "../theme";
 import type { ToastConfig } from "../types";
 
 interface ToastProps {
@@ -19,31 +14,26 @@ interface ToastProps {
 /**
  * Toast UI component - SPIndicator-style floating pill
  * Uses BlurView for native iOS feel
+ *
+ * Text colors match SPIndicator:
+ * - Title: UIColor.label.withAlphaComponent(0.6)
+ * - Subtitle: UIColor.label.withAlphaComponent(0.3)
  */
 export function Toast({ config }: ToastProps) {
-  const { title, message, preset, icon } = config;
+  const { title, message, preset, icon, coloredIcons = true } = config;
   const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const [isMultiline, setIsMultiline] = useState(false);
 
-  // Theme colors
-  const textColor = useThemeColor({}, "text");
-  const textSecondaryColor = useThemeColor({}, "textSecondary");
-  const successColor = useThemeColor({}, "success");
-  const errorColor = useThemeColor({}, "error");
+  // SPIndicator colors (label with opacity)
+  const labelColors = isDark
+    ? SPIndicatorLabelColors.dark
+    : SPIndicatorLabelColors.light;
+  const titleColor = labelColors.title;
+  const subtitleColor = labelColors.subtitle;
 
-  // Determine icon color based on preset
-  const getIconColor = () => {
-    switch (preset) {
-      case "done":
-        return successColor;
-      case "error":
-        return errorColor;
-      case "spinner":
-        return textSecondaryColor;
-      default:
-        return textColor;
-    }
-  };
+  // Icon color (colorful by default for toast)
+  const iconColor = useIconColor(preset, coloredIcons);
 
   // Render the appropriate icon
   const renderIcon = () => {
@@ -52,7 +42,6 @@ export function Toast({ config }: ToastProps) {
       return <View style={styles.iconContainer}>{icon}</View>;
     }
 
-    const iconColor = getIconColor();
     const iconSize = 22;
 
     switch (preset) {
@@ -80,9 +69,7 @@ export function Toast({ config }: ToastProps) {
   };
 
   // Handle text layout to detect multiline
-  const handleTextLayout = (
-    event: NativeSyntheticEvent<TextLayoutEventData>
-  ) => {
+  const handleTextLayout = (event: { nativeEvent: TextLayoutEventData }) => {
     if (event.nativeEvent.lines.length > 1) {
       setIsMultiline(true);
     }
@@ -90,13 +77,12 @@ export function Toast({ config }: ToastProps) {
 
   const hasMessage = Boolean(message);
   const hasIcon = Boolean(icon || preset);
-  const isMultilineLayout = isMultiline || hasMessage;
 
   return (
     <View
       style={[
         styles.shadowWrapper,
-        isMultilineLayout && styles.shadowWrapperMultiline,
+        isMultiline && styles.shadowWrapperMultiline,
         config.style,
       ]}
     >
@@ -104,32 +90,32 @@ export function Toast({ config }: ToastProps) {
         intensity={80}
         style={[
           styles.blurContainer,
-          isMultilineLayout && styles.blurContainerMultiline,
+          isMultiline && styles.blurContainerMultiline,
         ]}
-        tint={colorScheme === "dark" ? "dark" : "light"}
+        tint={isDark ? "dark" : "light"}
       >
         <View
           style={[
             styles.content,
             hasIcon && styles.contentWithIcon,
-            isMultilineLayout && styles.contentMultiline,
+            isMultiline && styles.contentMultiline,
           ]}
         >
           {renderIcon()}
           <View style={styles.textContainer}>
             <Text
               numberOfLines={1}
-              style={[styles.title, { color: textColor }, config.titleStyle]}
+              style={[styles.title, { color: titleColor }, config.titleStyle]}
             >
               {title}
             </Text>
             {hasMessage && (
               <Text
                 numberOfLines={3}
-                // onTextLayout={handleTextLayout}
+                onTextLayout={handleTextLayout}
                 style={[
                   styles.message,
-                  { color: textSecondaryColor },
+                  { color: subtitleColor },
                   config.messageStyle,
                 ]}
               >
@@ -147,7 +133,7 @@ const styles = StyleSheet.create({
   // Outer wrapper for shadow (no overflow:hidden so shadow is visible)
   shadowWrapper: {
     borderRadius: 1000, // Pill shape
-    maxWidth: "75%",
+    maxWidth: "90%",
     // Shadow (SPIndicator values)
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 7 },

@@ -16,7 +16,6 @@
     "submit:ios": "eas build --auto-submit -p ios -e production"
   },
   "dependencies": {
-    "@baronha/ting": "^1.2.3",
     "@bottom-tabs/react-navigation": "^1.1.0",
     "@expo/vector-icons": "^15.0.3",
     "@orpc/client": "catalog:",

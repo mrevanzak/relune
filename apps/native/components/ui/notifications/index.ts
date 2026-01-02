@@ -33,11 +33,13 @@
  *   forceToast: true,
  * });
  *
- * // Alert (centered modal popup)
+ * // Alert - iOS16 style (default: centered modal with large icon)
  * alert.done("Added to Library");
  * alert.error("Something went wrong");
  * alert.heart("Added to Favorites");
- * alert({ title: "Custom", message: "With message", preset: "done" });
+ *
+ * // Alert - iOS17 style (bottom-positioned, horizontal layout)
+ * alert.done("Added!", { alertStyle: "iOS17AppleMusic" });
  *
  * // Dismiss
  * toast.dismiss();
@@ -57,6 +59,7 @@ export type {
   AlertConfig,
   AlertInput,
   AlertPreset,
+  AlertStyle,
   HapticType,
   ToastConfig,
   ToastInput,

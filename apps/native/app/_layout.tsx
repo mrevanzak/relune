@@ -15,6 +15,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BootstrapErrorScreen } from "@/components/BootstrapErrorScreen";
 import { QueryProvider } from "@/components/QueryProvider";
 import { GradientBackground } from "@/components/ui/GradientBackground";
+import { NotificationProvider } from "@/components/ui/notifications";
 import { SessionProvider, useSession } from "@/context/session";
 import { useInitializeNotifications } from "@/features/notifications";
 import { useProcessUploadQueue } from "@/features/upload";
@@ -87,9 +88,11 @@ export default function RootLayout() {
     <GestureHandlerRootView>
       <KeyboardProvider>
         <QueryProvider>
-          <SessionProvider>
-            <RootLayoutNav />
-          </SessionProvider>
+          <NotificationProvider>
+            <SessionProvider>
+              <RootLayoutNav />
+            </SessionProvider>
+          </NotificationProvider>
         </QueryProvider>
       </KeyboardProvider>
     </GestureHandlerRootView>
