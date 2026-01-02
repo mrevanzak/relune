@@ -1,3 +1,5 @@
+import Constants from "expo-constants";
+
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
@@ -45,7 +47,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
   // Get the Expo push token
   try {
     const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: "80ccff1a-9f8c-4fbc-bae0-1b8838666cde",
+      projectId: Constants.easConfig?.projectId,
     });
     return tokenData.data;
   } catch (error) {
@@ -61,7 +63,7 @@ export async function configureAndroidChannel(): Promise<void> {
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("default", {
       name: "Default",
-      importance: Notifications.AndroidImportance.MAX,
+      importance: Notifications.AndroidImportance.DEFAULT,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: "#d4aecd",
     });
@@ -89,8 +91,8 @@ export function addNotificationResponseListener(
 /**
  * Get the last notification response (for handling app launch from notification).
  */
-export async function getLastNotificationResponse(): Promise<Notifications.NotificationResponse | null> {
-  return await Notifications.getLastNotificationResponseAsync();
+export function getLastNotificationResponse(): Notifications.NotificationResponse | null {
+  return Notifications.getLastNotificationResponse();
 }
 
 /**
