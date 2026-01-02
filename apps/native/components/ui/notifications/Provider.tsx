@@ -52,8 +52,23 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       dismissible: input.dismissible ?? true,
     };
 
-    // Replace current toast
-    setCurrentToast(config);
+    // Dismiss any spinner alerts when adding a new toast
+    setAlertQueue((queue) => {
+      const spinnerAlerts = queue.filter((a) => a.preset === "spinner");
+      for (const spinnerAlert of spinnerAlerts) {
+        spinnerAlert.onDismiss?.();
+      }
+      return queue.filter((a) => a.preset !== "spinner");
+    });
+
+    // Replace current toast, calling onDismiss if it was a spinner
+    setCurrentToast((current) => {
+      if (current?.preset === "spinner") {
+        current.onDismiss?.();
+      }
+      return config;
+    });
+
     return id;
   }, []);
 
@@ -76,8 +91,24 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       duration: input.duration ?? 2500,
     };
 
-    // Add to queue
-    setAlertQueue((queue) => [...queue, config]);
+    // Dismiss any spinner toast when adding a new alert
+    setCurrentToast((current) => {
+      if (current?.preset === "spinner") {
+        current.onDismiss?.();
+        return null;
+      }
+      return current;
+    });
+
+    // Filter out any spinner alerts from queue, calling their onDismiss callbacks
+    setAlertQueue((queue) => {
+      const spinnerAlerts = queue.filter((a) => a.preset === "spinner");
+      for (const spinnerAlert of spinnerAlerts) {
+        spinnerAlert.onDismiss?.();
+      }
+      return [...queue.filter((a) => a.preset !== "spinner"), config];
+    });
+
     return id;
   }, []);
 
