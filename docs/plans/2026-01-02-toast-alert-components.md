@@ -406,6 +406,37 @@ Multiline:
 
 ---
 
+## Auto-Switch Behavior
+
+When `toast()` is called with content that would render as more than 2 lines (combined title + message > 60 characters), it automatically displays as an Alert instead for better visual presentation.
+
+### Override
+
+Use `forceToast: true` to disable auto-switching:
+
+```typescript
+toast({
+  title: "Long Title Here",
+  message: "This is a very long message that would normally trigger Alert",
+  forceToast: true, // Force toast display regardless of length
+});
+```
+
+### Border Radius Customization
+
+Use the `style` prop to customize border radius:
+
+```typescript
+toast({
+  title: "Custom Radius",
+  message: "Short msg",
+  forceToast: true,
+  style: { borderRadius: 24 }, // Custom radius
+});
+```
+
+---
+
 ## Integration
 
 ### Provider Setup
